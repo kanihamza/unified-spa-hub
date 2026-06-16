@@ -232,8 +232,8 @@
 
           // Update KPIs
           document.getElementById('kpi-docs-count').textContent = documents.length;
-          document.getElementById('kpi-tasks-count').textContent = tasks.filter(t => t.status === 'PENDING').length;
-          document.getElementById('kpi-emails-count').textContent = emails.filter(e => e.assignmentStatus === 'PENDING').length;
+          document.getElementById('kpi-tasks-count').textContent = tasks.filter(t => String(t.status).toUpperCase() === 'PENDING').length;
+          document.getElementById('kpi-emails-count').textContent = emails.filter(e => String(e.assignmentStatus).toUpperCase() === 'PENDING').length;
           document.getElementById('kpi-logs-count').textContent = diagStats.totalActions;
 
           // Render Recent Incoming docs (top 4)

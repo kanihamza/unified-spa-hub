@@ -165,7 +165,8 @@
           }
 
           tbody.innerHTML = emails.map(e => {
-            const dateStr = new Date(e.dateReceived).toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+            const _d = new Date(e.received || e.receivedDateTime || e.dateReceived);
+            const dateStr = isNaN(_d.getTime()) ? '—' : _d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
             return `
               <tr class="mail-row" data-id="${Sanitizer.escape(e.id)}" style="cursor: pointer;">
                 <td>
@@ -282,7 +283,7 @@
                 <h3 class="dgo-h4">${Sanitizer.escape(e.subject)}</h3>
                 <div class="dgo-cluster dgo-cluster--between">
                   <span style="font-size: var(--dgo-type-body-sm); font-weight:600; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(e.sender)}</span>
-                  <span style="font-size: 11px; color:var(--dgo-color-fg-subtle);">${new Date(e.dateReceived).toLocaleString()}</span>
+                  <span style="font-size: 11px; color:var(--dgo-color-fg-subtle);">${(d => isNaN(d.getTime()) ? '—' : d.toLocaleString())(new Date(e.received || e.receivedDateTime || e.dateReceived))}</span>
                 </div>
               </div>
 
