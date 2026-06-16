@@ -44,6 +44,22 @@ const API = (() => {
   const PAGINATED_FLOWS = ['E02', 'E04', 'E09'];
   const FLOW_CODES = Object.keys(FLOW_ENDPOINTS);
 
+  // ── Client-side read cache (per flow, persisted in localStorage) ────────────
+  // Read data is fetched once (on first need / app start) and served from cache
+  // on subsequent navigation — it is NOT re-fetched just by landing on a module.
+  // It refreshes only on an explicit trigger: a write to a related flow
+  // (auto-invalidation) or a forced refresh (opts.force, used by module refresh
+  // buttons / predefined actions). References (E01) are cached by Lookups itself.
+  const READ_CACHE_FLOWS = ['E02', 'E04', 'E09'];
+  const CACHE_PREFIX = 'dgo_cache_';
+  const WRITE_INVALIDATES = { E03: ['E02'], E05: ['E04'], E06: ['E04'], E07: ['E04'], E08: ['E04'], E10: ['E04', 'E09'], E14: ['E02'] };
+  const cacheKey = (code) => CACHE_PREFIX + code;
+  function readCache(code) { try { const raw = localStorage.getItem(cacheKey(code)); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+  function writeCache(code, resp) { try { localStorage.setItem(cacheKey(code), JSON.stringify(resp)); } catch {} }
+  function invalidate(codes) { (Array.isArray(codes) ? codes : [codes]).forEach(c => { try { localStorage.removeItem(cacheKey(c)); } catch {} }); }
+  function isCached(code) { try { return localStorage.getItem(cacheKey(code)) !== null; } catch { return false; } }
+  function clearCache() { invalidate(READ_CACHE_FLOWS); }
+
   /** Active URL for a flow code: per-flow runtime override (Settings) wins over the registry. */
   function getEndpoint(code) {
     const override = localStorage.getItem(`dgo_endpoint_${code}`);
@@ -215,13 +231,22 @@ const API = (() => {
     }
   }
 
-  async function callPA(code, payload = {}) {
+  async function callPA(code, payload = {}, opts = {}) {
     if (PAGINATED_FLOWS.includes(code)) {
       payload.pagination = payload.pagination || { top: 50, skip: 0 };
     }
 
     if (WRITE_FLOWS.includes(code)) {
-      return await Outbox.push(code, payload);
+      const res = await Outbox.push(code, payload);
+      // A write invalidates the related module caches so their next read refetches.
+      if (WRITE_INVALIDATES[code]) invalidate(WRITE_INVALIDATES[code]);
+      return res;
+    }
+
+    // Serve cached read data unless an explicit refresh is requested (opts.force).
+    if (READ_CACHE_FLOWS.includes(code) && opts.force !== true) {
+      const cached = readCache(code);
+      if (cached !== null) return cached;
     }
 
     const url = getEndpoint(code);
@@ -243,14 +268,19 @@ const API = (() => {
       });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      // Normalize the live envelope/field shape to the platform's canonical shape.
-      return normalizeResponse(code, await response.json());
+      // Normalize the live envelope/field shape to the platform's canonical shape, then cache.
+      const normalized = normalizeResponse(code, await response.json());
+      if (READ_CACHE_FLOWS.includes(code)) writeCache(code, normalized);
+      return normalized;
     } catch (e) {
       clearTimeout(timeoutId);
       if (window.Telemetry) window.Telemetry.log("api_invocation_error", { code, error: e.message });
       throw e;
     }
   }
+
+  // Forced refresh for a flow (module refresh buttons / predefined refetch actions).
+  function refresh(code, payload) { return callPA(code, payload || {}, { force: true }); }
 
   // Local cache of the last successful live sync (used by pages for offline continuity;
   // empty until a live flow returns data — never seeded with sample content).
@@ -264,6 +294,10 @@ const API = (() => {
   return {
     Outbox,
     callPA,
+    refresh,
+    invalidate,
+    isCached,
+    clearCache,
     normalizeResponse,
     getEndpoint,
     FLOW_CODES,

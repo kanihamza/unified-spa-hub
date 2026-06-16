@@ -11,16 +11,16 @@
     syncing: false
   };
 
-  async function syncRegistry() {
+  async function syncRegistry(force = false) {
     if (STATE.syncing) return;
     STATE.syncing = true;
-    
+
     const tbody = document.getElementById('aid-tbody');
     tbody.innerHTML = '<tr><td colspan="6" class="aid-empty">Synchronizing Registry...</td></tr>';
 
     try {
-      const taskRes = await window.API.callPA('E04');
-      const docRes = await window.API.callPA('E02');
+      const taskRes = await window.API.callPA('E04', {}, { force });
+      const docRes = await window.API.callPA('E02', {}, { force });
       
       const combined = [...(taskRes.records || []), ...(docRes.records || [])];
       STATE.rows = combined;
@@ -58,7 +58,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     if (window.Chrome) window.Chrome.bootstrap('aid');
     const syncBtn = document.getElementById('btn-sync');
-    if (syncBtn) syncBtn.addEventListener('click', syncRegistry);
-    syncRegistry();
+    if (syncBtn) syncBtn.addEventListener('click', () => syncRegistry(true)); // manual refresh = force
+    syncRegistry(false); // initial = cached (no refetch on navigation)
   });
 })();

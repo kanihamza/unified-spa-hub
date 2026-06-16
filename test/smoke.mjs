@@ -52,9 +52,13 @@ try {
   await sleep(1200);
   const browser = await chromium.launch();
   const ctx = await browser.newContext();
-  // Mock the live flows at the transport layer.
-  await ctx.route('**/powerautomate/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bodyFor(route.request().url())) }));
+  // Mock the live flows at the transport layer, counting requests per flow GUID.
+  const reqCount = {};
+  await ctx.route('**/powerautomate/**', (route) => {
+    const g = (route.request().url().match(/workflows\/([0-9a-f]{8})/) || [])[1];
+    if (g) reqCount[g] = (reqCount[g] || 0) + 1;
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bodyFor(route.request().url())) });
+  });
 
   const page = await ctx.newPage();
   const errors = [];
@@ -86,6 +90,11 @@ try {
   check('dgceo-tracker has unified sidebar', !!(await page.$('#platform-sidebar')));
   const total = await page.textContent('#stat-total');
   check('tracker loaded records from live flow', Number(total) >= 0, `total=${total}`);
+
+  // Caching: across docs→tasks→index→docs→tracker navigations, each read flow is
+  // fetched ONCE and served from cache thereafter (no refetch just by navigating).
+  check('docs flow (E02) fetched once across navigations', reqCount['7995c1eb'] === 1, `E02 fetches=${reqCount['7995c1eb']}`);
+  check('tasks flow (E04) fetched once across navigations', reqCount['37642ba3'] === 1, `E04 fetches=${reqCount['37642ba3']}`);
 
   check('no console/page errors', errors.length === 0, errors.join(' | '));
   await browser.close();

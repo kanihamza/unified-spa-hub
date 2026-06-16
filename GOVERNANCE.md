@@ -39,6 +39,13 @@
 > flows at the browser network layer and validates navigation, live-pipeline rendering, live identity,
 > the tracker shell, and zero console errors. Green.
 >
+> **Fetch & cache strategy (corrected):** read data is no longer refetched on every navigation. Each
+> read flow is fetched once (first need / start) and cached per-flow in `localStorage`
+> (`dgo_cache_<code>`); navigation reads the cache. Refresh is explicit only: a write to a related flow
+> auto-invalidates the affected module cache (`WRITE_INVALIDATES`), and module refresh buttons force a
+> refetch (`API.refresh` / `callPA(code, …, { force: true })`). Verified in the smoke test (E02/E04
+> fetched exactly once across docs→tasks→index→docs→tracker navigations).
+>
 > **Still open (environmental):** live data requires the Power Automate flows to permit the app origin
 > via **CORS** (a server-side flow config — browser calls otherwise fail the preflight). This is the
 > only remaining dependency for live data; proxies are out of scope (FR-011). The tracker maps to the

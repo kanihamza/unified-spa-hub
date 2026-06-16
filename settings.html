@@ -310,7 +310,8 @@
         // Flush cache
         document.getElementById('btn-flush-cache').addEventListener('click', () => {
           localStorage.removeItem('dgo_cached_lookups');
-          window.Chrome.showToast('Offline cache flushed!', 'warning');
+          if (window.API && window.API.clearCache) window.API.clearCache();
+          window.Chrome.showToast('Offline cache flushed! Modules will refetch on next load.', 'warning');
           updateCacheCounters();
         });
 

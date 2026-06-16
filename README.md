@@ -53,6 +53,14 @@ unwraps the array (exposing both `records` and the entity key) and adds camelCas
 when a flow returns nothing or is unreachable, pages show genuine empty/error states. Live data
 requires the flows to permit the app origin via **CORS** (a server-side flow config).
 
+**Fetch & cache strategy.** Read data is fetched **once** (on first need / app start) and cached in
+`localStorage` per flow (`dgo_cache_<code>`). Navigating to or landing on a module **does not refetch** —
+it reads the cache. Data refreshes only on an explicit trigger: a **write** to a related flow
+(auto-invalidates the affected module's cache, so its next read is fresh) or a **manual refresh button**
+(`API.refresh(code)` / `callPA(code, payload, { force: true })`) — e.g. AID "Sync Registry", the
+tracker "Force Sync", and the Fast-Track toolbar actions. Each module refreshes via its own dedicated
+flow. `API.clearCache()` (Settings → "Flush offline cache") drops all cached reads.
+
 | Code | Purpose | Provisioned |
 |------|---------|-------------|
 | E01 | Reference / lookup directory | ✅ |

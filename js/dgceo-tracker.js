@@ -25,10 +25,10 @@
   }
 
   // Load correspondence records live from the dossier/correspondence flow (E02).
-  async function loadRecords() {
+  async function loadRecords(force = false) {
       try {
           if (!(window.API && window.API.callPA)) { applicationState.records = []; return; }
-          const res = await window.API.callPA('E02', { action: 'getDocs', operation: 'read', source: 'DGCEO_Tracker' });
+          const res = await window.API.callPA('E02', { action: 'getDocs', operation: 'read', source: 'DGCEO_Tracker' }, { force });
           const docs = (res && (res.records || res.docs)) || [];
           applicationState.records = docs.map(d => ({
               id: safeText(d.id != null ? d.id : d.ID),
@@ -218,11 +218,10 @@
   }
 
   window.triggerManualSync = async function() {
-      showToast("Initiating secure Flow synchronization...", "info");
-      const result = await uploadToPowerAutomate('full_sync', applicationState.records);
-      setTimeout(() => {
-          if(result.success) showToast("Database synchronization complete.", "success");
-      }, 1000);
+      showToast("Refreshing correspondence from the live flow…", "info");
+      await loadRecords(true); // manual refresh = force a refetch via E02
+      updateUI();
+      showToast("Records refreshed.", "success");
   }
 
   window.exportToCSV = function() {
@@ -372,7 +371,7 @@
     const rd = document.getElementById('form-received-date');
     if (rd) rd.valueAsDate = new Date();
     setupEventListeners();
-    await loadRecords();
+    await loadRecords(false); // initial = cached (no refetch on navigation)
     updateUI();
   }
 
