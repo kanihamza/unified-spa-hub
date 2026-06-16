@@ -24,7 +24,7 @@ const API = (() => {
   const FLOW_ENDPOINTS = {
     // Read flows (provisioned)
     E01: paUrl('ff455c68e9ac493e858fb984bcfd01fb', 'jajFVxbv67HbcKqvV8h6JBPm9TPG60yDnhRjy9WmpPU'), // Reference / lookup directory
-    E02: paUrl('818ec4053f1e4f0b87845114241d8b74', 'MgQUY52IfdIP3MRFR4H1Zz_lNH-lHT6-IJ675Yz5S50'), // Inbound dossiers (OData) — verified Live-OPS alternate: 7995c1eb (see GOVERNANCE.md)
+    E02: paUrl('7995c1eb50d94d5daa2780e71391d874', 'G9ti0-fzVRwt8fdGGheNgSrvIoMCcXKEibCaBDci4oE'), // Inbound dossiers (OData) — GET_DOCS_OPS_2 (verified_and_revalidated). Legacy: 818ec405 / MgQUY52I
     E04: paUrl('37642ba3597f4cf58288cc71b5e6b519', 'hklOSh62A6jmQuhX28NYQMaxlVEG8fC05LVsyVz7YX4'), // Action tasks (OData)
     E09: paUrl('3931e2ff995242b6b2c920c8b2209797', 'SV7I2t9wmS0sWBGpHoIKg8I3E8ATk1KFrqrjC9Gih0U'), // Mailbox sync (OData)
 
@@ -37,7 +37,7 @@ const API = (() => {
     E07: paUrl('c43388639d14452faef4ca3042a95b23', 'yST47ItNduW705P1gJu9CDyfa_LKghM8eTP8aBl48iU'), // Uniform bulk broadcast (Bulk Assign)
     E08: paUrl('1154b50e1d17420dadb3b012e7e2a02c', 'Swbi7nJCn3-VSSz4KN1YxHfxFPfO-EUWsF-czBS3zs4'), // AI batch allocator (Bulk Ops Assign)
     E10: paUrl('a942d230337c4ddfa9a386e92bbd048b', 'KAItnmgczUUEDkJQvICwLdfbTZ3IBbPpaPePNqz0A7U'), // Email-to-task directive (Create Task for Email)
-    E14: '', // Reserved — Dynamic Multi-Actions flow (bc83d98a) available if a catch-all is needed
+    E14: paUrl('bc83d98acf474a088832d78f50085388', '_Co-r3TG6rtP0yGDDJXIM90WD4Wpym2NmR5OyOSsgnY'), // Dynamic Multi-Actions (catch-all)
     E15: '', // Reserved — no source flow identified
 
     // Identity / OTP flows — provisioned. Gateway enabled with admin bypass (see js/identity.js).
