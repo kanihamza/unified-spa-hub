@@ -49,12 +49,13 @@ Outbox until a real URL is supplied.
 | E02 | Inbound dossiers (OData) | ✅ |
 | E04 | Action tasks (OData) | ✅ |
 | E09 | Mailbox sync (OData) | ✅ |
-| E03, E05, E06 | Update status / progress / single assign (unified mutation flow) | ✅ |
+| E03, E05 | Update dossier status / task progress / acknowledge (Subsidiary Doc Actions) | ✅ |
+| E06 | Single task assignment (Create Task) | ✅ |
 | E07 | Uniform bulk broadcast | ✅ |
 | E08 | AI batch allocator | ✅ |
 | E10 | Email-to-task directive | ✅ |
-| E14, E15 | Reserved | ⛔ no source flow identified |
-| E16, E17 | OTP request / verify | ⛔ OTP disabled this phase (no flow exists) |
+| E14, E15 | Reserved | ⛔ no flow assigned |
+| E16, E17 | OTP request / verify | ⛔ flows exist; trigger URLs not provided (OTP disabled, EXC-01) |
 
 ## Governance
 

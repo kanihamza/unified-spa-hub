@@ -32,7 +32,8 @@ carries explicit closure criteria.
   client. Any user can select any identity (including Director General) and reach every page.
   Role is cosmetic. This is acceptable **only** for non-production build/test use.
 - **Closure criteria (FR-038):**
-  1. Provision OTP request/verify flows `E16`/`E17` (URLs in `FLOW_ENDPOINTS`, `js/api.js`).
+  1. Provision OTP request/verify flows `E16`/`E17`. The flows now exist ("Web - OTP Generate" /
+     "Web - OTP Verify", schemas known); only their trigger URLs are needed in `FLOW_ENDPOINTS`.
   2. Set `OTP_SECURITY_ACTIVE = true`.
   3. Unify the session model so `js/state.js` and `js/identity.js` write a single session
      shape (the identity switcher must not bypass the authenticated session / `expiresAt`).
@@ -72,27 +73,30 @@ reconciled from the source-SPA extraction (`spa_flow_extraction_full.json` /
 `consolidated_endpoint_matrix.xlsx`); the workflow GUID is the stable key (source SPAs used
 inconsistent local E-numbering).
 
-- **Provisioned (live):** `E01`, `E02`, `E03`, `E04`, `E05`, `E06`, `E07`, `E08`, `E09`, `E10`
-  carry real flow URLs and call Power Automate directly. `E03`/`E05`/`E06` intentionally share
-  the unified mutation flow `6b3bad30…`, differentiated by payload `action`/`status`.
+See `docs/ENDPOINT_MAP.md` for the full revalidated mapping (now cross-checked against the
+deployed flow trigger/response schemas).
+
+- **Provisioned (live):** `E01`–`E10` carry real flow URLs and call Power Automate directly.
+  Write-flow mapping was **revalidated against trigger schemas**: `E03`/`E05` →
+  "Web - Subsidiary Doc Actions" (`85c556f1…`, contract `{docId,taskId,status,acknowledgedBy}`);
+  `E06` → "Deployed - Create Task" (`6b3bad30…`, contract `NewActivityTask`/`Selected`).
+  (Corrected from the prior matrix-based guess that routed E03/E05 to `6b3bad30…`.)
 - **Unprovisioned (empty):**
-  - `E14`, `E15` — reserved; **no source flow was identified** for them.
-  - `E16`, `E17` — OTP request/verify; **no OTP flow exists** in any source SPA (consistent with
-    EXC-01). They remain empty until an OTP flow is built.
+  - `E14`, `E15` — reserved. `E14` candidate: "Dynamic Multi-Actions" `bc83d98a…` (catch-all).
+  - `E16`, `E17` — OTP request/verify. The flows **now exist** ("Web - OTP Generate" / "Web - OTP
+    Verify", with known schemas) but their trigger **URLs were not provided**, so they remain empty.
 - **Open data items to verify:**
-  - **E02 docs GUID conflict:** `E02` uses the operational/interceptor GUID `818ec405…` (used by
-    all three source SPAs as Get Docs). One source file's *endpoint object* declared Get Docs as
-    `5de1fc93…` instead. The operational GUID is wired; `5de1fc93…` should be confirmed or discarded.
-  - **E07/E08 order:** assigned per stakeholder confirmation (E07 = Bulk Assign `c4338863…`;
-    E08 = Bulk Ops Assign `1154b50e…`). Trivially swappable if validated otherwise.
-  - **Unmapped extra flows** present in the extraction but with no platform E-code:
-    `bc83d98a…` (Dynamic Global), `85c556f1…` (Subsidiary/Supplementary Actions),
-    `7e71fffe…` (unlabeled). Assign or retire deliberately.
+  - **E02 docs — three candidate GUIDs:** `818ec405…` (wired, used by all source SPAs),
+    `5de1fc93…` (endpoint-object variant), and **`7995c1eb…` ("GET_DOCS_OPS_2 / Live_OPS_Fetch_Docs",
+    explicitly `verified_and_revalidated`)**. Recommended: functionally validate `7995c1eb…` and
+    promote it to E02; the current `818ec405…` is retained meanwhile to avoid regressing a live read.
+  - **E07/E08 order:** assigned per stakeholder confirmation (E07 = `c4338863…`; E08 = `1154b50e…`).
+  - **Unmapped extra flow:** `7e71fffe…` (unlabeled) — assign or retire deliberately.
 - **Behavior of an unprovisioned flow:**
   - *Read flows* → deterministic **local simulation** (`API.getSimulation`), used only when a
     URL is absent — an explicit, opt-in dev/offline fallback, logged as `api_simulation_fallback`.
   - *Write flows* → queued in the **Outbox** with backoff; stays queued
     (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
-- **Rotation note (EXC-02):** wiring the write flows added live SAS signatures for `6b3bad30…`,
-  `c4338863…`, `1154b50e…`, and `a942d230…` to the committed source. Include these in the
-  signature rotation required under EXC-02.
+- **Rotation note (EXC-02):** the committed source now embeds live SAS signatures for the write
+  flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`, `a942d230…` (plus the four read flows).
+  Include all of these in the signature rotation required under EXC-02.

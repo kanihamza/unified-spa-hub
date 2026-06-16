@@ -24,25 +24,26 @@ const API = (() => {
   const FLOW_ENDPOINTS = {
     // Read flows (provisioned)
     E01: paUrl('ff455c68e9ac493e858fb984bcfd01fb', 'jajFVxbv67HbcKqvV8h6JBPm9TPG60yDnhRjy9WmpPU'), // Reference / lookup directory
-    E02: paUrl('818ec4053f1e4f0b87845114241d8b74', 'MgQUY52IfdIP3MRFR4H1Zz_lNH-lHT6-IJ675Yz5S50'), // Inbound dossiers (OData)
+    E02: paUrl('818ec4053f1e4f0b87845114241d8b74', 'MgQUY52IfdIP3MRFR4H1Zz_lNH-lHT6-IJ675Yz5S50'), // Inbound dossiers (OData) — verified Live-OPS alternate: 7995c1eb (see GOVERNANCE.md)
     E04: paUrl('37642ba3597f4cf58288cc71b5e6b519', 'hklOSh62A6jmQuhX28NYQMaxlVEG8fC05LVsyVz7YX4'), // Action tasks (OData)
     E09: paUrl('3931e2ff995242b6b2c920c8b2209797', 'SV7I2t9wmS0sWBGpHoIKg8I3E8ATk1KFrqrjC9Gih0U'), // Mailbox sync (OData)
 
-    // Write / action flows
-    // E03/E05/E06 share the unified mutation flow (6b3bad30), differentiated by
-    // the payload `action`/`status` fields (matches the source SPA architecture).
-    E03: paUrl('6b3bad3005b44bf6bced0f8074d3f2ed', '1kJge9P2IOMOLRZOK-cVb3bcDJbuDhbR8x9h0TvHspQ'), // Update dossier status / flag document
-    E05: paUrl('6b3bad3005b44bf6bced0f8074d3f2ed', '1kJge9P2IOMOLRZOK-cVb3bcDJbuDhbR8x9h0TvHspQ'), // Update task progress
-    E06: paUrl('6b3bad3005b44bf6bced0f8074d3f2ed', '1kJge9P2IOMOLRZOK-cVb3bcDJbuDhbR8x9h0TvHspQ'), // Single task assignment
+    // Write / action flows (mapping revalidated against deployed flow trigger schemas)
+    // E03/E05 → "Web - Subsidiary Doc Actions" (docId/taskId/status/acknowledgedBy).
+    // E06 → "Deployed - Create Task" (Hybrid Assign: NewActivityTask/Selected/SelectedItems).
+    E03: paUrl('85c556f10b8244ba9d839a2ebe240b91', '8ikbMhXrOn_L4QRUBF94wiq2swh7GlNVY_GZ5BD5jK0'), // Update dossier status / flag document
+    E05: paUrl('85c556f10b8244ba9d839a2ebe240b91', '8ikbMhXrOn_L4QRUBF94wiq2swh7GlNVY_GZ5BD5jK0'), // Update task progress / acknowledge
+    E06: paUrl('6b3bad3005b44bf6bced0f8074d3f2ed', '1kJge9P2IOMOLRZOK-cVb3bcDJbuDhbR8x9h0TvHspQ'), // Single task assignment (Create Task)
     E07: paUrl('c43388639d14452faef4ca3042a95b23', 'yST47ItNduW705P1gJu9CDyfa_LKghM8eTP8aBl48iU'), // Uniform bulk broadcast (Bulk Assign)
     E08: paUrl('1154b50e1d17420dadb3b012e7e2a02c', 'Swbi7nJCn3-VSSz4KN1YxHfxFPfO-EUWsF-czBS3zs4'), // AI batch allocator (Bulk Ops Assign)
     E10: paUrl('a942d230337c4ddfa9a386e92bbd048b', 'KAItnmgczUUEDkJQvICwLdfbTZ3IBbPpaPePNqz0A7U'), // Email-to-task directive (Create Task for Email)
-    E14: '', // Reserved — no source flow identified
+    E14: '', // Reserved — Dynamic Multi-Actions flow (bc83d98a) available if a catch-all is needed
     E15: '', // Reserved — no source flow identified
 
-    // Identity / OTP flows — OTP disabled this phase (see GOVERNANCE.md)
-    E16: '', // OTP request
-    E17: ''  // OTP verify
+    // Identity / OTP flows — flows exist ("Web - OTP Generate" / "Web - OTP Verify")
+    // but their trigger URLs were not supplied; OTP stays disabled this phase (EXC-01).
+    E16: '', // OTP request — schema fields: otp_code
+    E17: ''  // OTP verify  — schema fields: otp_code, channel, request_id
   };
 
   const WRITE_FLOWS = ['E03', 'E05', 'E06', 'E07', 'E08', 'E10', 'E14', 'E15'];
