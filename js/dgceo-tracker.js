@@ -42,27 +42,33 @@
   function updateDashboard() {
       const records = applicationState.records;
       
-      document.getElementById('stat-total').innerText = records.length;
-      document.getElementById('stat-pending').innerText = records.filter(r => r.status === 'Pending').length;
-      document.getElementById('stat-accepted').innerText = records.filter(r => r.status === 'Accepted').length;
-      document.getElementById('stat-high').innerText = records.filter(r => r.priority === 'High').length;
+      document.getElementById('stat-total').textContent = records.length;
+      document.getElementById('stat-pending').textContent = records.filter(r => r.status === 'Pending').length;
+      document.getElementById('stat-accepted').textContent = records.filter(r => r.status === 'Accepted').length;
+      document.getElementById('stat-high').textContent = records.filter(r => r.priority === 'High').length;
 
       const tbody = document.getElementById('dashboard-recent-tbody');
       if(!tbody) return;
       tbody.innerHTML = '';
-      
+
+      if (records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--dgo-color-fg-subtle);">No registrations yet.</td></tr>';
+          return;
+      }
+
       records.slice(0, 5).forEach(record => {
           const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition-colors";
           tr.innerHTML = `
-              <td class="p-4">
-                  <div class="font-bold text-slate-800">${escapeHtml(record.subject)}</div>
-                  <div class="text-xs text-slate-500 font-medium">${escapeHtml(record.sender)}</div>
+              <td>
+                  <div style="font-weight:600;">${escapeHtml(record.subject)}</div>
+                  <div style="font-size:10px; color: var(--dgo-color-fg-muted);">${escapeHtml(record.sender)}</div>
               </td>
-              <td class="p-4 font-medium text-slate-600">${formatDate(record.receivedDate)}</td>
-              <td class="p-4">${getStatusBadge(record.status)}</td>
-              <td class="p-4 text-right">
-                  <button onclick="editRecord('${record.id}')" class="text-primary hover:bg-green-50 p-2.5 rounded-lg transition-colors shadow-sm border border-transparent hover:border-green-200"><i class="fa-solid fa-pen-to-square">🖊</i></button>
+              <td style="color: var(--dgo-color-fg-muted);">${formatDate(record.receivedDate)}</td>
+              <td>${getStatusBadge(record.status)}</td>
+              <td style="text-align:right;">
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="editRecord('${escapeHtml(record.id)}')" aria-label="Edit record">
+                      <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg>
+                  </button>
               </td>
           `;
           tbody.appendChild(tr);
@@ -101,39 +107,32 @@
           
           filtered.forEach(record => {
               const tr = document.createElement('tr');
-              tr.className = "hover:bg-slate-50 transition-colors";
               tr.innerHTML = `
-                  <td class="p-4 font-mono text-xs font-bold text-primary">${escapeHtml(record.id)}</td>
-                  <td class="p-4">
-                      <div class="font-bold text-slate-800">${escapeHtml(record.subject)}</div>
-                      <div class="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-600 inline-block px-2 py-0.5 rounded mt-1.5">${escapeHtml(record.category)}</div>
+                  <td style="font-family: var(--dgo-family-mono); font-size: 11px; font-weight:700; color: var(--dgo-color-action-primary);">${escapeHtml(record.id)}</td>
+                  <td>
+                      <div style="font-weight:600;">${escapeHtml(record.subject)}</div>
+                      <span class="dgo-badge dgo-badge--draft" style="font-size:10px; margin-top:4px;">${escapeHtml(record.category)}</span>
                   </td>
-                  <td class="p-4 text-slate-700 font-medium">${escapeHtml(record.sender)}</td>
-                  <td class="p-4">
-                      <div class="text-sm font-medium text-slate-600">Rcvd: ${formatDate(record.receivedDate)}</div>
-                      ${record.eventDate ? `<div class="text-xs text-secondary font-bold mt-1.5"><i class="fa-solid fa-calendar mr-1"></i> ${formatDate(record.eventDate)}</div>` : ''}
+                  <td>${escapeHtml(record.sender)}</td>
+                  <td>
+                      <div style="font-size: var(--dgo-type-body-sm);">Rcvd: ${formatDate(record.receivedDate)}</div>
+                      ${record.eventDate ? `<div style="font-size:11px; color: var(--dgo-color-action-accent); font-weight:600; margin-top:4px;">📅 ${formatDate(record.eventDate)}</div>` : ''}
                   </td>
-                  <td class="p-4">${getPriorityBadge(record.priority)}</td>
-                  <td class="p-4">${getStatusBadge(record.status)}</td>
-                  <td class="p-4 text-right space-x-1">
-                      <button onclick="editRecord('${record.id}')" class="text-slate-500 hover:text-primary hover:bg-slate-100 p-2 rounded transition-colors" title="Edit">
-                          <i class="fa-solid fa-pen">🖊</i>
-                      </button>
-                      <button onclick="quickAction('${record.id}', 'Accepted')" class="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded transition-colors" title="Mark Accepted">
-                          <i class="fa-solid fa-check-double">✓</i>
-                      </button>
-                      <button onclick="deleteRecord('${record.id}')" class="text-slate-500 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="Archive/Delete">
-                          <i class="fa-solid fa-trash">🗑</i>
-                      </button>
+                  <td>${getPriorityBadge(record.priority)}</td>
+                  <td>${getStatusBadge(record.status)}</td>
+                  <td style="text-align:right; white-space:nowrap;">
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="editRecord('${escapeHtml(record.id)}')" aria-label="Edit"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg></button>
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="quickAction('${escapeHtml(record.id)}','Accepted')" aria-label="Mark accepted"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-check"></use></svg></button>
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="deleteRecord('${escapeHtml(record.id)}')" aria-label="Delete"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-trash"></use></svg></button>
                   </td>
               `;
               tbody.appendChild(tr);
           });
       }
 
-      document.getElementById('page-end').innerText = filtered.length;
-      document.getElementById('page-total').innerText = filtered.length;
-      document.getElementById('page-start').innerText = filtered.length > 0 ? '1' : '0';
+      document.getElementById('page-end').textContent = filtered.length;
+      document.getElementById('page-total').textContent = filtered.length;
+      document.getElementById('page-start').textContent = filtered.length > 0 ? '1' : '0';
   }
 
   window.applyFilters = function() {
@@ -149,9 +148,9 @@
 
   function updateBadges() {
       const pBadge = document.getElementById('badge-pending');
-      if (pBadge) pBadge.innerText = applicationState.records.filter(r => r.status === 'Pending').length;
+      if (pBadge) pBadge.textContent = applicationState.records.filter(r => r.status === 'Pending').length;
       const eBadge = document.getElementById('badge-events');
-      if (eBadge) eBadge.innerText = applicationState.records.filter(r => r.category === 'Event Invitation').length;
+      if (eBadge) eBadge.textContent = applicationState.records.filter(r => r.category === 'Event Invitation').length;
   }
 
   window.editRecord = function(id) {
@@ -176,7 +175,7 @@
       document.getElementById('form-status').value = record.status;
 
       switchTab('new-entry');
-      document.getElementById('page-title').innerText = `Edit Official Record: ${record.id}`;
+      document.getElementById('page-title').textContent = `Edit Official Record: ${record.id}`;
   }
 
   window.quickAction = async function(id, newStatus) {
@@ -205,7 +204,7 @@
       document.getElementById('form-received-date').valueAsDate = new Date();
       const ve = document.getElementById('view-new-entry');
       if(ve && ve.classList.contains('active')) {
-          document.getElementById('page-title').innerText = 'Log New Correspondence';
+          document.getElementById('page-title').textContent = 'Log New Correspondence';
       }
   }
 
@@ -239,11 +238,18 @@
   }
 
   function getStatusBadge(status) {
-      return `<span style="font-size:10px;font-weight:bold;padding:2px 8px;border-radius:12px;background:#f1f5f9;color:#475569;">${escapeHtml(status)}</span>`;
+      const s = safeText(status).toLowerCase();
+      let mod = 'draft';
+      if (s.includes('pending')) mod = 'pending';
+      else if (s.includes('accept') || s.includes('treat') || s.includes('complete')) mod = 'routed';
+      else if (s.includes('declin')) mod = 'action';
+      return `<span class="dgo-badge dgo-badge--${mod}">${escapeHtml(status)}</span>`;
   }
 
   function getPriorityBadge(priority) {
-      return `<span style="font-size:10px;font-weight:bold;padding:2px 8px;border-radius:12px;background:#fff8ec;color:#ca8a04;">${escapeHtml(priority)}</span>`;
+      const p = safeText(priority).toLowerCase();
+      const mod = p === 'high' ? 'action' : (p === 'low' ? 'draft' : 'routed');
+      return `<span class="dgo-badge dgo-badge--${mod}">${escapeHtml(priority)}</span>`;
   }
 
   function formatDate(dateStr) {
@@ -270,13 +276,15 @@
       if(tgt) tgt.classList.add('active');
       
       document.querySelectorAll('.nav-btn').forEach(btn => {
-          btn.classList.remove('bg-primary', 'text-white', 'border', 'border-green-700', 'shadow-md');
-          btn.classList.add('text-green-100');
+          btn.classList.remove('dgo-btn--primary');
+          btn.classList.add('dgo-btn--outline');
+          btn.setAttribute('aria-selected', 'false');
       });
       const activeBtn = document.getElementById(`nav-${tabId}`);
       if(activeBtn) {
-        activeBtn.classList.remove('text-green-100');
-        activeBtn.classList.add('bg-primary', 'text-white', 'border', 'border-green-700', 'shadow-md');
+        activeBtn.classList.remove('dgo-btn--outline');
+        activeBtn.classList.add('dgo-btn--primary');
+        activeBtn.setAttribute('aria-selected', 'true');
       }
 
       const titles = {
@@ -285,7 +293,7 @@
           'records': 'All Records & Archives'
       };
       const titleObj = document.getElementById('page-title');
-      if (titleObj) titleObj.innerText = titles[tabId] || '';
+      if (titleObj) titleObj.textContent = titles[tabId] || '';
 
       if(tabId === 'records') renderRecordsTable();
       if(tabId === 'dashboard') updateDashboard();

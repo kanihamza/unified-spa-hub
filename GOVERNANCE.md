@@ -23,15 +23,20 @@
 > demo in production-required areas) with the need for a populated UAT environment. `aid-dashboard`
 > was integrated into the nav shell (missing `Chrome.bootstrap('aid')` call).
 >
-> **Open gaps (not yet addressed):**
-> 1. `dgceo-tracker.html` is a standalone SPA with its own Tailwind/FontAwesome dark shell and
->    tab-nav — full integration into the dgo design system is a redesign (FR-007).
-> 2. **External dependencies** (FR-008 / BRULE-002 / AC-004): `dgceo-tracker.html` loads FontAwesome
->    from a CDN; `dgceo-tracker`, `exec-hub`, `reports`, `response-matrix`, `fast-track` reference an
->    external NITDA logo URL. These must be localised/removed for true dependency-freedom.
-> 3. Minor polish: home "Pending" KPI filter is case-sensitive (`PENDING`≠`Pending`); some email
->    date parsing shows "Invalid Date". (Verified only in a jsdom harness — no live browser/CSS/CORS
->    validation was possible.)
+> **Gaps resolved (2026-06-16):**
+> 1. ✅ `dgceo-tracker` **redesigned** into the dgo design system + standard shell (sidebar/topbar via
+>    `Chrome.bootstrap`); its 3 tab-views (Dashboard / Log / Records) rebuilt with dgo components, and
+>    it is now a first-class nav item (added to `chrome.js` NAV_ITEMS + command palette). Resolves the
+>    FR-007 isolation. *(Visual layout verified only in jsdom — a real-browser glance is still advisable.)*
+> 2. ✅ **External dependencies removed** (FR-008 / BRULE-002 / AC-004): FontAwesome CDN dropped from
+>    `dgceo-tracker` (icons → local sprite); the external NITDA logo (`dgceo-tracker`, `response-matrix`)
+>    → local `assets/logo/mark.svg`. No external `http(s)` resources remain in any HTML page.
+> 3. ✅ Polish: home "Pending" KPI filters made case-insensitive; email "Invalid Date" fixed (read the
+>    real `received`/`receivedDateTime` field).
+>
+> **Remaining (lower priority):** the tracker persists via `callPA('E02')` (a read flow) — its
+> correspondence domain model has no dedicated write flow; CRUD is effectively local. Needs a proper
+> flow mapping. And all validation remains jsdom-based — no live browser/CSS/CORS test was possible.
 
 This document is the governance and remediation tracking artifact required by **FR-037**
 and **NFR-015**. It records the controlled exceptions that remain open during the current

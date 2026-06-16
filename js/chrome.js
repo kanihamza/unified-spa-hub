@@ -18,6 +18,7 @@ const Chrome = (() => {
     { code: 'aid', label: 'AID Dashboard', url: 'aid-dashboard.html', icon: 'i-globe' },
     { code: 'reports', label: 'GTQ Reports', url: 'reports.html', icon: 'i-folder' },
     { code: 'dgceo-hub', label: 'DGCEO Decision Hub', url: 'dgceo-hub.html', icon: 'i-shield' },
+    { code: 'dgceo-tracker', label: 'DGCEO Tracker', url: 'dgceo-tracker.html', icon: 'i-folder' },
     { code: 'exec-hub', label: 'Executive Ops Hub', url: 'exec-hub.html', icon: 'i-building' },
     { code: 'settings', label: 'Settings & Station', url: 'settings.html', icon: 'i-settings' }
   ];
@@ -233,6 +234,7 @@ const Chrome = (() => {
       { text: 'Go to AID Dashboard', url: 'aid-dashboard.html', icon: 'i-globe', cat: 'Navigation' },
       { text: 'Go to GTQ Reports', url: 'reports.html', icon: 'i-folder', cat: 'Navigation' },
       { text: 'Go to DGCEO Decision Hub', url: 'dgceo-hub.html', icon: 'i-shield', cat: 'Navigation' },
+      { text: 'Go to DGCEO Correspondence Tracker', url: 'dgceo-tracker.html', icon: 'i-folder', cat: 'Navigation' },
       { text: 'Go to Executive Ops Hub', url: 'exec-hub.html', icon: 'i-building', cat: 'Navigation' },
       { text: 'Change Endpoint Station', url: 'settings.html', icon: 'i-settings', cat: 'Navigation' },
       { text: 'Switch: Theme Mode Cycle', action: 'toggleTheme', icon: 'i-sparkle', cat: 'System Action', shortcut: 'T' },
