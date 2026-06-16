@@ -8,5 +8,8 @@
     "serve": "python3 -m http.server 3000",
     "smoke": "node test/smoke.mjs"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "playwright": "^1.61.0"
+  }
 }

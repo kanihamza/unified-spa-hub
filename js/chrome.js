@@ -29,6 +29,34 @@ const Chrome = (() => {
     setupCommandPalette();
     setupMobileMenu();
     injectToastContainer();
+    refreshIdentity();
+  }
+
+  function userLabel(u) { return (u && u.role ? u.role : '') + (u && u.roleCode ? ' (' + u.roleCode + ')' : ''); }
+  function userInitials(u) { return (u && u.name) ? u.name.split(' ').map(n => n[0]).slice(0, 2).join('') : '?'; }
+
+  // The live officer directory (E01) loads asynchronously; once available, re-render the
+  // identity switcher options and the topbar user. No hardcoded users are ever shown.
+  async function refreshIdentity() {
+    try {
+      if (window.Lookups && typeof window.Lookups.loadReferences === 'function') {
+        await window.Lookups.loadReferences();
+      }
+    } catch { /* live directory unavailable — switcher stays empty */ }
+
+    const user = window.State.getActiveUser();
+    const select = document.getElementById('identity-switcher');
+    if (select) {
+      const users = window.State.getAllUsers();
+      select.innerHTML = `<option value="" ${!user ? 'selected' : ''} disabled>Select identity…</option>` +
+        users.map(u => `<option value="${Sanitizer.escape(u.id)}" ${user && String(u.id) === String(user.id) ? 'selected' : ''}>${Sanitizer.escape(u.name)}${u.roleCode ? ' (' + Sanitizer.escape(u.roleCode) + ')' : ''}</option>`).join('');
+    }
+    const nameEl = document.getElementById('userbox-name');
+    const roleEl = document.getElementById('userbox-role');
+    const avEl = document.getElementById('avatar-circle');
+    if (nameEl) nameEl.textContent = user && user.name ? user.name : 'Select User';
+    if (roleEl) roleEl.textContent = user ? userLabel(user).trim() || 'Identified' : 'Not identified';
+    if (avEl) avEl.textContent = userInitials(user);
   }
 
   // Inject sidebar navigation dynamically
@@ -47,9 +75,10 @@ const Chrome = (() => {
       </a>
     `).join('');
 
-    // Compile active identity switcher markup
-    const userOptions = users.map(u => `
-      <option value="${Sanitizer.escape(u.id)}" ${u.id === user.id ? 'selected' : ''}>${Sanitizer.escape(u.name)} (${Sanitizer.escape(u.roleCode)})</option>
+    // Compile active identity switcher markup (live officer directory; no hardcoded users)
+    const userOptions = `<option value="" ${!user ? 'selected' : ''} disabled>Select identity…</option>` +
+      users.map(u => `
+      <option value="${Sanitizer.escape(u.id)}" ${user && String(u.id) === String(user.id) ? 'selected' : ''}>${Sanitizer.escape(u.name)}${u.roleCode ? ' (' + Sanitizer.escape(u.roleCode) + ')' : ''}</option>
     `).join('');
 
     sidebarEl.outerHTML = `
@@ -79,9 +108,9 @@ const Chrome = (() => {
       const select = document.getElementById('identity-switcher');
       if (select) {
         select.addEventListener('change', (e) => {
+          if (!e.target.value) return;
           window.State.setActiveUser(e.target.value);
-          showToast('Identity Context Changed!', 'success');
-          // Reload page to re-index credentials
+          showToast('Active identity set.', 'success');
           setTimeout(() => window.location.reload(), 400);
         });
       }
@@ -115,11 +144,11 @@ const Chrome = (() => {
           
           <div class="dgo-userbox">
             <div class="dgo-userbox__avatar" id="avatar-circle">
-              ${Sanitizer.escape(user.name.split(' ').map(n=>n[0]).slice(0,2).join(''))}
+              ${Sanitizer.escape(userInitials(user))}
             </div>
             <div class="dgo-userbox__info">
-              <span class="dgo-userbox__name" id="userbox-name">${Sanitizer.escape(user.name)}</span>
-              <span class="dgo-userbox__role" id="userbox-role">${Sanitizer.escape(user.role)} (${Sanitizer.escape(user.roleCode)})</span>
+              <span class="dgo-userbox__name" id="userbox-name">${Sanitizer.escape(user && user.name ? user.name : 'Select User')}</span>
+              <span class="dgo-userbox__role" id="userbox-role">${Sanitizer.escape(user ? (userLabel(user).trim() || 'Identified') : 'Not identified')}</span>
             </div>
           </div>
         </div>

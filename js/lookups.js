@@ -45,12 +45,9 @@ const Lookups = (() => {
       if (window.Telemetry) {
         window.Telemetry.log('lookup_fetch_failure', { error: err.message });
       }
-      // Fail-safe: fall back to the gateway's deterministic local simulation
-      // payload (synchronous — no live fetch) so selections never render blank.
-      cachedData = window.API.getSimulation
-        ? window.API.getSimulation('E01')
-        : { categories: [], departments: [], officers: [] };
-      localStorage.setItem('dgo_cached_lookups', JSON.stringify(cachedData));
+      // No live references available — return empty structures (never sample data).
+      // Do not persist empties, so a later successful load can populate the cache.
+      cachedData = cachedData || { categories: [], departments: [], officers: [] };
       return cachedData;
     }
   }

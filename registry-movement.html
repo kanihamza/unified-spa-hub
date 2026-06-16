@@ -327,74 +327,10 @@
         // Minute movements Local Persistence helper
         function getMovementsStore(docId) {
           const raw = localStorage.getItem(`dgo_move_log_${docId}`);
-          if (!raw) {
-            // Seed defaults for mock correspondence items
-            let seededLog = [];
-            let seededMinutes = [];
-            const doc = documents.find(d => d.id === docId);
-
-            if (docId === "DOC-2026-A101") {
-              // National AI Blueprint Seeds
-              seededLog = [
-                { time: "2026-06-11T10:00:00Z", from: "Registry Mailroom", to: "Kala Ibrahim", action: "Docket Registered & Catalogued" },
-                { time: "2026-06-11T12:30:00Z", from: "Bala Ibrahim", to: "SA (Tech)", action: "Routed to DG Office for Urgent Attn" }
-              ];
-              seededMinutes = [
-                {
-                  id: 1,
-                  num: "MINUTE 1",
-                  text: "I have registered and verified the blueprint proposal files. Forwarding details immediately to the DG CEO office for standing allocation approval guidelines validation.",
-                  officerId: "O02", // Bala Ibrahim
-                  action: "FOR_ACTION",
-                  timestamp: "2026-06-11T12:30:00Z"
-                }
-              ];
-            } else if (docId === "DOC-2026-B203") {
-              // Infrastructure Audit Seeds
-              seededLog = [
-                { time: "2026-06-09T09:12:00Z", from: "Central Registry", to: "Bala Ibrahim", action: "Dossier Received Inbound" },
-                { time: "2026-06-09T10:15:00Z", from: "Registry Director", to: "Dr. Muhammad Sirajo", action: "Assigned for Site Inspection" }
-              ];
-              seededMinutes = [
-                {
-                  id: 1,
-                  num: "MINUTE 1",
-                  text: "Incoming audit request from Hub Coordinator. We must review server physical constraints and certify standards. Forwarded to Lead Infrastructure auditor.",
-                  officerId: "O02",
-                  action: "FOR_ACTION",
-                  timestamp: "2026-06-09T09:30:00Z"
-                },
-                {
-                  id: 2,
-                  num: "MINUTE 2",
-                  text: "Infrastructure Division: Site inspection booked for compliance evaluation. Director SGF has been looped for overall SLA frameworks review.",
-                  officerId: "O03", // Dr Muhammad
-                  action: "FOR_ACTION",
-                  timestamp: "2026-06-09T10:15:00Z"
-                }
-              ];
-            } else {
-              // Default Fallback seeds
-              seededLog = [
-                { time: doc?.dateReceived || new Date().toISOString(), from: "Inbound Registry", to: "Central Mail Dispatch", action: "Docket Created" }
-              ];
-              seededMinutes = [
-                {
-                  id: 1,
-                  num: "MINUTE 1",
-                  text: "Dossier docketed and processed. Forwarded for standard classification.",
-                  officerId: "O02",
-                  action: "FOR_ACTION",
-                  timestamp: doc?.dateReceived || new Date().toISOString()
-                }
-              ];
-            }
-
-            const state = { log: seededLog, minutes: seededMinutes };
-            localStorage.setItem(`dgo_move_log_${docId}`, JSON.stringify(state));
-            return state;
-          }
-          return JSON.parse(raw);
+          // A dossier with no recorded movement starts with an empty minute sheet
+          // (no sample/seed data); users add minutes live via the minute editor.
+          if (!raw) return { log: [], minutes: [] };
+          try { return JSON.parse(raw); } catch { return { log: [], minutes: [] }; }
         }
 
         function saveMovementsStore(docId, state) {

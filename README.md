@@ -49,9 +49,9 @@ Live flows return `{ok,…,docs|tasks|emails:[{ID,Title,AssignmentStatus,…}]}`
 unwraps the array (exposing both `records` and the entity key) and adds camelCase aliases
 (`id`,`title`,`status`,…) while preserving the original PascalCase fields.
 
-**Demo / simulation mode (opt-in, OFF by default).** Toggle in Settings or `?demo=1` (persisted;
-`?demo=0` disables). Populates the platform with built-in sample data without calling live flows —
-a build/UAT facility, **not** a production data source (see GOVERNANCE.md).
+**Live-only.** There is no demo/sample/mock data anywhere. The platform calls the live flows directly;
+when a flow returns nothing or is unreachable, pages show genuine empty/error states. Live data
+requires the flows to permit the app origin via **CORS** (a server-side flow config).
 
 | Code | Purpose | Provisioned |
 |------|---------|-------------|
@@ -65,7 +65,7 @@ a build/UAT facility, **not** a production data source (see GOVERNANCE.md).
 | E08 | AI batch allocator | ✅ |
 | E10 | Email-to-task directive | ✅ |
 | E14, E15 | Reserved | ⛔ no flow assigned |
-| E16, E17 | OTP request / verify | ✅ OTP gateway enabled (admins bypass — EXC-01) |
+| E16, E17 | OTP request / verify | ✅ provisioned (OTP disabled this phase — FR-036 / EXC-01) |
 
 ## Governance
 
@@ -75,6 +75,6 @@ Two governed exceptions apply to the current phase and are tracked in
 1. **Embedded flow URLs** — flow trigger URLs (with SAS signatures) are embedded in the
    frontend by design until a proxy layer is approved. Treat them as exposed secrets and
    rotate as documented.
-2. **OTP gateway enabled with admin bypass** — `OTP_SECURITY_ACTIVE = true` in `js/identity.js`;
-   roles in `ADMIN_ROLE_CODES` (default `['DG']`) bypass it. The bypass is evaluated client-side
-   and is not yet a server-enforced boundary — see EXC-01.
+2. **OTP disabled this phase** — `OTP_SECURITY_ACTIVE = false` in `js/identity.js`, a tracked
+   exception per FR-036. The gateway and admin-bypass logic remain in place for re-enablement at
+   closure. Identity is selected from the live officer directory (no hardcoded user) — see EXC-01.

@@ -24,21 +24,28 @@
       }
   }
 
-  function seedInitialData() {
-      applicationState.records = [
-          {
-              id: 'NITDA-892101',
-              category: 'Ministerial Directive',
-              priority: 'High',
-              sender: 'Ministry of Communications',
-              contact: 'hmo@fmcide.gov.ng',
-              receivedDate: '2026-04-28',
-              eventDate: '',
-              subject: 'Review of National AI Strategy Framework',
-              remarks: 'Implementation stages requested within 48 hours.',
-              status: 'Pending'
-          }
-      ];
+  // Load correspondence records live from the dossier/correspondence flow (E02).
+  async function loadRecords() {
+      try {
+          if (!(window.API && window.API.callPA)) { applicationState.records = []; return; }
+          const res = await window.API.callPA('E02', { action: 'getDocs', operation: 'read', source: 'DGCEO_Tracker' });
+          const docs = (res && (res.records || res.docs)) || [];
+          applicationState.records = docs.map(d => ({
+              id: safeText(d.id != null ? d.id : d.ID),
+              category: safeText(d.category || d.Category || 'Other'),
+              priority: safeText(d.priority || d.Priority || 'Normal'),
+              sender: safeText(d.sender || d.Sender || ''),
+              contact: safeText(d.contact || d.EditorEmail || ''),
+              receivedDate: String(d.receivedDate || d.Created || d.received || '').slice(0, 10),
+              eventDate: String(d.eventDate || '').slice(0, 10),
+              subject: safeText(d.subject || d.title || d.Title || ''),
+              remarks: safeText(d.remarks || d.directives || d.Description || ''),
+              status: safeText(d.status || d.Status || d.AssignmentStatus || 'Pending')
+          }));
+      } catch (e) {
+          applicationState.records = [];
+          showToast('Unable to load correspondence from the live flow.', 'error');
+      }
   }
 
   function updateDashboard() {
@@ -360,13 +367,13 @@
       }
   }
 
-  function init() {
+  async function init() {
     if (window.Chrome) window.Chrome.bootstrap('dgceo-tracker');
     const rd = document.getElementById('form-received-date');
     if (rd) rd.valueAsDate = new Date();
-    seedInitialData();
-    updateUI();
     setupEventListeners();
+    await loadRecords();
+    updateUI();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

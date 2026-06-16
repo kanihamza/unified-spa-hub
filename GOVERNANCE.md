@@ -13,44 +13,36 @@
 > (`status`/`priority`), and `href`/`src` URL values (escaped for attribute breakout but not
 > yet `javascript:`-scheme filtered).
 
-> **Data contract + demo mode (2026-06-16):** `callPA` now normalizes every read response to a
-> canonical shape (unwraps the live envelope → records array; adds camelCase aliases; preserves
-> originals), fixing the empty-platform root cause where most pages read `.records`/camelCase but
-> live flows return `{docs|tasks|emails:[{ID,Title,…}]}` (audit: only `fast-track`/
-> `response-tracking`/`response-matrix` were live-shape-aware). A **demo/simulation mode** was added
-> (`API.isDemoMode`/`setDemoMode`, Settings toggle, `?demo=1`) — **opt-in and OFF by default**; it is
-> a build/UAT facility, **not** a production data source, reconciling FR-031–034 / BRULE-008 (no
-> demo in production-required areas) with the need for a populated UAT environment. `aid-dashboard`
-> was integrated into the nav shell (missing `Chrome.bootstrap('aid')` call).
+> **Live-only build (2026-06-16, corrected):** ALL demo/simulation/sample/seed/mock data and the
+> demo-mode toggle were **removed** (FR-031–034 / BRULE-008). `callPA` now calls the live flows only
+> and normalizes every read response to a canonical shape (unwraps the live envelope → records array;
+> adds camelCase aliases; preserves originals), so every page renders live data regardless of envelope
+> or field casing. When a flow returns nothing or is unreachable, pages show genuine empty/error
+> states — never sample content.
 >
-> **Gaps resolved (2026-06-16):**
-> 1. ✅ `dgceo-tracker` **redesigned** into the dgo design system + standard shell (sidebar/topbar via
->    `Chrome.bootstrap`); its 3 tab-views (Dashboard / Log / Records) rebuilt with dgo components, and
->    it is now a first-class nav item (added to `chrome.js` NAV_ITEMS + command palette). Resolves the
->    FR-007 isolation. *(Visual layout verified only in jsdom — a real-browser glance is still advisable.)*
-> 2. ✅ **External dependencies removed** (FR-008 / BRULE-002 / AC-004): FontAwesome CDN dropped from
->    `dgceo-tracker` (icons → local sprite); the external NITDA logo (`dgceo-tracker`, `response-matrix`)
->    → local `assets/logo/mark.svg`. No external `http(s)` resources remain in any HTML page.
-> 3. ✅ Polish: home "Pending" KPI filters made case-insensitive; email "Invalid Date" fixed (read the
->    real `received`/`receivedDateTime` field).
+> **Hardcoded identity removed (FR-034):** `state.js` no longer contains a `DEFAULT_USER` or a hardcoded
+> `USERS` list. The active user is the OTP-authenticated session or one **selected from the live officer
+> directory** (E01 references); the header shows the selected user, or "Select User" until one is chosen.
 >
-> **Follow-ups (2026-06-16, addressed):**
-> - ✅ **Navigation regression fixed:** the OTP gateway ran at module-eval time (readyState
->   `interactive`) before `state.js` loaded, so `isAdmin()` was false and every non-index page
->   redirected to `index.html` ("snap back to home"). `enforceGateway()` now defers to
->   `DOMContentLoaded`.
-> - ✅ **Tracker write flow:** `dgceo-tracker` now posts CRUD to `E14` (Dynamic Multi-Actions,
->   a write flow via the Outbox), replacing the incorrect `E02` (read) call.
-> - ✅ **External dependency removed:** `dgo-base.css` no longer `@import`s Google Fonts
->   (Outfit/Inter/JetBrains Mono); font tokens fall back to system fonts. No external `http(s)`
->   resource remains in any platform CSS/HTML.
-> - ✅ **Real-browser smoke test added** (`test/smoke.mjs`, Playwright — test-only, not a runtime
->   dep): validates navigation, demo-mode data, the tracker shell, and zero console errors. Green.
+> **Other corrections:** the correspondence tracker now **loads records live from E02** (was a seeded
+> sample record) and **writes to E14** (was the incorrect E02 read); `registry-movement` starts each
+> dossier with an empty minute sheet (seeded sample minutes removed); the phantom `E15` (no source
+> flow) was dropped — the registry now has no empty entries (E01–E10, E14, E16, E17, all provisioned).
+> External dependencies (FontAwesome CDN, external NITDA logo, Google Fonts `@import`) were all removed;
+> `dgceo-tracker` was redesigned into the dgo shell and registered as a nav item.
 >
-> **Still open:** live data requires the Power Automate flows to permit the app origin via **CORS**
-> (a server-side flow config; browser calls otherwise fail preflight). Until then, use **Demo Mode**
-> (Settings toggle or `?demo=1`) to run the platform populated. The tracker's domain model still
-> maps to the generic `E14` catch-all rather than a dedicated correspondence flow.
+> **Navigation fix:** `enforceGateway()` deferred to `DOMContentLoaded` (it previously ran before
+> `state.js`, redirecting every module page to home). With OTP disabled (below) the gateway is inert
+> anyway.
+>
+> **Real-browser smoke test** (`test/smoke.mjs`, Playwright — test-only, not a runtime dep): mocks the
+> flows at the browser network layer and validates navigation, live-pipeline rendering, live identity,
+> the tracker shell, and zero console errors. Green.
+>
+> **Still open (environmental):** live data requires the Power Automate flows to permit the app origin
+> via **CORS** (a server-side flow config — browser calls otherwise fail the preflight). This is the
+> only remaining dependency for live data; proxies are out of scope (FR-011). The tracker maps to the
+> generic `E14` catch-all rather than a dedicated correspondence write flow.
 
 This document is the governance and remediation tracking artifact required by **FR-037**
 and **NFR-015**. It records the controlled exceptions that remain open during the current
@@ -63,32 +55,27 @@ carries explicit closure criteria.
 
 | ID | Exception | Status | Governing Requirements | Closure Gate |
 |----|-----------|--------|------------------------|--------------|
-| EXC-01 | OTP gateway — enabled with client-side admin bypass | PARTIAL (server-side enforcement pending) | FR-036, FR-037, FR-038, NFR-014, NFR-015, BRULE-009 | Server-side OTP/role enforcement |
+| EXC-01 | OTP authentication disabled (tracked exception) | OPEN (temporary, per FR-036) | FR-036, FR-037, FR-038, NFR-014, NFR-015, BRULE-009 | Re-enable at final security closure |
 | EXC-02 | Power Automate flow URLs embedded in the frontend | OPEN (accepted current-phase design) | BR-006, FR-015, FR-016, FR-019, NFR-016, BRULE-005 | Approval & adoption of a proxy layer |
 
 ---
 
-## EXC-01 — OTP Authentication Gateway (enabled, admin bypass)
+## EXC-01 — OTP Authentication Disabled (tracked exception)
 
-- **What:** The OTP gateway is now **enabled** (`OTP_SECURITY_ACTIVE = true` in
-  [`js/identity.js`](js/identity.js)) with `E16`/`E17` provisioned. `enforceGateway()` redirects
-  unauthenticated, non-admin sessions on protected pages to the OTP login (`index.html`).
-  **Admin roles bypass** the gateway (`ADMIN_ROLE_CODES = ['DG']`); `isAdmin()` resolves the active
-  identity from an authenticated OTP session, else the active platform identity
-  (`State.getActiveUser()`, which defaults to the Director General).
-- **Why (admin bypass):** Per stakeholder requirement, administrators retain uninterrupted access.
-  The default platform identity (DG) is an admin and is not gated, preserving operational access
-  while non-admin roles must authenticate via OTP.
-- **Residual risk (still PARTIAL):** The bypass — like the identity switcher — is evaluated
-  **client-side**. A user can select the DG identity in the switcher to obtain the bypass; nothing
-  is enforced server-side. Treat client role/bypass as advisory, not a security control, until a
-  server-side trust boundary exists.
-- **Remaining closure criteria (FR-038):**
-  1. Enforce OTP/role **server-side** (in the Power Automate flows or a future proxy) so the client
-     bypass cannot be forged.
-  2. Unify the session model so `js/state.js` and `js/identity.js` write a single session shape
-     (the switcher must not grant an implicit admin session without a token/`expiresAt`).
-  3. Validate the live `E16`/`E17` flows end-to-end (request → verify → token).
+- **What:** OTP is **disabled this phase** (`OTP_SECURITY_ACTIVE = false` in
+  [`js/identity.js`](js/identity.js)), per **FR-036**. `enforceGateway()` returns early, so no page
+  redirects. The OTP request/verify flows (`E16`/`E17`) and the gateway + admin-bypass logic remain
+  in place for re-enablement at closure.
+- **Why:** Per FR-036 / Assumption 4, OTP is intentionally disabled during the current build /
+  remediation phase as a controlled, temporary exception. (This also makes the "snap back to home"
+  navigation issue impossible, since the gateway never redirects.)
+- **Identity in this phase:** the active user is selected from the **live officer directory**
+  (E01 references) via the sidebar switcher, or set by OTP verification when re-enabled. There is no
+  hardcoded/default user.
+- **Closure criteria (FR-038):**
+  1. Set `OTP_SECURITY_ACTIVE = true` and validate `E16`/`E17` end-to-end (request → verify → token).
+  2. Enforce OTP/role **server-side** (in the flows or a future proxy) so the client cannot forge it.
+  3. Unify the session model so `state.js` and `identity.js` write a single session shape.
 - **Owner:** Security Reviewer (per BRD §16 sign-off).
 
 ## EXC-02 — Embedded Power Automate Flow URLs

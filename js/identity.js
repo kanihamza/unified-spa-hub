@@ -3,11 +3,12 @@
    ============================================================ */
 
 const Identity = (() => {
-  // CONFIGURATION SECURITY BOUNDARY (EXC-01). OTP gateway is active; users holding an
-  // admin role bypass it. Set to false to fully re-open the platform.
-  const OTP_SECURITY_ACTIVE = true;
+  // CONFIGURATION SECURITY BOUNDARY (FR-036 / EXC-01). OTP is intentionally DISABLED
+  // during the current build/remediation phase, as a tracked governance exception.
+  // The gateway + admin-bypass logic below remain in place for re-enablement at closure.
+  const OTP_SECURITY_ACTIVE = false;
 
-  // Roles permitted to bypass the OTP gateway (e.g. Director General).
+  // Roles permitted to bypass the OTP gateway when it is re-enabled (e.g. Director General).
   const ADMIN_ROLE_CODES = ['DG'];
 
   const TOKEN_KEY = "dgo_auth_token";

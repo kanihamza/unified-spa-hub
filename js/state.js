@@ -1,49 +1,65 @@
 /* ============================================================
-   DGO v2.1 — Session, Theme, & Local Storage Persistence State
+   DGO v2.2 — Session, Theme, & Local Storage Persistence State
+   ------------------------------------------------------------
+   Identity is LIVE: the active user is either the OTP-authenticated
+   session or one selected from the live officer directory (E01
+   references). No hardcoded/sample users exist (FR-034).
    ============================================================ */
 
 const State = (() => {
-  const DEFAULT_USER = {
-    id: "U-DG",
-    name: "Kashifu Inuwa Abdullahi",
-    role: "Director General",
-    roleCode: "DG",
-    dsu: "DSU01"
-  };
+  const USER_KEY = 'dgo_session_user';
 
-  const USERS = [
-    { id: "U-DG", name: "Kashifu Inuwa Abdullahi", role: "Director General", roleCode: "DG", dsu: "DSU01" },
-    { id: "U-DIR", name: "Salisu Kaka", role: "SGF Directorate Director", roleCode: "DIR", dsu: "DSU04" },
-    { id: "U-SUP", name: "John Oke", role: "EGI Support Officer", roleCode: "SUP", dsu: "DSU03" },
-    { id: "U-REG", name: "Bala Ibrahim", role: "Registry Staff", roleCode: "REG", dsu: "DSU02" }
-  ];
-
+  // The active user, or null if none has been selected/authenticated yet.
   function getActiveUser() {
-    const raw = localStorage.getItem('dgo_session_user');
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return DEFAULT_USER;
-      }
-    }
-    return DEFAULT_USER;
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
-  function setActiveUser(userId) {
-    const user = USERS.find(u => u.id === userId);
+  // Live directory of selectable identities, sourced from the references flow (E01).
+  function getAllUsers() {
+    const officers = (window.Lookups && typeof window.Lookups.getOfficers === 'function')
+      ? window.Lookups.getOfficers()
+      : [];
+    return (officers || []).map(o => ({
+      id: o.id,
+      name: o.name,
+      role: o.role || '',
+      roleCode: o.roleCode || deriveRoleCode(o.role),
+      dsu: o.dsu || '',
+      email: o.email || ''
+    }));
+  }
+
+  // Best-effort role code from a role title (used only for display/labelling).
+  function deriveRoleCode(role) {
+    const r = String(role || '').toLowerCase();
+    if (r.includes('director general') || /\bdg\b/.test(r)) return 'DG';
+    if (r.includes('director')) return 'DIR';
+    if (r.includes('support')) return 'SUP';
+    if (r.includes('registry')) return 'REG';
+    return 'USR';
+  }
+
+  // Select/persist the active identity. Accepts an id (resolved against the live
+  // directory) or a full user object (e.g. from OTP verification).
+  function setActiveUser(idOrUser) {
+    let user = null;
+    if (idOrUser && typeof idOrUser === 'object') {
+      user = idOrUser;
+    } else if (idOrUser) {
+      user = getAllUsers().find(u => String(u.id) === String(idOrUser)) || null;
+    }
     if (user) {
-      localStorage.setItem('dgo_session_user', JSON.stringify(user));
-      if (window.Telemetry) {
-        window.Telemetry.log('session_switch', { userId, userName: user.name });
-      }
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      if (window.Telemetry) window.Telemetry.log('session_switch', { userId: user.id, userName: user.name });
       return user;
     }
     return getActiveUser();
   }
 
-  function getAllUsers() {
-    return USERS;
+  function clearActiveUser() {
+    localStorage.removeItem(USER_KEY);
   }
 
   // Visual appearance tokens (theme, density)
@@ -68,20 +84,15 @@ const State = (() => {
     }
   }
 
-  // Bootstrap initial attributes
   function initialize() {
-    const settings = getVisualSettings();
-    applyVisualSettings(settings);
-    
-    // Ensure lookups cache is populated
-    if (window.Lookups) {
-      window.Lookups.bootstrapCache();
-    }
+    applyVisualSettings(getVisualSettings());
+    if (window.Lookups) window.Lookups.bootstrapCache();
   }
 
   return {
     getActiveUser,
     setActiveUser,
+    clearActiveUser,
     getAllUsers,
     getVisualSettings,
     applyVisualSettings,
@@ -89,10 +100,8 @@ const State = (() => {
   };
 })();
 
-// Attach to window context
 window.State = State;
 
-// Auto-run bootstrap on load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', State.initialize);
 } else {

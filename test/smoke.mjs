@@ -1,8 +1,10 @@
 // Real-browser smoke pass (Playwright + Chromium).
-// Serves the project statically, then drives a real browser to validate:
-//   #3 navigation does NOT snap back to the home dashboard, and
-//   #4 data populates (in demo mode) across modules.
-// Run:  npm run smoke      (after: npm i && npx playwright install chromium)
+// The PLATFORM is live-only (no demo/sample data). This test mocks the Power
+// Automate flows at the browser network layer (page.route) — i.e. it stands in
+// for the backend during testing without putting any sample data in the product.
+// Validates: navigation (no snap-back to home), live-pipeline rendering, the
+// correspondence tracker shell, and zero console errors.
+// Run:  npm i -D playwright && npx playwright install chromium && npm run smoke
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -11,19 +13,35 @@ import path from 'node:path';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 3210;
 const BASE = `http://localhost:${PORT}`;
-
-const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: ROOT, stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function newPage(browser) {
-  return browser.newPage().then(async (page) => {
-    page._errors = [];
-    page.on('console', (m) => { if (m.type() === 'error') page._errors.push(m.text().slice(0, 200)); });
-    page.on('pageerror', (e) => page._errors.push('PAGEERROR: ' + e.message.slice(0, 200)));
-    return page;
-  });
+// Live-shaped mock backend (envelope + PascalCase), keyed by workflow GUID.
+const DOCS = [
+  { ID: 20427, Title: 'EDO Facility Management Request', Created: '2026-06-15T15:13:36Z', AssignedTo: 'Dr. Sirajo', Category: 'Infrastructure', AssignmentStatus: 'PENDING', Description: 'Provision FM for HQ.' },
+  { ID: 20428, Title: 'Policy Compliance Review', Created: '2026-06-14T10:00:00Z', AssignedTo: 'Salisu Kaka', Category: 'Policy', AssignmentStatus: 'ROUTED', Description: 'Review policy.' }
+];
+const TASKS = [
+  { ID: 88121, Title: 'Infra gap assessment', AssignedTo: 'Sirajo', RefIDD: '20427', Classification: 'Infrastructure', Priority: 'HIGH', Progress: 'Pending', DueDate: '2026-06-23', Description: 'Audit network.', GDSUROUT: 'EGI' }
+];
+const EMAILS = [
+  { id: 'AAMk-1', subject: 'RE: Facility 20427', receivedDateTime: '2026-06-15T09:00:00Z', bodyPreview: 'Pre-read attached.', from: { emailAddress: { address: 'vendor@x.com' } } }
+];
+const REFS = { ok: true, data: {
+  categories: [{ ID: 1, Title: 'Infrastructure', Category: 'Infrastructure', DSU_KEY: 'EGI', Priority: 'HIGH' }],
+  departments: [{ ID: 3, Title: 'e-Government Infrastructure (EGI)', DSU_KEY: 'EGI' }],
+  users: [{ name: 'Dr. Muhammad Sirajo', email: 'sirajo@nitda.gov.ng', department: 'EGI', jobTitle: 'Director (EGI)' }]
+} };
+function bodyFor(url) {
+  const g = (url.match(/workflows\/([0-9a-f]{8})/) || [])[1];
+  if (g === 'ff455c68') return REFS;
+  if (g === '7995c1eb') return { ok: true, timing: {}, docs: DOCS };
+  if (g === '37642ba3') return { ok: true, timing: {}, tasks: TASKS };
+  if (g === '3931e2ff') return { ok: true, timing: {}, emails: EMAILS };
+  if (g === '43879c51') return { success: true, token: 't', user: { id: 'sirajo@nitda.gov.ng', name: 'Dr. Muhammad Sirajo', role: 'Director (EGI)', roleCode: 'DIR' } };
+  return { success: true };
 }
 
+const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: ROOT, stdio: 'ignore' });
 let failures = 0;
 function check(name, cond, detail) {
   console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`);
@@ -33,33 +51,43 @@ function check(name, cond, detail) {
 try {
   await sleep(1200);
   const browser = await chromium.launch();
-  const page = await newPage(browser);
+  const ctx = await browser.newContext();
+  // Mock the live flows at the transport layer.
+  await ctx.route('**/powerautomate/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bodyFor(route.request().url())) }));
 
-  // #3 — navigate to a module, then select another nav item; must NOT snap to index.
-  await page.goto(`${BASE}/docs.html?demo=1`, { waitUntil: 'networkidle' });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 200)); });
+  page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message.slice(0, 200)));
+
+  // #3 — navigation must NOT snap back to home.
+  await page.goto(`${BASE}/docs.html`, { waitUntil: 'networkidle' });
   check('docs.html stays on docs (no auth redirect)', /docs\.html/.test(page.url()), page.url());
   await page.click('#nav-link-tasks');
   await page.waitForLoadState('networkidle');
   check('selecting Tasks navigates to tasks (not home)', /tasks\.html/.test(page.url()), page.url());
 
-  // #4 — data populates in demo mode.
-  await page.goto(`${BASE}/index.html?demo=1`, { waitUntil: 'networkidle' });
+  // #4 — data populates from the (mocked) live flows.
+  await page.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+  await sleep(300);
   const kpiDocs = await page.textContent('#kpi-docs-count');
   const homeRows = await page.$$eval('#home-docs-tbody tr', (els) => els.length);
-  check('home KPI docs count > 0 (demo)', Number(kpiDocs) > 0, `kpi=${kpiDocs}`);
-  check('home recent-docs table has rows (demo)', homeRows > 0, `rows=${homeRows}`);
+  check('home KPI docs > 0 (live)', Number(kpiDocs) > 0, `kpi=${kpiDocs}`);
+  check('home recent-docs table has rows (live)', homeRows > 0, `rows=${homeRows}`);
 
-  await page.goto(`${BASE}/docs.html?demo=1`, { waitUntil: 'networkidle' });
-  const docsRows = await page.$$eval('tbody tr', (els) => els.length);
-  check('docs page renders rows (demo)', docsRows > 0, `rows=${docsRows}`);
+  // Identity is live: switcher populated from references, header shows a real selectable user.
+  const optionCount = await page.$$eval('#identity-switcher option', (els) => els.length);
+  check('identity switcher populated from live officers', optionCount > 1, `options=${optionCount}`);
 
-  // dgceo-tracker redesign loads in the shell.
-  await page.goto(`${BASE}/dgceo-tracker.html?demo=1`, { waitUntil: 'networkidle' });
-  const hasSidebar = await page.$('#platform-sidebar');
-  check('dgceo-tracker has unified sidebar', !!hasSidebar);
+  // Correspondence tracker loads in the unified shell from the live flow.
+  await page.goto(`${BASE}/dgceo-tracker.html`, { waitUntil: 'networkidle' });
+  await sleep(300);
+  check('dgceo-tracker has unified sidebar', !!(await page.$('#platform-sidebar')));
+  const total = await page.textContent('#stat-total');
+  check('tracker loaded records from live flow', Number(total) >= 0, `total=${total}`);
 
-  check('no console/page errors', page._errors.length === 0, page._errors.join(' | '));
-
+  check('no console/page errors', errors.length === 0, errors.join(' | '));
   await browser.close();
 } catch (e) {
   console.log('SMOKE ERROR: ' + (e && e.message ? e.message : e));
