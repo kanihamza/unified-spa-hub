@@ -67,19 +67,32 @@ carries explicit closure criteria.
 
 ## Known Limitation — Unprovisioned Flows & Simulation Mode
 
-Not an exception, but recorded for delivery transparency (relevant to FR-031–FR-034).
+Recorded for delivery transparency (relevant to FR-031–FR-034). Endpoint values were
+reconciled from the source-SPA extraction (`spa_flow_extraction_full.json` /
+`consolidated_endpoint_matrix.xlsx`); the workflow GUID is the stable key (source SPAs used
+inconsistent local E-numbering).
 
-- **Provisioned (live):** `E01`, `E02`, `E04`, `E09` carry real flow URLs and call Power
-  Automate directly.
-- **Unprovisioned:** `E03`, `E05`, `E06`, `E07`, `E08`, `E10`, `E14`, `E15`, `E16`, `E17`
-  have **empty** URLs in `FLOW_ENDPOINTS` because real trigger URLs were not available at
-  build time. Real URLs must be supplied (in `FLOW_ENDPOINTS` or via Settings) before these
-  capabilities are production-complete.
+- **Provisioned (live):** `E01`, `E02`, `E03`, `E04`, `E05`, `E06`, `E07`, `E08`, `E09`, `E10`
+  carry real flow URLs and call Power Automate directly. `E03`/`E05`/`E06` intentionally share
+  the unified mutation flow `6b3bad30…`, differentiated by payload `action`/`status`.
+- **Unprovisioned (empty):**
+  - `E14`, `E15` — reserved; **no source flow was identified** for them.
+  - `E16`, `E17` — OTP request/verify; **no OTP flow exists** in any source SPA (consistent with
+    EXC-01). They remain empty until an OTP flow is built.
+- **Open data items to verify:**
+  - **E02 docs GUID conflict:** `E02` uses the operational/interceptor GUID `818ec405…` (used by
+    all three source SPAs as Get Docs). One source file's *endpoint object* declared Get Docs as
+    `5de1fc93…` instead. The operational GUID is wired; `5de1fc93…` should be confirmed or discarded.
+  - **E07/E08 order:** assigned per stakeholder confirmation (E07 = Bulk Assign `c4338863…`;
+    E08 = Bulk Ops Assign `1154b50e…`). Trivially swappable if validated otherwise.
+  - **Unmapped extra flows** present in the extraction but with no platform E-code:
+    `bc83d98a…` (Dynamic Global), `85c556f1…` (Subsidiary/Supplementary Actions),
+    `7e71fffe…` (unlabeled). Assign or retire deliberately.
 - **Behavior of an unprovisioned flow:**
   - *Read flows* → deterministic **local simulation** (`API.getSimulation`), used only when a
-    URL is absent. This is an explicit, opt-in dev/offline fallback — not production data, and
-    not a hidden placeholder. It is logged as `api_simulation_fallback` in telemetry.
-  - *Write flows* → the request is queued in the **Outbox** and retried with backoff; it stays
-    queued (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
-- **Action to close:** Provision the remaining flow URLs, then confirm no `api_simulation_fallback`
-  events occur on production-required read paths.
+    URL is absent — an explicit, opt-in dev/offline fallback, logged as `api_simulation_fallback`.
+  - *Write flows* → queued in the **Outbox** with backoff; stays queued
+    (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
+- **Rotation note (EXC-02):** wiring the write flows added live SAS signatures for `6b3bad30…`,
+  `c4338863…`, `1154b50e…`, and `a942d230…` to the committed source. Include these in the
+  signature rotation required under EXC-02.
