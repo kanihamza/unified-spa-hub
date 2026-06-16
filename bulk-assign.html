@@ -197,7 +197,7 @@
           // Uniform categories select
           const dirCatSelect = document.getElementById('dir-frm-category');
           dirCatSelect.innerHTML += categories.map(c => `
-            <option value="${c.code}">${c.name}</option>
+            <option value="${c.code}">${Sanitizer.escape(c.name)}</option>
           `).join('');
 
           // Load documents details from API
@@ -223,11 +223,11 @@
             const catLabel = categories.find(c => c.code === doc.category)?.name || doc.category;
             return `
               <tr>
-                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${doc.id}</code></td>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(doc.id)}</code></td>
                 <td>
                   <div class="dgo-stack dgo-stack--0" style="font-size:var(--dgo-type-body-sm);">
-                    <strong style="color:var(--dgo-color-fg-strong);">${doc.title}</strong>
-                    <span style="font-size:10px; color:var(--dgo-color-fg-muted);">${doc.sender}</span>
+                    <strong style="color:var(--dgo-color-fg-strong);">${Sanitizer.escape(doc.title)}</strong>
+                    <span style="font-size:10px; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(doc.sender)}</span>
                   </div>
                 </td>
                 <td><span style="font-size:var(--dgo-type-body-sm);">${catLabel}</span></td>
@@ -278,9 +278,9 @@
             }
 
             dropdown.innerHTML = matched.map(o => `
-              <div class="dgo-autocomplete__item" data-id="${o.id}" data-name="${o.name}">
-                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${o.name}</p>
-                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${o.role}</p>
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
               </div>
             `).join('');
 
@@ -388,7 +388,7 @@
 
           pane.innerHTML = optimizedAllocationResults.map((alloc, idx) => {
             const officerOptions = officers.map(o => `
-              <option value="${o.id}" ${o.id === alloc.proposedAssigneeId ? 'selected' : ''}>${o.name}</option>
+              <option value="${Sanitizer.escape(o.id)}" ${o.id === alloc.proposedAssigneeId ? 'selected' : ''}>${Sanitizer.escape(o.name)}</option>
             `).join('');
 
             return `
@@ -403,7 +403,7 @@
 
                 <div class="dgo-stack dgo-stack--1">
                   <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--dgo-color-fg-muted);">Dossier text</span>
-                  <span style="font-weight:600; font-size:13px; color:var(--dgo-color-fg-strong);">${alloc.title}</span>
+                  <span style="font-weight:600; font-size:13px; color:var(--dgo-color-fg-strong);">${Sanitizer.escape(alloc.title)}</span>
                 </div>
 
                 <div class="dgo-grid dgo-grid--2" style="gap:var(--dgo-s-2); margin-top:var(--dgo-s-1);">

@@ -179,12 +179,12 @@
             const officers = window.Lookups.getOfficers();
             const officer = officers.find(o => o.id === t.assignee);
             return `
-              <tr class="task-row" data-id="${t.id}" style="cursor: pointer;">
-                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${t.id}</code></td>
+              <tr class="task-row" data-id="${Sanitizer.escape(t.id)}" style="cursor: pointer;">
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(t.id)}</code></td>
                 <td>
                   <div class="dgo-stack dgo-stack--0">
-                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${t.title}</span>
-                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${officer ? officer.name : t.assignee}</span>
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(t.title)}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${Sanitizer.escape(officer ? officer.name : t.assignee)}</span>
                   </div>
                 </td>
                 <td style="vertical-align: middle;">
@@ -196,7 +196,7 @@
                   </div>
                 </td>
                 <td>
-                  <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${t.priority}</span>
+                  <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${Sanitizer.escape(t.priority)}</span>
                 </td>
               </tr>
             `;
@@ -237,14 +237,14 @@
               <!-- Header -->
               <div class="dgo-cluster dgo-cluster--between">
                 <h3 class="dgo-h4">Activity Directives</h3>
-                <span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : (t.status === 'ROUTED' ? 'routed' : 'pending')}">${t.status}</span>
+                <span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : (t.status === 'ROUTED' ? 'routed' : 'pending')}">${Sanitizer.escape(t.status)}</span>
               </div>
 
               <!-- Ref -->
               <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-3);">
                 <div class="dgo-stack dgo-stack--0">
                   <span class="dgo-overline">Task Reference</span>
-                  <code style="font-size:13px; font-weight:600; background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${t.id}</code>
+                  <code style="font-size:13px; font-weight:600; background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(t.id)}</code>
                 </div>
                 <div class="dgo-stack dgo-stack--0" style="text-align:right;">
                   <span class="dgo-overline">Dossier Association</span>
@@ -254,22 +254,22 @@
 
               <div class="dgo-stack dgo-stack--1">
                 <span class="dgo-overline">Directives Title</span>
-                <p class="dgo-body-sm text-strong">${t.title}</p>
+                <p class="dgo-body-sm text-strong">${Sanitizer.escape(t.title)}</p>
               </div>
 
               <div class="dgo-stack dgo-stack--1">
                 <span class="dgo-overline">Process Class</span>
-                <p class="dgo-body-sm">${category ? category.name : t.category}</p>
+                <p class="dgo-body-sm">${Sanitizer.escape(category ? category.name : t.category)}</p>
               </div>
 
               <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3);">
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Lead Assignee</span>
-                  <span class="text-strong">${pOfficer ? pOfficer.name : t.assignee}</span>
+                  <span class="text-strong">${Sanitizer.escape(pOfficer ? pOfficer.name : t.assignee)}</span>
                 </div>
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Co-Assignee</span>
-                  <span class="text-muted">${cOfficer ? cOfficer.name : (t.coAssignee || 'None')}</span>
+                  <span class="text-muted">${Sanitizer.escape(cOfficer ? cOfficer.name : (t.coAssignee || 'None'))}</span>
                 </div>
               </div>
 
@@ -280,7 +280,7 @@
 
               <div class="dgo-stack dgo-stack--1" style="background:var(--dgo-color-surface-sunken); padding: var(--dgo-s-3); border-radius: var(--dgo-radius-control); border-left: 3px solid var(--dgo-color-border-brand);">
                 <span class="dgo-overline" style="margin-bottom:var(--dgo-s-1);">DG Standing Mandate</span>
-                <p class="dgo-body-sm" style="font-style:italic; white-space:pre-wrap; line-height:1.4;">"${t.directives || 'No directives recorded.'}"</p>
+                <p class="dgo-body-sm" style="font-style:italic; white-space:pre-wrap; line-height:1.4;">"${Sanitizer.escape(t.directives || 'No directives recorded.')}"</p>
               </div>
 
               <div class="dgo-stack dgo-stack--1">
@@ -296,7 +296,7 @@
               ${t.lastUpdateNotes ? `
                 <div class="dgo-stack dgo-stack--1" style="border-top:1px dashed var(--dgo-color-border-default); padding-top:var(--dgo-s-3);">
                   <span class="dgo-overline">Latest Owner Log comments</span>
-                  <p class="dgo-body-sm text-muted" style="white-space:pre-wrap;">"${t.lastUpdateNotes}"</p>
+                  <p class="dgo-body-sm text-muted" style="white-space:pre-wrap;">"${Sanitizer.escape(t.lastUpdateNotes)}"</p>
                   <span class="dgo-caption" style="font-size:10px;">Submitted: ${new Date(t.updatedAt).toLocaleString()}</span>
                 </div>
               ` : ''}

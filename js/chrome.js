@@ -48,7 +48,7 @@ const Chrome = (() => {
 
     // Compile active identity switcher markup
     const userOptions = users.map(u => `
-      <option value="${u.id}" ${u.id === user.id ? 'selected' : ''}>${u.name} (${u.roleCode})</option>
+      <option value="${Sanitizer.escape(u.id)}" ${u.id === user.id ? 'selected' : ''}>${Sanitizer.escape(u.name)} (${Sanitizer.escape(u.roleCode)})</option>
     `).join('');
 
     sidebarEl.outerHTML = `
@@ -102,7 +102,7 @@ const Chrome = (() => {
           <button class="dgo-mobile-menu-btn" id="mobile-sidebar-toggle" aria-label="Open navigation menu">
             <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-menu"></use></svg>
           </button>
-          <h1 class="dgo-h3" style="font-size: var(--dgo-type-h4);" id="topbar-page-title">${title}</h1>
+          <h1 class="dgo-h3" style="font-size: var(--dgo-type-h4);" id="topbar-page-title">${Sanitizer.escape(title)}</h1>
         </div>
 
         <div class="dgo-cluster dgo-cluster--density">
@@ -114,11 +114,11 @@ const Chrome = (() => {
           
           <div class="dgo-userbox">
             <div class="dgo-userbox__avatar" id="avatar-circle">
-              ${user.name.split(' ').map(n=>n[0]).slice(0,2).join('')}
+              ${Sanitizer.escape(user.name.split(' ').map(n=>n[0]).slice(0,2).join(''))}
             </div>
             <div class="dgo-userbox__info">
-              <span class="dgo-userbox__name" id="userbox-name">${user.name}</span>
-              <span class="dgo-userbox__role" id="userbox-role">${user.role} (${user.roleCode})</span>
+              <span class="dgo-userbox__name" id="userbox-name">${Sanitizer.escape(user.name)}</span>
+              <span class="dgo-userbox__role" id="userbox-role">${Sanitizer.escape(user.role)} (${Sanitizer.escape(user.roleCode)})</span>
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ const Chrome = (() => {
     toast.innerHTML = `
       <svg style="width:20px; height:20px; flex-shrink:0;"><use href="assets/icons/sprite.svg#${iconName}"></use></svg>
       <div>
-        <p style="font-size: var(--dgo-type-body-sm); font-weight: var(--dgo-wt-600); margin-bottom: 2px;">${message}</p>
+        <p style="font-size: var(--dgo-type-body-sm); font-weight: var(--dgo-wt-600); margin-bottom: 2px;">${Sanitizer.escape(message)}</p>
       </div>
     `;
 

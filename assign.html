@@ -334,11 +334,11 @@
 
           // Populates Process Category select
           const selectCat = document.getElementById('frm-category');
-          selectCat.innerHTML += categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+          selectCat.innerHTML += categories.map(c => `<option value="${c.code}">${Sanitizer.escape(c.name)}</option>`).join('');
 
           // Populate CC options
           const selectCC = document.getElementById('select-cc-dept');
-          selectCC.innerHTML += depts.map(d => `<option value="${d.code}">${d.name} (${d.code})</option>`).join('');
+          selectCC.innerHTML += depts.map(d => `<option value="${d.code}">${Sanitizer.escape(d.name)} (${d.code})</option>`).join('');
 
         } catch (err) {
           window.Chrome.showToast('Reference lookups sync failed.', 'error');
@@ -431,9 +431,9 @@
             }
 
             dropdown.innerHTML = matched.map(o => `
-              <div class="dgo-autocomplete__item" data-id="${o.id}" data-name="${o.name}">
-                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${o.name}</p>
-                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${o.role}</p>
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
               </div>
             `).join('');
 
@@ -518,16 +518,16 @@
 
             tbody.innerHTML = docs.filter(d => d.status === 'PENDING').map(d => `
               <tr>
-                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${d.id}</code></td>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(d.id)}</code></td>
                 <td>
                   <div class="dgo-stack dgo-stack--0">
-                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${d.title}</span>
-                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${d.sender}</span>
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(d.title)}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(d.sender)}</span>
                   </div>
                 </td>
                 <td><span style="font-size: var(--dgo-type-body-sm);">${getCategoryLabel(d.category)}</span></td>
                 <td style="text-align:right;">
-                  <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--primary" onclick="window.pickDoc('${d.id}')">Select</button>
+                  <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--primary" onclick="window.pickDoc('${Sanitizer.escape(d.id)}')">Select</button>
                 </td>
               </tr>
             `).join('');

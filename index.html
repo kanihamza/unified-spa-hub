@@ -243,15 +243,15 @@
           } else {
             homeDocsBody.innerHTML = documents.slice(0, 4).map(doc => `
               <tr>
-                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${doc.id}</code></td>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(doc.id)}</code></td>
                 <td>
                   <div class="dgo-stack dgo-stack--0">
-                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${doc.title}</span>
-                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${doc.sender}</span>
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(doc.title)}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(doc.sender)}</span>
                   </div>
                 </td>
                 <td>
-                  <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${doc.status}</span>
+                  <span class="dgo-badge dgo-badge--${Sanitizer.escape(String(doc.status).toLowerCase())}">${Sanitizer.escape(doc.status)}</span>
                 </td>
               </tr>
             `).join('');
@@ -267,15 +267,15 @@
               const officer = officers.find(o => o.id === t.assignee);
               return `
                 <tr>
-                  <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${t.id}</code></td>
+                  <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(t.id)}</code></td>
                   <td>
                     <div class="dgo-stack dgo-stack--0">
-                      <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${t.title}</span>
-                      <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${officer ? officer.name : t.assignee}</span>
+                      <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(t.title)}</span>
+                      <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${Sanitizer.escape(officer ? officer.name : t.assignee)}</span>
                     </div>
                   </td>
                   <td>
-                    <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${t.priority}</span>
+                    <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${Sanitizer.escape(t.priority)}</span>
                   </td>
                 </tr>
               `;

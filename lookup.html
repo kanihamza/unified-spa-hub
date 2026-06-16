@@ -243,15 +243,15 @@
           divList.innerHTML = matchingList.map(rec => {
             const isSel = selectedRecord && selectedRecord.id === rec.id;
             const style = isSel ? 'background: var(--dgo-green-50); border-color: var(--dgo-color-border-brand);' : '';
-            const titleText = activeLookupType === 'DOC' ? rec.title : (activeLookupType === 'TSK' ? rec.title : rec.subject);
-            const secondary = activeLookupType === 'DOC' ? rec.sender : (activeLookupType === 'TSK' ? `Owner ID: ${rec.assignee}` : rec.sender);
+            const titleText = Sanitizer.escape(activeLookupType === 'DOC' ? rec.title : (activeLookupType === 'TSK' ? rec.title : rec.subject));
+            const secondary = activeLookupType === 'DOC' ? Sanitizer.escape(rec.sender) : (activeLookupType === 'TSK' ? `Owner ID: ${Sanitizer.escape(rec.assignee)}` : Sanitizer.escape(rec.sender));
 
             return `
               <div class="dgo-card dgo-card--interactive dgo-stack dgo-stack--1" 
                    style="${style} padding: var(--dgo-s-3); border-radius: var(--dgo-r-lg);"
-                   onclick="selectLookupRecord('${rec.id}')">
+                   onclick="selectLookupRecord('${Sanitizer.escape(rec.id)}')">
                 <div class="dgo-cluster dgo-cluster--between">
-                  <code style="font-size:11px; background:var(--dgo-color-surface-sunken); padding:2px 4px; border-radius:3px; font-weight:700;">${rec.id}</code>
+                  <code style="font-size:11px; background:var(--dgo-color-surface-sunken); padding:2px 4px; border-radius:3px; font-weight:700;">${Sanitizer.escape(rec.id)}</code>
                   <span class="dgo-badge dgo-badge--outline" style="font-size: 9px; padding-inline:4px;">${activeLookupType}</span>
                 </div>
                 <strong style="font-size:12px; color:var(--dgo-color-fg-strong); line-height:1.3;" class="text-clamp-2">${titleText}</strong>
@@ -288,20 +288,20 @@
                 <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-2);">
                   <div class="dgo-stack dgo-stack--0">
                     <span class="dgo-overline">Dossier Correspondence Registry</span>
-                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${rec.id}</h3>
+                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${Sanitizer.escape(rec.id)}</h3>
                   </div>
-                  <span class="dgo-badge dgo-badge--${rec.status === 'ROUTED' ? 'routed' : 'pending'}">${rec.status}</span>
+                  <span class="dgo-badge dgo-badge--${rec.status === 'ROUTED' ? 'routed' : 'pending'}">${Sanitizer.escape(rec.status)}</span>
                 </div>
 
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Dossier / Movement Subject</span>
-                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${rec.title}</p>
+                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${Sanitizer.escape(rec.title)}</p>
                 </div>
 
                 <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3);">
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Origin Dispatch Sender</span>
-                    <span class="text-strong">${rec.sender}</span>
+                    <span class="text-strong">${Sanitizer.escape(rec.sender)}</span>
                   </div>
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Flag Compliance Tracker</span>
@@ -335,7 +335,7 @@
                       <label for="frm-emb-category" class="dgo-label dgo-label--required">Cascade Framework Class Category</label>
                       <select id="frm-emb-category" class="dgo-select" required>
                         <option value="" disabled selected>(Select structural class)</option>
-                        ${categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('')}
+                        ${categories.map(c => `<option value="${c.code}">${Sanitizer.escape(c.name)}</option>`).join('')}
                       </select>
                     </div>
 
@@ -343,7 +343,7 @@
                       <label for="frm-emb-assignee" class="dgo-label dgo-label--required">Task Executive Assignee</label>
                       <select id="frm-emb-assignee" class="dgo-select" required>
                         <option value="" disabled selected>(Select target official profile)</option>
-                        ${officers.map(o => `<option value="${o.id}">${o.name} (${o.role})</option>`).join('')}
+                        ${officers.map(o => `<option value="${Sanitizer.escape(o.id)}">${Sanitizer.escape(o.name)} (${Sanitizer.escape(o.role)})</option>`).join('')}
                       </select>
                     </div>
 
@@ -366,30 +366,30 @@
                 <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-2);">
                   <div class="dgo-stack dgo-stack--0">
                     <span class="dgo-overline">Action Assignment Plan</span>
-                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${rec.id}</h3>
+                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${Sanitizer.escape(rec.id)}</h3>
                   </div>
-                  <span class="dgo-badge dgo-badge--${rec.status === 'COMPLETED' ? 'replied' : (rec.status === 'ROUTED' ? 'routed' : 'pending')}">${rec.status}</span>
+                  <span class="dgo-badge dgo-badge--${rec.status === 'COMPLETED' ? 'replied' : (rec.status === 'ROUTED' ? 'routed' : 'pending')}">${Sanitizer.escape(rec.status)}</span>
                 </div>
 
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Directive Title</span>
-                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${rec.title}</p>
+                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${Sanitizer.escape(rec.title)}</p>
                 </div>
 
                 <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3);">
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Responsible Lead Executor</span>
-                    <span class="text-strong">${primaryOfficer ? primaryOfficer.name : rec.assignee}</span>
+                    <span class="text-strong">${Sanitizer.escape(primaryOfficer ? primaryOfficer.name : rec.assignee)}</span>
                   </div>
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Priority Tier Rating</span>
-                    <span class="dgo-badge dgo-badge--${rec.priority === 'HIGH' ? 'action' : 'draft'}" style="width:fit-content; height:20px; font-size:9px;">${rec.priority}</span>
+                    <span class="dgo-badge dgo-badge--${rec.priority === 'HIGH' ? 'action' : 'draft'}" style="width:fit-content; height:20px; font-size:9px;">${Sanitizer.escape(rec.priority)}</span>
                   </div>
                 </div>
 
                 <div class="dgo-stack dgo-stack--1" style="background:var(--dgo-color-surface-sunken); padding:var(--dgo-s-3); border-radius: var(--dgo-radius-control); border-left: 3px solid var(--dgo-color-border-brand);">
                   <span class="dgo-overline">Directives text</span>
-                  <p class="dgo-body-sm" style="font-style:italic; line-height:1.4;">"${rec.directives || 'None configured.'}"</p>
+                  <p class="dgo-body-sm" style="font-style:italic; line-height:1.4;">"${Sanitizer.escape(rec.directives || 'None configured.')}"</p>
                 </div>
 
                 <div class="dgo-stack dgo-stack--1" style="border-top:1px dashed var(--dgo-color-border-default); padding-top:var(--dgo-s-3);">
@@ -417,7 +417,7 @@
                 <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-2);">
                   <div class="dgo-stack dgo-stack--0">
                     <span class="dgo-overline">Core Sync Inbox Mail</span>
-                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${rec.id}</h3>
+                    <h3 class="dgo-h4" style="font-family:var(--dgo-family-mono); font-weight:700;">${Sanitizer.escape(rec.id)}</h3>
                   </div>
                   <span class="dgo-badge dgo-badge--${rec.assignmentStatus === 'ASSIGNED' ? 'replied' : 'pending'}">${rec.assignmentStatus}</span>
                 </div>
@@ -425,7 +425,7 @@
                 <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3);">
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Sender Address</span>
-                    <span class="text-strong">${rec.sender}</span>
+                    <span class="text-strong">${Sanitizer.escape(rec.sender)}</span>
                   </div>
                   <div class="dgo-stack dgo-stack--1">
                     <span class="dgo-overline">Date Inbound Synchronized</span>
@@ -435,11 +435,11 @@
 
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Mail Head Subject</span>
-                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${rec.subject}</p>
+                  <p class="dgo-body-sm text-strong" style="font-size:14px;">${Sanitizer.escape(rec.subject)}</p>
                 </div>
 
                 <div class="dgo-stack dgo-stack--1" style="background:#fffdfd; border:1px solid var(--dgo-color-border-strong); padding:var(--dgo-s-4); border-radius:var(--dgo-r-md); max-height:180px; overflow-y:auto; line-height:1.5; font-size:13px; color:var(--dgo-color-fg-default);">
-                  ${rec.body}
+                  ${Sanitizer.escape(rec.body)}
                 </div>
 
                 <div style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4);">
@@ -463,7 +463,7 @@
                       <label for="frm-eml-assignee" class="dgo-label dgo-label--required">Target Executor Principal</label>
                       <select id="frm-eml-assignee" class="dgo-select" required>
                         <option value="" disabled selected>(Select target official profile)</option>
-                        ${officers.map(o => `<option value="${o.id}">${o.name} (${o.role})</option>`).join('')}
+                        ${officers.map(o => `<option value="${Sanitizer.escape(o.id)}">${Sanitizer.escape(o.name)} (${Sanitizer.escape(o.role)})</option>`).join('')}
                       </select>
                     </div>
 

@@ -2,7 +2,16 @@
 
 **Platform:** Unified SPA Hub (DGO Digital Operations Hub)
 **Baseline:** Dependency-Free HTML Multi-Module Platform with Power Automate HTTP Flow Integration (BRD/FRD v1.0)
-**Last updated:** 2026-06-15
+**Last updated:** 2026-06-16
+
+> **Security hardening (2026-06-16):** Output-encoding remediation applied across the
+> client. All dynamic external data rendered into `innerHTML` now passes through
+> `Sanitizer.escape()` (shared shell `chrome.js`, plus the page-inline render scripts on
+> index/docs/tasks/emails/lookup/assign/bulk-assign/registry-movement/response-track/settings).
+> This closes the stored-XSS gap (audit SEC-03) affecting NFR-006/007/008 and AC-011.
+> Residual low-risk items: CSS class interpolations of backend enum values
+> (`status`/`priority`), and `href`/`src` URL values (escaped for attribute breakout but not
+> yet `javascript:`-scheme filtered).
 
 This document is the governance and remediation tracking artifact required by **FR-037**
 and **NFR-015**. It records the controlled exceptions that remain open during the current

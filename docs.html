@@ -173,7 +173,7 @@
         const categoryFilter = document.getElementById('category-filter');
         const categories = window.Lookups.getCategories();
         categoryFilter.innerHTML += categories.map(c => `
-          <option value="${c.code}">${c.name}</option>
+          <option value="${c.code}">${Sanitizer.escape(c.name)}</option>
         `).join('');
 
         // Fetch dynamic document records E02
@@ -188,11 +188,11 @@
             tbody.innerHTML = '';
             documents.forEach(doc => {
               const row = Sanitizer.createRow([
-                { content: `<input type="checkbox" class="doc-checkbox" data-id="${doc.id}">`, isHTML: true, className: 'checkbox-cell' },
+                { content: `<input type="checkbox" class="doc-checkbox" data-id="${Sanitizer.escape(doc.id)}">`, isHTML: true, className: 'checkbox-cell' },
                 { content: doc.id, className: 'font-mono' },
                 { content: doc.title, className: 'text-strong' },
                 { content: doc.category },
-                { content: `<span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${doc.status}</span>`, isHTML: true }
+                { content: `<span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${Sanitizer.escape(doc.status)}</span>`, isHTML: true }
               ]);
               row.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('doc-checkbox')) selectDossier(doc);
@@ -216,15 +216,15 @@
             const isChecked = checkedIds.has(doc.id);
             const flagBadge = doc.flag ? getFlagBadgeMarkup(doc.flag) : '';
             return `
-              <tr class="doc-row" data-id="${doc.id}" style="cursor: pointer;">
+              <tr class="doc-row" data-id="${Sanitizer.escape(doc.id)}" style="cursor: pointer;">
                 <td style="text-align: center;" class="checkbox-cell">
-                  <input type="checkbox" class="doc-checkbox" data-id="${doc.id}" ${isChecked ? 'checked' : ''} style="transform: scale(1.1); cursor:pointer;">
+                  <input type="checkbox" class="doc-checkbox" data-id="${Sanitizer.escape(doc.id)}" ${isChecked ? 'checked' : ''} style="transform: scale(1.1); cursor:pointer;">
                 </td>
-                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${doc.id}</code></td>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(doc.id)}</code></td>
                 <td>
                   <div class="dgo-stack dgo-stack--0">
-                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${doc.title}</span>
-                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${doc.sender}</span>
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(doc.title)}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(doc.sender)}</span>
                   </div>
                 </td>
                 <td>
@@ -232,7 +232,7 @@
                 </td>
                 <td>
                   <div class="dgo-cluster dgo-cluster--density">
-                    <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${doc.status}</span>
+                    <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${Sanitizer.escape(doc.status)}</span>
                     ${flagBadge}
                   </div>
                 </td>
@@ -317,23 +317,23 @@
               <!-- Pane Header -->
               <div class="dgo-cluster dgo-cluster--between">
                 <h3 class="dgo-h4">Dossier Details</h3>
-                <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${doc.status}</span>
+                <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${Sanitizer.escape(doc.status)}</span>
               </div>
 
               <!-- Ref ID block -->
               <div class="dgo-stack dgo-stack--1">
                 <span class="dgo-overline">Dossier Reference</span>
-                <code style="background:var(--dgo-color-surface-sunken); padding: 4px var(--dgo-s-2); font-size:13px; border-radius:4px; font-weight:600;">${doc.id}</code>
+                <code style="background:var(--dgo-color-surface-sunken); padding: 4px var(--dgo-s-2); font-size:13px; border-radius:4px; font-weight:600;">${Sanitizer.escape(doc.id)}</code>
               </div>
 
               <div class="dgo-stack dgo-stack--1">
                 <span class="dgo-overline">Sender</span>
-                <p class="dgo-body-sm text-strong">${doc.sender}</p>
+                <p class="dgo-body-sm text-strong">${Sanitizer.escape(doc.sender)}</p>
               </div>
 
               <div class="dgo-stack dgo-stack--1">
                 <span class="dgo-overline">Subject / Registry Title</span>
-                <p class="dgo-body-sm" style="font-weight: 500;">${doc.title}</p>
+                <p class="dgo-body-sm" style="font-weight: 500;">${Sanitizer.escape(doc.title)}</p>
               </div>
 
               <div class="dgo-stack dgo-stack--1">
@@ -354,7 +354,7 @@
               ${doc.assignedTo ? `
                 <div class="dgo-stack dgo-stack--1">
                   <span class="dgo-overline">Active Assigned Lead</span>
-                  <p class="dgo-body-sm" style="font-weight: 600; color: var(--dgo-color-action-primary);">${officer ? officer.name : doc.assignedTo}</p>
+                  <p class="dgo-body-sm" style="font-weight: 600; color: var(--dgo-color-action-primary);">${Sanitizer.escape(officer ? officer.name : doc.assignedTo)}</p>
                 </div>
               ` : ''}
 
@@ -366,7 +366,7 @@
                 </button>
                 
                 ${doc.status === 'PENDING' ? `
-                  <a href="assign.html?documentId=${doc.id}" class="dgo-btn dgo-btn--md dgo-btn--primary">
+                  <a href="assign.html?documentId=${Sanitizer.escape(doc.id)}" class="dgo-btn dgo-btn--md dgo-btn--primary">
                     <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
                     <span>Route Assignments</span>
                   </a>

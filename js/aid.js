@@ -46,7 +46,7 @@
       const tr = Sanitizer.createRow([
         { content: row.id, className: 'aid-ref-id' },
         { content: row.title || row.subject || 'N/A', className: 'aid-subj' },
-        { content: `<span class="aid-status">${row.status}</span>`, isHTML: true },
+        { content: `<span class="aid-status">${Sanitizer.escape(row.status)}</span>`, isHTML: true },
         { content: row.assignee || 'Unassigned', className: 'aid-officer' },
         { content: row.dueDate || 'No Due Date', className: 'aid-due' },
         { content: row.category || 'General', className: 'aid-dsu' }

@@ -245,8 +245,8 @@
             let rating = `<span class="dgo-badge dgo-badge--action" style="font-size:10px;">UNMATCHED</span>`;
 
             if (linkedTask) {
-              tCode = `<code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${linkedTask.id}</code>`;
-              tAssignee = `<strong>${officer ? officer.name : linkedTask.assignee}</strong>`;
+              tCode = `<code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(linkedTask.id)}</code>`;
+              tAssignee = `<strong>${Sanitizer.escape(officer ? officer.name : linkedTask.assignee)}</strong>`;
               tProg = `
                 <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap; width:100px;">
                   <span style="font-family: var(--dgo-family-mono); font-size:11px;">${linkedTask.progress}%</span>
@@ -260,8 +260,8 @@
 
             return `
               <tr>
-                <td><code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${doc.id}</code></td>
-                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${doc.title}</span></td>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(doc.id)}</code></td>
+                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(doc.title)}</span></td>
                 <td>${tCode}</td>
                 <td>${tAssignee}</td>
                 <td>${tProg}</td>
@@ -282,10 +282,10 @@
             const dateStr = t.updatedAt ? new Date(t.updatedAt).toLocaleString() : 'N/A';
             return `
               <tr>
-                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${t.id}</code></td>
-                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${t.title}</span></td>
-                <td><span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : 'pending'}">${t.status} (${t.progress}%)</span></td>
-                <td><p class="dgo-body-sm text-muted" style="font-style:italic; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">"${t.lastUpdateNotes || 'No notes compiled.'}"</p></td>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(t.id)}</code></td>
+                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(t.title)}</span></td>
+                <td><span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : 'pending'}">${Sanitizer.escape(t.status)} (${t.progress}%)</span></td>
+                <td><p class="dgo-body-sm text-muted" style="font-style:italic; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">"${Sanitizer.escape(t.lastUpdateNotes || 'No notes compiled.')}"</p></td>
                 <td style="font-size:11px; color:var(--dgo-color-fg-muted);">${dateStr}</td>
               </tr>
             `;
@@ -301,21 +301,21 @@
 
           tbody.innerHTML = emails.map(e => {
             // Find corresponding task for emails E10
-            const linkedConvTask = tasks.find(t => t.documentId === `EMAIL_REF:${e.id}`);
+            const linkedConvTask = tasks.find(t => t.documentId === `EMAIL_REF:${Sanitizer.escape(e.id)}`);
             const converted = e.assignmentStatus === 'ASSIGNED';
             
             return `
               <tr>
-                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${e.id}</code></td>
-                <td><span style="font-size:var(--dgo-type-body-sm); font-weight:600;">${e.subject}</span></td>
-                <td><span class="text-muted" style="font-size:11px;">${e.sender}</span></td>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(e.id)}</code></td>
+                <td><span style="font-size:var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(e.subject)}</span></td>
+                <td><span class="text-muted" style="font-size:11px;">${Sanitizer.escape(e.sender)}</span></td>
                 <td>
                   <span class="dgo-badge dgo-badge--${converted ? 'replied' : 'draft'}">
                     ${converted ? 'CONVERTED' : 'UNASSIGNED'}
                   </span>
                 </td>
                 <td>
-                  ${linkedConvTask ? `<code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${linkedConvTask.id}</code>` : `<span style="font-size:11px; color:var(--dgo-color-fg-subtle);">(None)</span>`}
+                  ${linkedConvTask ? `<code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(linkedConvTask.id)}</code>` : `<span style="font-size:11px; color:var(--dgo-color-fg-subtle);">(None)</span>`}
                 </td>
               </tr>
             `;
@@ -362,20 +362,20 @@
             csvContent += "Dossier Reference,Dossier Subject,Linked Task ID,Priority,Status\n";
             documents.forEach(doc => {
               const task = tasks.find(t => t.documentId === doc.id);
-              csvContent += `"${doc.id}","${doc.title.replace(/"/g, '""')}","${task ? task.id : 'None'}","${doc.status}","${doc.flag || 'None'}"\n`;
+              csvContent += `"${Sanitizer.escape(doc.id)}","${doc.title.replace(/"/g, '""')}","${task ? task.id : 'None'}","${Sanitizer.escape(doc.status)}","${doc.flag || 'None'}"\n`;
             });
             filename = "DGO_Dossier_Task_Map.csv";
           } else if (currentTab === 'task-feed') {
             csvContent += "Task ID,Subject,Progress,Status,Latest Notes\n";
             tasks.forEach(t => {
-              csvContent += `"${t.id}","${t.title.replace(/"/g, '""')}","${t.progress}%","${t.status}","${(t.lastUpdateNotes || '').replace(/"/g, '""')}"\n`;
+              csvContent += `"${Sanitizer.escape(t.id)}","${t.title.replace(/"/g, '""')}","${t.progress}%","${Sanitizer.escape(t.status)}","${(t.lastUpdateNotes || '').replace(/"/g, '""')}"\n`;
             });
             filename = "DGO_Task_Progress_Log.csv";
           } else if (currentTab === 'email-map') {
             csvContent += "Email Thread ID,Subject,Sender,Status,Linked Conversion Task\n";
             emails.forEach(e => {
-              const task = tasks.find(t => t.documentId === `EMAIL_REF:${e.id}`);
-              csvContent += `"${e.id}","${e.subject.replace(/"/g, '""')}","${e.sender}","${e.assignmentStatus}","${task ? task.id : 'None'}"\n`;
+              const task = tasks.find(t => t.documentId === `EMAIL_REF:${Sanitizer.escape(e.id)}`);
+              csvContent += `"${Sanitizer.escape(e.id)}","${e.subject.replace(/"/g, '""')}","${Sanitizer.escape(e.sender)}","${e.assignmentStatus}","${task ? task.id : 'None'}"\n`;
             });
             filename = "DGO_Email_Conversions_Log.csv";
           }

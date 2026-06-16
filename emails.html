@@ -167,14 +167,14 @@
           tbody.innerHTML = emails.map(e => {
             const dateStr = new Date(e.dateReceived).toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
             return `
-              <tr class="mail-row" data-id="${e.id}" style="cursor: pointer;">
+              <tr class="mail-row" data-id="${Sanitizer.escape(e.id)}" style="cursor: pointer;">
                 <td>
                   <span style="font-size:11px; font-weight:600; color:var(--dgo-color-fg-muted);">${dateStr}</span>
                 </td>
                 <td>
                   <div class="dgo-stack dgo-stack--0">
-                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm); color:var(--dgo-color-fg-strong);">${e.subject}</span>
-                    <span style="font-size:11px; color:var(--dgo-color-fg-muted);">${e.sender}</span>
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm); color:var(--dgo-color-fg-strong);">${Sanitizer.escape(e.subject)}</span>
+                    <span style="font-size:11px; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(e.sender)}</span>
                     <div class="dgo-cluster dgo-cluster--density" style="margin-top: 4px;">
                       <span class="dgo-badge dgo-badge--${e.assignmentStatus === 'ASSIGNED' ? 'replied' : 'draft'}" style="font-size: 9px; height: 16px;">
                         ${e.assignmentStatus === 'ASSIGNED' ? 'ASSIGNED DIRECTIVE' : 'UNASSIGNED'}
@@ -224,7 +224,7 @@
                     <label for="eml-frm-category" class="dgo-label dgo-label--required">Operations Category</label>
                     <select id="eml-frm-category" class="dgo-select" required>
                       <option value="" disabled selected>(Select category cascade)</option>
-                      ${categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('')}
+                      ${categories.map(c => `<option value="${c.code}">${Sanitizer.escape(c.name)}</option>`).join('')}
                     </select>
                   </div>
 
@@ -246,7 +246,7 @@
                     <div style="display: flex; gap: var(--dgo-s-2);">
                       <select id="eml-select-cc-dept" class="dgo-select" style="flex:1;">
                         <option value="" disabled selected>Add CC Directorates...</option>
-                        ${depts.map(d => `<option value="${d.code}">${d.name} (${d.code})</option>`).join('')}
+                        ${depts.map(d => `<option value="${d.code}">${Sanitizer.escape(d.name)} (${d.code})</option>`).join('')}
                       </select>
                       <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-eml-add-cc">Add</button>
                     </div>
@@ -279,16 +279,16 @@
             <div class="dgo-stack dgo-stack--4">
               <!-- Message Details Header -->
               <div class="dgo-stack dgo-stack--1" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-4);">
-                <h3 class="dgo-h4">${e.subject}</h3>
+                <h3 class="dgo-h4">${Sanitizer.escape(e.subject)}</h3>
                 <div class="dgo-cluster dgo-cluster--between">
-                  <span style="font-size: var(--dgo-type-body-sm); font-weight:600; color:var(--dgo-color-fg-muted);">${e.sender}</span>
+                  <span style="font-size: var(--dgo-type-body-sm); font-weight:600; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(e.sender)}</span>
                   <span style="font-size: 11px; color:var(--dgo-color-fg-subtle);">${new Date(e.dateReceived).toLocaleString()}</span>
                 </div>
               </div>
 
               <!-- Message Body -->
               <div style="background:var(--dgo-color-surface-sunken); padding: var(--dgo-s-4); border-radius: var(--dgo-radius-control); border:1px solid var(--dgo-color-border-default);">
-                <p style="white-space: pre-wrap; font-size:var(--dgo-type-body-sm); line-height:1.6; color:var(--dgo-color-fg-default);">${e.body}</p>
+                <p style="white-space: pre-wrap; font-size:var(--dgo-type-body-sm); line-height:1.6; color:var(--dgo-color-fg-default);">${Sanitizer.escape(e.body)}</p>
               </div>
 
               <!-- Inline mail stubs -->
@@ -304,7 +304,7 @@
 
           // Form controller activations
           if (e.assignmentStatus === 'PENDING') {
-            const prefillDirectives = `Forwarding public inquiry from: ${e.sender} concerning: ${e.subject}.\n-----------------------------------\nDG MANDATE DIRECTIVE:\n[Confirm guidelines compliance and respond directly to sender.]`;
+            const prefillDirectives = `Forwarding public inquiry from: ${Sanitizer.escape(e.sender)} concerning: ${Sanitizer.escape(e.subject)}.\n-----------------------------------\nDG MANDATE DIRECTIVE:\n[Confirm guidelines compliance and respond directly to sender.]`;
             document.getElementById('eml-frm-directives').value = prefillDirectives;
 
             // Bind selectors cascade
@@ -391,9 +391,9 @@
             }
 
             dropdown.innerHTML = matched.map(o => `
-              <div class="dgo-autocomplete__item" data-id="${o.id}" data-name="${o.name}">
-                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${o.name}</p>
-                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${o.role}</p>
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
               </div>
             `).join('');
 
@@ -437,7 +437,7 @@
 
           pendingEnvelope = {
             emailId: selectedMail.id,
-            title: `Inquiry conversion directive: ${selectedMail.subject}`,
+            title: `Inquiry conversion directive: ${Sanitizer.escape(selectedMail.subject)}`,
             category,
             assignee: document.getElementById('eml-frm-assignee-val').value || assigneeName,
             directives,
