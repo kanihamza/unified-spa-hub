@@ -1,0 +1,65 @@
+:root { --nitda-green: #05583B; --nitda-teal: #00A69D; --nitda-gold: #c9a227; }
+body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; color: #111; margin: 0; padding: 0; }
+.hub-header { background: linear-gradient(to right, var(--nitda-green), var(--nitda-teal)); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.brand { display: flex; align-items: center; gap: 15px; }
+.brand-text h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+.brand-text p { margin: 0; font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+.user-ctx { display: flex; align-items: center; gap: 15px; }
+.avatar { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); }
+.main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 20px; max-width: 1600px; margin: 0 auto; height: calc(100vh - 90px); }
+.feed-panel { background: white; border-radius: 12px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.feed-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+.feed-header h2 { font-size: 14px; margin: 0; color: var(--nitda-green); text-transform: uppercase; font-weight: 800; }
+.feed-controls select { padding: 6px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; }
+.feed-list { flex: 1; overflow-y: auto; padding: 10px; }
+.feed-item { padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; background: #fff; position: relative; border-left: 4px solid #ccc; }
+.feed-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+.feed-item.active { border-left-color: var(--nitda-teal); background: #f0fcfb; }
+.feed-item.priority-High { border-left-color: #ef4444; }
+.feed-item.priority-Medium { border-left-color: #f59e0b; }
+.item-meta { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+.item-title { font-size: 13px; font-weight: 700; margin-bottom: 5px; line-height: 1.3; color: #222; }
+.item-desc { font-size: 11px; color: #555; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.detail-panel { background: white; border-radius: 12px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.detail-header { padding: 20px; border-bottom: 1px solid #eee; background: #fafafa; }
+.detail-title { font-size: 20px; font-weight: 800; color: var(--nitda-green); margin: 0 0 10px 0; }
+.detail-meta { display: flex; gap: 15px; font-size: 12px; color: #555; }
+.meta-tag { background: #e0e0e0; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+.detail-content { flex: 1; overflow-y: auto; padding: 20px; background: #fdfdfd; }
+.empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: #999; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+.action-bar { border-top: 1px solid #eee; padding: 20px; background: #fafafa; display: flex; gap: 15px; }
+.action-box { flex: 1; }
+.action-box label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 8px; }
+.action-box select, .action-box textarea, .action-box input { wwidth: 100%; width: -webkit-fill-available; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 10px; }
+.action-box textarea { height: 80px; resize: none; }
+.btn-primary { background: var(--nitda-green); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
+.btn-primary:hover { background: #044530; }
+.btn-secondary { background: #e0e0e0; color: #333; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
+.btn-secondary:hover { background: #ccc; }
+.btn-danger { background: #ef4444; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
+
+.status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.status-treated { background: #dcfce7; color: #166534; }
+.status-pending { background: #fef9c3; color: #854d0e; }
+
+.thread-list { margin-top: 20px; }
+.thread-msg { background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; }
+.thread-msg::before { content: ''; position: absolute; left: -10px; top: 20px; width: 10px; height: 1px; background: #e0e0e0; }
+.thread-meta { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
+.thread-body { font-size: 13px; color: #333; line-height: 1.5; font-family: 'Courier New', Courier, monospace; background: #fafafa; padding: 10px; border-radius: 4px; border: 1px dashed #ccc; }
+
+.loading-spinner { border: 3px solid rgba(0,0,0,0.1); border-top-color: var(--nitda-teal); border-radius: 50%; wwidth: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Notification */
+#toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { background: #10b981; }
+#toast.error { background: #ef4444; }
+
+@media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; height: auto; }
+    .feed-panel { height: 400px; }
+}

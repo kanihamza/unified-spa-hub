@@ -1,0 +1,179 @@
+/* ============================================================
+   DGO v2.2 — AID Dashboard Component Styles (Harmonized)
+   All body, root, and layout-breaking sizing overrides neutralized.
+   ============================================================ */
+
+.aid-app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--dgo-color-surface-sunken);
+  overflow: hidden;
+  border-radius: var(--dgo-radius-card);
+  animation: aid-fadeIn 0.28s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+/* Header Component */
+.aid-hdr {
+  flex-shrink: 0;
+  background: var(--dgo-color-surface-raised);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  padding: var(--dgo-s-4) var(--dgo-s-5);
+  box-shadow: var(--dgo-shadow-1);
+}
+
+.aid-bc {
+  display: flex;
+  align-items: center;
+  gap: var(--dgo-s-2);
+  font-size: var(--dgo-type-caption);
+  color: var(--dgo-color-fg-muted);
+}
+
+.aid-bc-org {
+  font-weight: var(--dgo-wt-700);
+  color: var(--dgo-color-action-primary);
+  text-transform: uppercase;
+}
+
+.aid-title {
+  font-size: var(--dgo-type-h2);
+  font-weight: var(--dgo-wt-800);
+  color: var(--dgo-color-fg-strong);
+  margin-top: var(--dgo-s-2);
+}
+
+/* Tabs Navigation */
+.aid-tabs {
+  flex-shrink: 0;
+  background: var(--dgo-color-surface-raised);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  padding: var(--dgo-s-2) var(--dgo-s-4);
+  display: flex;
+  gap: var(--dgo-s-2);
+  overflow-x: auto;
+}
+
+.aid-tab {
+  padding: var(--dgo-s-2) var(--dgo-s-3);
+  font-size: var(--dgo-type-body-sm);
+  font-weight: var(--dgo-wt-600);
+  color: var(--dgo-color-fg-muted);
+  border-radius: var(--dgo-radius-control);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dgo-s-2);
+}
+
+.aid-tab.active {
+  background: var(--dgo-color-action-primary-soft);
+  color: var(--dgo-color-action-primary);
+  border-color: var(--dgo-color-border-strong);
+}
+
+.aid-tab-cnt {
+  font-size: 10px;
+  font-weight: var(--dgo-wt-700);
+  padding: 1px 6px;
+  border-radius: var(--dgo-radius-circle);
+  background: var(--dgo-color-surface-muted);
+  color: var(--dgo-color-fg-muted);
+}
+
+.aid-tab.active .aid-tab-cnt {
+  background: var(--dgo-color-action-primary);
+  color: var(--dgo-color-fg-on-brand);
+}
+
+/* KPI Strips */
+.aid-kpis {
+  flex-shrink: 0;
+  padding: var(--dgo-s-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--dgo-s-4);
+}
+
+.aid-kpi {
+  background: var(--dgo-color-surface-raised);
+  border: 1px solid var(--dgo-color-border-default);
+  border-radius: var(--dgo-radius-card);
+  padding: var(--dgo-s-4);
+  box-shadow: var(--dgo-shadow-1);
+}
+
+.aid-kpi-lbl {
+  font-size: 10px;
+  font-weight: var(--dgo-wt-700);
+  color: var(--dgo-color-fg-muted);
+  text-transform: uppercase;
+}
+
+.aid-kpi-val {
+  font-size: var(--dgo-type-h1);
+  font-weight: var(--dgo-wt-800);
+  color: var(--dgo-color-fg-strong);
+}
+
+/* Data Table Component */
+.aid-panel {
+  flex: 1;
+  background: var(--dgo-color-surface-raised);
+  border: 1px solid var(--dgo-color-border-default);
+  border-radius: var(--dgo-radius-card);
+  margin: var(--dgo-s-4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.aid-panel-hdr {
+  padding: var(--dgo-s-3) var(--dgo-s-4);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--dgo-color-surface-sunken);
+}
+
+.aid-tbl-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.aid-tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.aid-tbl th {
+  background: var(--dgo-color-surface-sunken);
+  color: var(--dgo-color-fg-muted);
+  font-weight: var(--dgo-wt-600);
+  text-transform: uppercase;
+  font-size: 11px;
+  padding: var(--dgo-s-3);
+  text-align: left;
+  border-bottom: 1px solid var(--dgo-color-border-default);
+}
+
+.aid-tbl td {
+  padding: var(--dgo-s-3);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  font-size: var(--dgo-type-body-sm);
+  color: var(--dgo-color-fg-default);
+}
+
+.aid-empty {
+  text-align: center;
+  padding: var(--dgo-s-8);
+  color: var(--dgo-color-fg-subtle);
+}
+
+@keyframes aid-fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

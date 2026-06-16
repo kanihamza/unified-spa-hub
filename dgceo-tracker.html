@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NITDA DG/CEO Correspondence Tracker</title>
+    <!-- We will use a Tailwind CDN for standalone functionality -->
+    <!-- Visual Tailwind CDN neutralized for secure offline-first operations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dgceo-tracker.css">
+</head>
+<body class="tracker-app text-slate-800">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <!-- Sidebar / Navigation -->
+    <aside class="w-72 bg-dark text-white flex flex-col shadow-2xl relative z-20">
+        <!-- Logo & Branding -->
+        <div class="px-6 py-8 border-b border-green-900 flex items-center gap-4">
+            <div class="h-10 w-10 bg-white rounded flex items-center justify-center p-1 shadow-inner">
+                <img src="https://nitda.gov.ng/wp-content/uploads/2021/01/NITDA-Logo.png" alt="NITDA Logo" class="h-full object-contain">
+            </div>
+            <div>
+                <h1 class="text-sm font-black tracking-widest uppercase">Office of the DG</h1>
+                <p class="text-[10px] text-green-400 font-bold uppercase tracking-wider mt-0.5">Records & Tracker</p>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <button id="nav-dashboard" onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold bg-primary text-white border border-green-700 shadow-md transition-all">
+                <i class="fa-solid fa-chart-pie w-5"></i> Dashboard Overview
+            </button>
+            <button id="nav-new-entry" onclick="switchTab('new-entry')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-green-100 hover:bg-green-800/50 hover:text-white transition-all">
+                <div class="flex justify-between items-center w-full">
+                    <span><i class="fa-solid fa-plus-circle w-5"></i> Log Correspondence</span>
+                </div>
+            </button>
+            <button id="nav-records" onclick="switchTab('records')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-green-100 hover:bg-green-800/50 hover:text-white transition-all">
+                <div class="flex justify-between items-center w-full">
+                    <span><i class="fa-solid fa-folder-open w-5"></i> Official Records</span>
+                    <span id="badge-pending" class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm">1</span>
+                </div>
+            </button>
+            <div class="pt-6 pb-2">
+                <p class="px-4 text-[10px] font-black text-green-600 uppercase tracking-widest">Smart Filters</p>
+            </div>
+            <button onclick="filterRecords('category', 'Event Invitation')" class="nav-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-semibold text-green-200 hover:bg-green-800/30 transition-all">
+                <div class="flex justify-between items-center w-full">
+                    <span><i class="fa-solid fa-calendar-check w-5"></i> Events</span>
+                    <span id="badge-events" class="bg-green-800 text-green-100 text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+                </div>
+            </button>
+            <button onclick="filterRecords('priority', 'High')" class="nav-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-semibold text-green-200 hover:bg-green-800/30 transition-all">
+                <i class="fa-solid fa-bolt w-5 text-accent"></i> Priority Directives
+            </button>
+        </nav>
+
+        <!-- Connectivity & User Info -->
+        <div class="p-5 border-t border-green-900 bg-green-950/30">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-full bg-accent text-dark flex items-center justify-center font-black text-xs shadow-inner">RD</div>
+                <div>
+                    <p class="text-xs font-bold text-white">Registry Desk</p>
+                    <p class="text-[10px] text-green-400 font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Flow Connected</p>
+                </div>
+            </div>
+            <button onclick="triggerManualSync()" class="w-full py-2 bg-green-900 hover:bg-primary text-[10px] font-black text-green-100 uppercase tracking-widest rounded transition-colors border border-green-800 shadow-inner">
+                Force Sync Database
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col relative z-10 w-full overflow-hidden">
+        <!-- Top App Bar -->
+        <header class="bg-white px-8 py-4 flex justify-between items-center shadow-sm border-b border-slate-200 z-20">
+            <div>
+                <h2 id="page-title" class="text-xl font-black text-slate-800 tracking-tight">Dashboard Overview</h2>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5 border-l-2 border-primary pl-2 ml-1">NITDA Operations</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="global-search" placeholder="Search references, subjects..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary focus:bg-white transition-all w-64 font-medium placeholder-slate-400 shadow-inner">
+                </div>
+                <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv"></i> Export
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content Viewport -->
+        <div class="flex-1 overflow-y-auto p-8 relative">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="tab-content active h-full space-y-6">
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm border-l-4 border-l-primary flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Total Logged</h3>
+                            <div class="p-2 bg-green-50 text-secondary rounded-lg"><i class="fa-solid fa-folder"></i></div>
+                        </div>
+                        <p id="stat-total" class="text-3xl font-black text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Pending Action</h3>
+                            <div class="p-2 bg-red-50 text-red-500 rounded-lg"><i class="fa-solid fa-clock"></i></div>
+                        </div>
+                        <p id="stat-pending" class="text-3xl font-black text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm border-l-4 border-l-emerald-500 flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Accepted/Treated</h3>
+                            <div class="p-2 bg-emerald-50 text-emerald-500 rounded-lg"><i class="fa-solid fa-check-circle"></i></div>
+                        </div>
+                        <p id="stat-accepted" class="text-3xl font-black text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm border-l-4 border-l-accent flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">High Priority</h3>
+                            <div class="p-2 bg-yellow-50 text-accent rounded-lg"><i class="fa-solid fa-bolt"></i></div>
+                        </div>
+                        <p id="stat-high" class="text-3xl font-black text-slate-800 mt-2">0</p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Preview -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-history mr-2 text-slate-400"></i> Recent Registrations</h3>
+                        <button onclick="switchTab('records')" class="text-xs font-bold text-primary hover:text-green-800 transition-colors uppercase tracking-wider">View All <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest sticky top-0 shadow-sm">
+                                <tr>
+                                    <th class="p-4">Subject & Sender</th>
+                                    <th class="p-4 w-32">Received</th>
+                                    <th class="p-4 w-32">Status</th>
+                                    <th class="p-4 w-16"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-tbody" class="divide-y divide-slate-100">
+                                <!-- Data rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: NEW/EDIT ENTRY FORM -->
+            <div id="view-new-entry" class="tab-content h-full max-w-4xl mx-auto">
+                <form id="entry-form" class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col relative">
+                    <!-- Top Ribbon -->
+                    <div class="h-2 bg-gradient-to-r from-primary to-accent w-full"></div>
+                    
+                    <div class="p-8 space-y-8 flex-1 overflow-y-auto">
+                        <!-- Context Info -->
+                        <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                            <div>
+                                <h3 class="font-black text-lg text-slate-800">Correspondence Registration</h3>
+                                <p class="text-xs text-slate-500 font-medium">Map physical/digital documents into the central tracker.</p>
+                            </div>
+                            <div class="text-right">
+                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">System Generated ID</label>
+                                <input type="text" id="entry-id" readonly placeholder="[ Auto-Generated on Save ]" class="bg-slate-50 border border-slate-200 text-slate-600 font-mono text-sm px-3 py-1.5 rounded w-48 text-center font-bold outline-none cursor-not-allowed shadow-inner">
+                            </div>
+                        </div>
+
+                        <!-- Data Fields Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Category -->
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-category">Category Classification <span class="text-red-500">*</span></label>
+                                <select id="form-category" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                                    <option value="" disabled selected>Select appropriate category...</option>
+                                    <option value="Ministerial Directive">Ministerial Directive</option>
+                                    <option value="Event Invitation">Event Invitation / Request</option>
+                                    <option value="Project Proposal">Project Proposal / Concept Note</option>
+                                    <option value="External Correspondence">External Correspondence (MDA)</option>
+                                    <option value="Internal Memo">Internal Memo</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Priority -->
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-priority">Priority Level <span class="text-red-500">*</span></label>
+                                <select id="form-priority" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                                    <option value="Normal" selected>Normal</option>
+                                    <option value="High">High (Requires Immediate Attention)</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+
+                            <!-- Sender -->
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-sender">Sender / Organization <span class="text-red-500">*</span></label>
+                                <input type="text" id="form-sender" required placeholder="e.g. Ministry of Communications, FMCIDE..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                            </div>
+
+                            <!-- Contact -->
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-contact">Sender Contact (Email/Phone)</label>
+                                <input type="text" id="form-contact" placeholder="For follow-ups..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                            </div>
+
+                            <!-- Dates -->
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-received-date">Date Received <span class="text-red-500">*</span></label>
+                                <input type="date" id="form-received-date" required class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700 flex justify-between" for="form-event-date">
+                                    <span>Event Date <span class="text-slate-400 font-normal">(If applicable)</span></span>
+                                </label>
+                                <input type="date" id="form-event-date" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                            </div>
+
+                            <!-- Full width subject -->
+                            <div class="col-span-1 md:col-span-2 space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-subject">Subject / Title <span class="text-red-500">*</span></label>
+                                <input type="text" id="form-subject" required placeholder="Exact title of the document or memo..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none">
+                            </div>
+
+                            <!-- Full width Remarks -->
+                            <div class="col-span-1 md:col-span-2 space-y-1">
+                                <label class="text-xs font-bold text-slate-700 flex justify-between" for="form-remarks">
+                                    <span>Registry Remarks & Routing Instructions</span>
+                                </label>
+                                <textarea id="form-remarks" rows="3" placeholder="Add specific notes, required actions, or initial routing ideas..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-medium shadow-sm outline-none resize-none"></textarea>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700" for="form-status">Initial Status</label>
+                                <select id="form-status" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary font-bold text-slate-700 shadow-sm outline-none">
+                                    <option value="Pending" selected>Pending Action</option>
+                                    <option value="Accepted">Accepted / Approved</option>
+                                    <option value="Declined">Declined</option>
+                                    <option value="Delegated">Delegated (Tracking)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Footer -->
+                    <div class="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-between items-center">
+                        <button type="button" onclick="resetForm()" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider">Clear Form</button>
+                        <button type="submit" class="bg-primary hover:bg-green-800 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-green-900/20 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Save & Sync Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- VIEW: BROWSE RECORDS -->
+            <div id="view-records" class="tab-content h-full flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <!-- Sticky Filter Ribbon -->
+                <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between z-10 sticky top-0">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-slate-400 text-xs"></i>
+                            <select id="filter-status" onchange="applyFilters()" class="bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-primary">
+                                <option value="All">All Statuses</option>
+                                <option value="Pending">Pending Action</option>
+                                <option value="Accepted">Accepted / Treated</option>
+                                <option value="Delegated">Delegated</option>
+                                <option value="Declined">Declined</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="filter-category" onchange="applyFilters()" class="bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-primary">
+                                <option value="All">All Categories</option>
+                                <option value="Ministerial Directive">Ministerial Directive</option>
+                                <option value="Event Invitation">Event Invitation</option>
+                                <option value="Project Proposal">Project Proposal</option>
+                                <option value="External Correspondence">Ext. Correspondence</option>
+                                <option value="Internal Memo">Internal Memo</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4 border-l border-slate-200">
+                        Displaying <span id="page-start" class="text-primary">0</span>-<span id="page-end" class="text-primary">0</span> of <span id="page-total" class="text-slate-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="flex-1 overflow-auto relative">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-slate-100 text-slate-500 text-[10px] uppercase font-black tracking-widest sticky top-0 shadow-sm z-20">
+                            <tr>
+                                <th class="p-4 w-32 border-b border-slate-200">Ref ID</th>
+                                <th class="p-4 min-w-[300px] border-b border-slate-200">Subject</th>
+                                <th class="p-4 border-b border-slate-200">Sender / Org</th>
+                                <th class="p-4 border-b border-slate-200">Timeline</th>
+                                <th class="p-4 w-24 border-b border-slate-200">Priority</th>
+                                <th class="p-4 w-24 border-b border-slate-200">Status</th>
+                                <th class="p-4 w-24 border-b border-slate-200 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                    
+                    <!-- Empty State -->
+                    <div id="records-empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10">
+                        <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-sm font-bold text-slate-500">No records match the current filters.</p>
+                        <button onclick="filterRecords('status', 'All'); filterRecords('category', 'All'); document.getElementById('global-search').value = ''; applyFilters();" class="mt-4 text-xs font-bold text-primary hover:underline uppercase tracking-widest">Clear All Filters</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="/js/dgceo-tracker.js"></script>
+</body>
+</html>

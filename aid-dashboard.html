@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — AID Dashboard</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+    <link rel="stylesheet" href="css/aid.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main" style="padding: 0;">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder" style="flex-shrink: 0; background: var(--dgo-color-surface-default);"></div>
+          
+          <div class="aid-app dgo-content-viewport" role="application" aria-label="Assignment Intelligence Dashboard" style="flex:1; border-radius: 0; position:relative; overflow:hidden;">
+            <!-- ═══════════════════ HEADER ═══════════════════ -->
+            <header class="aid-hdr" role="banner">
+              <div class="aid-bc" aria-label="Breadcrumbs">
+                <span class="aid-bc-org">DGO Digital Ops</span>
+                <span class="aid-bc-sep">›</span>
+                <span class="aid-bc-cat">Stats &amp; Reports Dashboard</span>
+                <span class="aid-bc-sep">›</span>
+                <span class="aid-bc-cat">DGO Analytics</span>
+              </div>
+              <div class="aid-hdr-row">
+                <h1 class="aid-title">Assignment Intelligence Dashboard</h1>
+                <div class="aid-actions">
+                  <button id="btn-sync" class="aid-btn aid-btn-p" type="button" aria-label="Sync registry">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    <span id="btn-sync-lbl">Sync Registry</span>
+                  </button>
+                  <button id="btn-report" class="aid-btn aid-btn-s" type="button" aria-label="Generate report">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                    Generate Report
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <!-- ═══════════════════ FILTER TABS ═══════════════════ -->
+            <nav class="aid-tabs" role="tablist" aria-label="Assignment filters">
+              <button class="aid-tab active" role="tab" aria-selected="true"  data-filter="all"       type="button">All Assignments <span class="aid-tab-cnt" data-cnt="all">0</span></button>
+              <button class="aid-tab"        role="tab" aria-selected="false" data-filter="pending"   type="button">Pending Ack    <span class="aid-tab-cnt" data-cnt="pending">0</span></button>
+              <button class="aid-tab"        role="tab" aria-selected="false" data-filter="overdue"   type="button">Overdue        <span class="aid-tab-cnt" data-cnt="overdue">0</span></button>
+              <button class="aid-tab"        role="tab" aria-selected="false" data-filter="urgent"    type="button">Urgent Priority<span class="aid-tab-cnt" data-cnt="urgent">0</span></button>
+              <button class="aid-tab"        role="tab" aria-selected="false" data-filter="completed" type="button">Completed      <span class="aid-tab-cnt" data-cnt="completed">0</span></button>
+              <button class="aid-tab"        role="tab" aria-selected="false" data-filter="ontrack"   type="button">On Track       <span class="aid-tab-cnt" data-cnt="ontrack">0</span></button>
+            </nav>
+
+            <!-- ═══════════════════ KPI STRIP ═══════════════════ -->
+            <section class="aid-kpis" aria-label="Key performance indicators">
+              <div class="aid-kpi" data-kpi="total"   role="status">
+                <div class="aid-kpi-lbl">Total Pool</div>
+                <div class="aid-kpi-val" id="kpi-total">0</div>
+                <div class="aid-kpi-sub">All registered records</div>
+              </div>
+              <div class="aid-kpi" data-kpi="active"  role="status">
+                <div class="aid-kpi-lbl">Active / Pending</div>
+                <div class="aid-kpi-val" id="kpi-active">0</div>
+                <div class="aid-kpi-sub">Awaiting action</div>
+              </div>
+              <div class="aid-kpi" data-kpi="overdue" role="status">
+                <div class="aid-kpi-lbl">Overdue Alerts</div>
+                <div class="aid-kpi-val" id="kpi-overdue" data-pulse="0">0</div>
+                <div class="aid-kpi-sub">Past due-date</div>
+              </div>
+              <div class="aid-kpi" data-kpi="closed"  role="status">
+                <div class="aid-kpi-lbl">Closed Tasks</div>
+                <div class="aid-kpi-val" id="kpi-closed">0</div>
+                <div class="aid-kpi-sub">Completed records</div>
+              </div>
+            </section>
+
+            <!-- ═══════════════════ DATA PANEL ═══════════════════ -->
+            <section class="aid-panel" aria-label="Assignment registry">
+              <div class="aid-panel-hdr">
+                <div class="aid-panel-hdr-l">
+                  <h2>Assignment Details</h2>
+                  <p>Live feed from DGO Registry</p>
+                </div>
+                <div class="aid-sync-status" role="status" aria-live="polite">
+                  <span class="aid-sync-dot" id="sync-dot" aria-hidden="true"></span>
+                  <span id="sync-label">Idle</span>
+                  <span>·</span>
+                  <span class="aid-sync-rec" id="sync-rec">0</span>
+                  <span>Records</span>
+                </div>
+              </div>
+              <div class="aid-tbl-wrap">
+                <table class="aid-tbl" role="grid">
+                  <thead>
+                    <tr>
+                      <th class="sortable" data-sort="ref"     scope="col">Ref &amp; Priority <span class="sort-ind"></span></th>
+                      <th class="sortable" data-sort="subject" scope="col">Assignment Subject <span class="sort-ind"></span></th>
+                      <th class="sortable" data-sort="status"  scope="col">Current Status     <span class="sort-ind"></span></th>
+                      <th class="sortable" data-sort="officer" scope="col">Assigned Officer   <span class="sort-ind"></span></th>
+                      <th class="sortable" data-sort="due"     scope="col">Due Date           <span class="sort-ind"></span></th>
+                      <th class="sortable" data-sort="dsu"     scope="col">DSU / Category     <span class="sort-ind"></span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="aid-tbody">
+                    <tr><td colspan="6" class="aid-empty">
+                      <span class="aid-empty-ico" aria-hidden="true">📋</span>
+                      <div class="aid-empty-ttl">Registry is empty</div>
+                      <div class="aid-empty-msg">Synchronize to load data from the live DGO Registry.</div>
+                    </td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Fallback modal -->
+    <div id="aid-fb-modal" role="dialog" aria-modal="true" aria-labelledby="aid-fb-h">
+      <div class="aid-fb-box">
+        <div id="aid-fb-h" class="aid-fb-h">Authorization Required</div>
+        <div id="aid-fb-b" class="aid-fb-b">Confirm execution of the requested operation to proceed.</div>
+        <div class="aid-fb-f">
+          <button class="aid-btn aid-btn-g" id="aid-fb-cancel" type="button">Cancel</button>
+          <button class="aid-btn aid-btn-p" id="aid-fb-ok" type="button">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="/js/aid.js"></script>
+  </body>
+</html>

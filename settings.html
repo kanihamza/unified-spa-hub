@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Station &amp; Telemetry</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+            
+            <!-- Page Header -->
+            <div class="dgo-cluster dgo-cluster--between">
+              <div class="dgo-stack dgo-stack--1">
+                <h2 class="dgo-h2">Station Configuration &amp; Telemetry</h2>
+                <p class="dgo-body text-muted">Configure active Logic Flow gateways, view OData caching, and review live diagnostic logging.</p>
+              </div>
+              <button id="btn-factory-reset" class="dgo-btn dgo-btn--md dgo-btn--outline" style="border-color: var(--dgo-color-action-danger); color: var(--dgo-color-action-danger);">
+                <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-settings"></use></svg>
+                <span>Full System Reset</span>
+              </button>
+            </div>
+
+            <!-- Double Split: Left (Configs) vs Right (Logs & state diagnostics) -->
+            <div class="dgo-split-interactive">
+              
+              <!-- Left: Configuration Forms -->
+              <div class="dgo-stack dgo-stack--4">
+                
+                <!-- Card 1: Accessibility Presets -->
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <h3 class="dgo-card__title">Aesthetic &amp; Accessibility Presets</h3>
+                  
+                  <div class="dgo-form-group">
+                    <span class="dgo-label">Contrast Visual Theme Override</span>
+                    <div class="dgo-cluster dgo-cluster--density">
+                      <button class="dgo-btn dgo-btn--md dgo-btn--outline theme-toggle-btn" id="btn-theme-light" data-theme="light">Light Slate (Standard)</button>
+                      <button class="dgo-btn dgo-btn--md dgo-btn--outline theme-toggle-btn" id="btn-theme-dark" data-theme="dark">Midnight Dark (Low light)</button>
+                      <button class="dgo-btn dgo-btn--md dgo-btn--outline theme-toggle-btn" id="btn-theme-hc" data-theme="hc">High Contrast (Accessibility)</button>
+                    </div>
+                  </div>
+
+                  <div class="dgo-form-group">
+                    <span class="dgo-label">Information Density Mode</span>
+                    <div class="dgo-cluster dgo-cluster--density">
+                      <button class="dgo-btn dgo-btn--md dgo-btn--outline density-toggle-btn" id="btn-dens-comfortable" data-density="comfortable">Comfortable Grid (Relaxed)</button>
+                      <button class="dgo-btn dgo-btn--md dgo-btn--outline density-toggle-btn" id="btn-dens-compact" data-density="compact">Compact Grid (Operations-first)</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Logic Flow Gateways URLs -->
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <div class="dgo-cluster dgo-cluster--between">
+                    <h3 class="dgo-card__title">Microsoft Power Automate Gateways</h3>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-restore-endpoints-default" style="height:28px; font-size:11px;">Restore Defaults</button>
+                  </div>
+                  <p class="dgo-body-sm text-muted">Map active HTTP trigger URL webhooks generated in Power Automate cloud. Clear fields default to sandboxed simulation routing.</p>
+
+                  <form id="endpoints-form" class="dgo-stack dgo-stack--3" onsubmit="return false">
+                    <div class="dgo-form-group">
+                      <label for="ep-E01" class="dgo-label">E01 — Reference Directory Lookup Feed</label>
+                      <input type="url" id="ep-E01" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+                    
+                    <div class="dgo-form-group">
+                      <label for="ep-E02" class="dgo-label">E02 — Inbound Dossier Table Sync (OData)</label>
+                      <input type="url" id="ep-E02" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E03" class="dgo-label">E03 — Update Dossier Status Flag (Patch)</label>
+                      <input type="url" id="ep-E03" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E04" class="dgo-label">E04 — Action Tasks Table Sync (OData)</label>
+                      <input type="url" id="ep-E04" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E05" class="dgo-label">E05 — Update Task Progress Metric (Patch)</label>
+                      <input type="url" id="ep-E05" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E06" class="dgo-label">E06 — Dispatch Single Task Assignment (Post)</label>
+                      <input type="url" id="ep-E06" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E07" class="dgo-label">E07 — Dispatch Uniform Bulk Broadcast (Post)</label>
+                      <input type="url" id="ep-E07" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E08" class="dgo-label">E08 — AI Optimized Batch allocator (Post)</label>
+                      <input type="url" id="ep-E08" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E09" class="dgo-label">E09 — Sync Public Mailbox Exchange (OData)</label>
+                      <input type="url" id="ep-E09" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E10" class="dgo-label">E10 — Translate Email-to-Task Directive (Post)</label>
+                      <input type="url" id="ep-E10" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <button type="button" class="dgo-btn dgo-btn--md dgo-btn--primary" id="btn-save-endpoints" style="width:100%;">Commit Gateways Settings</button>
+                  </form>
+                </div>
+
+              </div>
+
+              <!-- Right: Logs, cache, and traces -->
+              <div class="dgo-stack dgo-stack--4">
+                
+                                <!-- OData cache diagnostics -->
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <div class="dgo-cluster dgo-cluster--between">
+                    <h3 class="dgo-card__title">Sync Outbox</h3>
+                    <span class="dgo-badge dgo-badge--pending" id="outbox-count-badge">0 Pending</span>
+                  </div>
+                  <p class="dgo-body-sm text-muted">Operations queued while offline or during PA Flow latency.</p>
+                  <div class="dgo-cluster dgo-cluster--density">
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--primary dgo-spacer" onclick="window.API.Outbox.process()">Flush Outbox Now</button>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="localStorage.removeItem('dgo_sync_outbox'); location.reload()">Clear Queue</button>
+                  </div>
+                </div>
+
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <h3 class="dgo-card__title">OData Directories Cache</h3>
+                  <p class="dgo-body-sm text-muted">Offline lookups reference store is cached to minimize live Power Automate fetch costs.</p>
+
+                  <div class="dgo-grid dgo-grid--3 dgo-grid--density" style="font-size: var(--dgo-type-body-sm);">
+                    <div style="background:var(--dgo-color-surface-sunken); padding:var(--dgo-s-2); border-radius:4px; text-align:center;">
+                      <p style="font-size:10px; color:var(--dgo-color-fg-muted); text-transform:uppercase;">Categories</p>
+                      <strong style="font-size:15px; font-family:var(--dgo-family-mono);" id="lbl-cache-cats-count">0</strong>
+                    </div>
+                    <div style="background:var(--dgo-color-surface-sunken); padding:var(--dgo-s-2); border-radius:4px; text-align:center;">
+                      <p style="font-size:10px; color:var(--dgo-color-fg-muted); text-transform:uppercase;">Directors</p>
+                      <strong style="font-size:15px; font-family:var(--dgo-family-mono);" id="lbl-cache-officers-count">0</strong>
+                    </div>
+                    <div style="background:var(--dgo-color-surface-sunken); padding:var(--dgo-s-2); border-radius:4px; text-align:center;">
+                      <p style="font-size:10px; color:var(--dgo-color-fg-muted); text-transform:uppercase;">Agencies/Direc</p>
+                      <strong style="font-size:15px; font-family:var(--dgo-family-mono);" id="lbl-cache-depts-count">0</strong>
+                    </div>
+                  </div>
+
+                  <div class="dgo-cluster dgo-cluster--density">
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--outline dgo-spacer" id="btn-rebuild-cache">Rebuild Lookup cache</button>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-flush-cache" style="color:var(--dgo-color-action-danger);">Flush offline cache</button>
+                  </div>
+                </div>
+
+                <!-- Telemetry Logs pane -->
+                <div class="dgo-card dgo-stack dgo-stack--3 dgo-spacer" style="max-height: 480px; overflow-y: hidden; display:flex; flex-direction:column;">
+                  <div class="dgo-cluster dgo-cluster--between">
+                    <h3 class="dgo-card__title">Operations Diagnostics Logs</h3>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-flush-telemetry" style="height:28px; font-size:11px; color:var(--dgo-color-action-danger);">Flush logs</button>
+                  </div>
+                  <p class="dgo-body-sm text-muted">Audits real-time OData timeouts, mock cascades, API triggers, and state switches.</p>
+
+                  <div class="dgo-stack dgo-stack--2 dgo-spacer" style="overflow-y:auto; background:var(--dgo-color-surface-sunken); border-radius:var(--dgo-radius-control); padding:var(--dgo-s-3); border:1px solid var(--dgo-color-border-default);" id="telemetry-logs-tbody">
+                    <!-- Logs injection -->
+                    <div style="text-align:center; color: var(--dgo-color-fg-subtle); padding:var(--dgo-s-4); font-size:12px;">Active stream initialized.</div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('settings');
+
+        // Render accessibility triggers active states
+        function updateVisualControlsUI() {
+          const s = window.State.getVisualSettings();
+          
+          // Theme toggles
+          document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+            if (btn.getAttribute('data-theme') === s.theme) {
+              btn.classList.add('dgo-btn--primary');
+              btn.classList.remove('dgo-btn--outline');
+            } else {
+              btn.classList.remove('dgo-btn--primary');
+              btn.classList.add('dgo-btn--outline');
+            }
+          });
+
+          // Density toggles
+          document.querySelectorAll('.density-toggle-btn').forEach(btn => {
+            if (btn.getAttribute('data-density') === s.density) {
+              btn.classList.add('dgo-btn--primary');
+              btn.classList.remove('dgo-btn--outline');
+            } else {
+              btn.classList.remove('dgo-btn--primary');
+              btn.classList.add('dgo-btn--outline');
+            }
+          });
+        }
+
+        updateVisualControlsUI();
+
+        // Bind theme click togglers
+        document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const t = btn.getAttribute('data-theme');
+            window.State.applyVisualSettings({ theme: t });
+            updateVisualControlsUI();
+            window.Chrome.showToast(`Theme preset changed to: ${t.toUpperCase()}`, 'success');
+          });
+        });
+
+        // Bind density toggler
+        document.querySelectorAll('.density-toggle-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const d = btn.getAttribute('data-density');
+            window.State.applyVisualSettings({ density: d });
+            updateVisualControlsUI();
+            window.Chrome.showToast(`Density grid changed to: ${d.toUpperCase()}`, 'success');
+          });
+        });
+
+        // Load custom endpoint forms
+        const formEndpoints = window.API.getCustomEndpoints();
+        for (const epKey in formEndpoints) {
+          const input = document.getElementById(`ep-${epKey}`);
+          if (input) {
+            input.value = formEndpoints[epKey] || '';
+          }
+        }
+
+        // Save customized flow URLs
+        document.getElementById('btn-save-endpoints').addEventListener('click', () => {
+          const formEndpoints = {};
+          const flowKeys = ['E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
+          
+          flowKeys.forEach(k => {
+            const val = document.getElementById(`ep-${k}`).value;
+            formEndpoints[k] = val ? val.trim() : "";
+          });
+
+          window.API.saveCustomEndpoints(formEndpoints);
+          window.Chrome.showToast('Logic Flow endpoint gateways committed!', 'success');
+        });
+
+        // Restore URLs to defaults
+        document.getElementById('btn-restore-endpoints-default').addEventListener('click', () => {
+          const flowKeys = ['E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
+          flowKeys.forEach(k => {
+            document.getElementById(`ep-${k}`).value = '';
+          });
+          window.API.saveCustomEndpoints({});
+          window.Chrome.showToast('Triggering default mock simulation pathways.', 'success');
+        });
+
+        // Lookup Cache Statistics
+        function updateCacheCounters() {
+          const cats = window.Lookups.getCategories().length;
+          const officers = window.Lookups.getOfficers().length;
+          const depts = window.Lookups.getDepartments().length;
+
+          document.getElementById('lbl-cache-cats-count').textContent = cats;
+          document.getElementById('lbl-cache-officers-count').textContent = officers;
+          document.getElementById('lbl-cache-depts-count').textContent = depts;
+        }
+
+        updateCacheCounters();
+
+        // Rebuild lookup cache
+        document.getElementById('btn-rebuild-cache').addEventListener('click', async () => {
+          window.Chrome.showToast('Rebuilding local lookups...');
+          await window.Lookups.loadReferences(true);
+          updateCacheCounters();
+        });
+
+        // Flush cache
+        document.getElementById('btn-flush-cache').addEventListener('click', () => {
+          localStorage.removeItem('dgo_cached_lookups');
+          window.Chrome.showToast('Offline cache flushed!', 'warning');
+          updateCacheCounters();
+        });
+
+        // Telemetry Logs list viewer
+        function renderLogsFeed() {
+          const pane = document.getElementById('telemetry-logs-tbody');
+          const logs = window.Telemetry.getLogs();
+
+          if (logs.length === 0) {
+            pane.innerHTML = `<div style="text-align:center; color: var(--dgo-color-fg-subtle); padding:var(--dgo-s-4); font-size:12px;">Logs history is clear. No active events.</div>`;
+            return;
+          }
+
+          pane.innerHTML = logs.map(log => {
+            const d = new Date(log.timestamp).toLocaleTimeString();
+            const detailsText = Object.keys(log.details).length > 0 ? JSON.stringify(log.details) : '';
+            
+            let color = 'var(--dgo-color-fg-muted)';
+            if (log.action.toLowerCase().includes('error') || log.action.toLowerCase().includes('fail')) {
+              color = 'var(--dgo-color-action-danger)';
+            } else if (log.action.toLowerCase().includes('success') || log.action.toLowerCase().includes('commit')) {
+              color = 'var(--dgo-green-600)';
+            } else if (log.action.toLowerCase().includes('api_')) {
+              color = 'var(--dgo-color-action-accent)';
+            }
+
+            return `
+              <div class="dgo-stack dgo-stack--0" style="font-family:var(--dgo-family-mono); font-size:10px; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:4px; margin-bottom:4px;">
+                <div class="dgo-cluster dgo-cluster--between">
+                  <span style="font-weight:700; color:${color};">${log.action}</span>
+                  <span style="color:var(--dgo-color-fg-subtle); font-size:9px;">${d}</span>
+                </div>
+                ${detailsText ? `<span style="font-size:9px; color:var(--dgo-color-fg-subtle); word-break:break-all;">${detailsText}</span>` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+
+        renderLogsFeed();
+
+        // Flush telemetry
+        document.getElementById('btn-flush-telemetry').addEventListener('click', () => {
+          window.Telemetry.clearLogs();
+          renderLogsFeed();
+        });
+
+        // Listen for new telemetry logs in real time
+        window.addEventListener('dgo_telemetry_push', renderLogsFeed);
+
+        // Factory reset
+        document.getElementById('btn-factory-reset').addEventListener('click', () => {
+          if (confirm('Warning! This will clear all mock database records in your local browser storage (Dossiers flags, Progress Comments logs, Mailboxes attachments, Switch logs) and restore initial state. Are you sure?')) {
+            localStorage.clear();
+            window.Chrome.showToast('Full factory operational reset complete! Refreshing page...', 'error');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1200);
+          }
+        });
+
+      });
+    </script>
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', () => {
+        const count = window.API.Outbox.get().length;
+        const badge = document.getElementById('outbox-count-badge');
+        if (badge) {
+          badge.textContent = `${count} Pending`;
+          if (count > 0) badge.className = 'dgo-badge dgo-badge--action';
+        }
+      });
+    </script>
+  </body>
+</html>

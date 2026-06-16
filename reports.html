@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — FAST-Track Reports</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+    <link rel="stylesheet" href="css/reports.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main" style="padding: 0;">
+          <div id="dgo-topbar-placeholder" style="flex-shrink: 0; background: var(--dgo-color-surface-default);"></div>
+          
+          <div class="app-screen-container dgo-content-viewport" style="flex:1; border-radius: 0; position:relative; overflow:hidden;">
+            <!-- COMPONENT: cmpScreenHeader_16 -->
+            <header class="cmp-screen-header" id="cmpScreenHeader_16">
+              <div class="brand">
+                <span class="brand-mark">N</span>
+                <span>NITDA · DGO FAST-Track · <strong style="color:#FFC000">Reports</strong></span>
+              </div>
+              <div class="header-meta">
+                <div class="user-block">
+                  <label for="userEmailSelect">User:</label>
+                  <select id="userEmailSelect" title="Select impersonated user (drives navigation menu, just like User().Email in Power Apps)">
+                    <option value="dgsregistry@nitda.gov.ng">dgsregistry@nitda.gov.ng</option>
+                    <option value="dgs@nitda.gov.ng">dgs@nitda.gov.ng</option>
+                    <option value="dg@nitda.gov.ng">dg@nitda.gov.ng</option>
+                    <option value="other@nitda.gov.ng">other@nitda.gov.ng (default)</option>
+                  </select>
+                </div>
+              </div>
+            </header>
+
+            <div class="cmp-status-label" id="Label1_7">
+              <span id="statusLabelText"></span>
+            </div>
+
+            <div class="cmp-tag-gallery" id="galSuggestedTags_7"></div>
+
+            <div class="cmp-actions" id="TableNameContainer1_34">
+              <button class="act act-blue" id="Button2_26" title="OnSelect: SendEmailV2 to User().Email subject 'DGO Report'">
+                📧 Send DGO Report Email
+              </button>
+              <button class="act act-blue" id="Button2_38" title="OnSelect: Filter 'DGO DIGITAL OPS' by date range; build reportHTML; show R3" data-source="dgo">
+                <span id="Button2_38_label">0 ShowR3</span>
+              </button>
+              <button class="act act-green" id="Button2_28" title="OnSelect: SendEmailV2 to User().Email subject 'GTQ Report'">
+                📧 Send GTQ Report Email
+              </button>
+              <button class="act act-green" id="Button2_37" title="OnSelect: Filter 'Global Tracking Queue' by date range; build reportHTML; show R3" data-source="gtq">
+                ▶ ShowR3
+              </button>
+              <button class="act act-orange" id="Button2_27" title="OnSelect: SendEmailV2 to User().Email subject 'DGO Report' (Dual)">
+                📧 Send Dual Report
+              </button>
+              <button class="act act-orange" id="Button2_39" title="OnSelect: Filter 'Global Tracking Queue' by date range; build reportHTML; show R3 (Dual generator)" data-source="dual">
+                ⚡ Generate Dual Report
+              </button>
+              <div class="dp-wrap"><label for="dpReportStartDate">GTQ Start (dpReportStartDate)</label>
+                <input type="date" class="dp" id="dpReportStartDate" title="Default: Today()-14"></div>
+              <div class="dp-wrap"><label for="dpReportEndDate">GTQ End (dpReportEndDate)</label>
+                <input type="date" class="dp" id="dpReportEndDate"></div>
+              <div class="dp-wrap"><label for="dpReportStartDate_1">DGO Start (dpReportStartDate_1)</label>
+                <input type="date" class="dp" id="dpReportStartDate_1" title="Default: Today()-14"></div>
+              <div class="dp-wrap"><label for="dpReportEndDate_1">DGO End (dpReportEndDate_1)</label>
+                <input type="date" class="dp" id="dpReportEndDate_1"></div>
+            </div>
+
+            <!-- REPORTS CONTAINER -->
+            <div class="cmp-reports-container" id="Container4">
+              <div class="cmp-reports-toolbar">
+                <div class="left">
+                  <span>Active template:</span>
+                  <span class="badge" id="activeTemplateBadge">— none —</span>
+                  <span style="opacity:.7">Records:</span>
+                  <span class="badge" id="recordCountBadge" style="background:#fef3d4;color:#7a5a00">0</span>
+                </div>
+                <div class="right">
+                  <button class="mini-btn" id="btnPrint" title="Print currently visible report">🖨 Print</button>
+                  <button class="mini-btn" id="btnDownloadHtml" title="Download active report as standalone HTML">⬇ HTML</button>
+                  <button class="mini-btn primary" id="btnExpand" title="Open active report in new window">⛶ Expand</button>
+                </div>
+              </div>
+              
+              <div class="cmp-reports-stage" id="reportStage">
+                <div id="reportEmpty" class="report-empty">
+                  <div class="ico">📊</div>
+                  <div><strong>No template selected</strong></div>
+                  <div class="hint">Pick M1–M10 (or All) above and click <strong>ShowR3</strong>, <strong>Generate Dual Report</strong>, or use the section buttons to populate report from live sources.</div>
+                </div>
+                <div id="HtmlText4"  class="report-template" data-cb="cb1Active"></div>
+                <div id="HtmlText9"  class="report-template" data-cb="cb2Active"></div>
+                <div id="HtmlText2"  class="report-template" data-cb="cb3Active"></div>
+                <div id="HtmlText21" class="report-template" data-cb="cb4Active"></div>
+                <div id="HtmlText22" class="report-template" data-cb="cb5Active"></div>
+                <div id="HtmlText17" class="report-template" data-cb="cb6Active"></div>
+                <div id="HtmlText18" class="report-template" data-cb="cb7Active"></div>
+                <div id="HtmlText10" class="report-template" data-cb="cb8Active"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modals & Overlays -->
+    <div class="loader-overlay" id="loader">
+      <div class="loader-spinner"></div>
+      <div class="loader-text" id="loaderText">Working…</div>
+    </div>
+    
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <div class="modal-header"><h3 id="modalTitle">Title</h3><button class="x" id="modalClose">✕</button></div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer" id="modalFooter"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="/js/reports.js"></script>
+  </body>
+</html>

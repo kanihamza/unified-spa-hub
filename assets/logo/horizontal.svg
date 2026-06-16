@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" role="img" aria-label="DGO Digital Ops">
+  <defs>
+    <style>
+      .dgo-word { font-family: 'Outfit', sans-serif; font-weight: 800; fill: #05583B; }
+      .dgo-sub { font-family: 'Inter', sans-serif; font-weight: 600; fill: #373435; }
+    </style>
+  </defs>
+  
+  <text class="dgo-word" x="0" y="40" font-size="44">D</text>
+  
+  <text class="dgo-word" x="32" y="40" font-size="44">G</text>
+  
+  <g transform="translate(86 28)">
+    <circle r="14" fill="none" stroke="#17B255" stroke-width="3.5"></circle>
+    <circle r="4" fill="#05583B"></circle>
+  </g>
+  
+  <text class="dgo-sub" x="116" y="22" font-size="9">DIGITAL</text>
+  <text class="dgo-sub" x="116" y="38" font-size="9">OPS</text>
+  <line x1="116" y1="44" x2="180" y2="44" stroke="#17B255" stroke-width="1.5"></line>
+  <text class="dgo-sub" x="116" y="54" font-size="6" letter-spacing="2">AN INITIATIVE OF NITDA</text>
+</svg>

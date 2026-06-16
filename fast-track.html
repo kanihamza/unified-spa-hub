@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Fast Track Web Ops</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+    <link rel="stylesheet" href="css/fast-track.css">
+  </head>
+  <body>
+    <div class="dgo-shell ft-app">
+      <div class="dgo-split-sidebar">
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main" style="padding: 0;">
+          <div id="dgo-topbar-placeholder" style="flex-shrink: 0; background: var(--bg-primary);"></div>
+          
+          <div class="app-bg"></div>
+
+          <!-- INITIAL EMAIL PROMPT -->
+          <div id="email-prompt-modal">
+            <div class="modal-box">
+              <h3 style="color:var(--brand-primary);margin-bottom:8px;font-size:16px;">Welcome to DGO Digital Ops</h3>
+              <p style="font-size:12px;color:var(--neutral-secondary);margin-bottom:16px;">Please enter your NITDA email address to personalize your experience and set your role.</p>
+              <input id="init-email-input" placeholder="e.g. user@nitda.gov.ng" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;margin-bottom:16px;font-size:14px;" type="email"/>
+              <button onclick="saveUserEmail()" style="width:100%;padding:10px;background:var(--brand-primary);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Continue</button>
+            </div>
+          </div>
+          
+          <!-- LOADING OVERLAY -->
+          <div id="loading-overlay">
+            <div class="spinner"></div>
+            <span id="loading-text" style="color:white;font-weight:600;font-size:12px;">Loading, please wait...</span>
+          </div>
+          
+          <!-- ERROR BANNER -->
+          <div id="error-banner">
+            <span style="font-size:16px;">⚠️</span>
+            <span id="error-message">Failed to load data. Please refresh or contact support.</span>
+            <button onclick="clearError()" style="margin-left:auto;background:none;border:none;color:white;cursor:pointer;font-size:16px;">✕</button>
+          </div>
+          
+          <!-- SUCCESS TOAST -->
+          <div id="success-toast">
+            <span style="font-size:14px;background:white;color:var(--success);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;">✓</span>
+            <span>Saved successfully!</span>
+          </div>
+          
+          <!-- SIDE NAV DRAWER -->
+          <div id="side-nav">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:12px;">
+              <span style="color:white;font-weight:600;font-size:14px;">Navigation</span>
+              <button id="close-nav-btn" onclick="toggleMenu(false)" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
+            </div>
+            <div style="color:rgba(255,255,255,0.7);font-size:10px;margin-bottom:8px;">Logged in as: <br/><span id="nav-user-email" style="color:white;font-weight:bold;"></span></div>
+            <div id="nav-items-container" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;"></div>
+          </div>
+          <div id="side-nav-overlay" onclick="toggleMenu(false)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:8999;"></div>
+          
+          <!-- APP HEADER -->
+          <div id="app-header">
+            <button id="hamburger-btn" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:0 4px;">☰</button><button id="hamburger-filter-btn" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 4px;">⛭</button>
+            <span style="flex:1;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Unified Dashboard — DGO Digital Ops</span>
+            <span id="header-user-info" style="font-size:10px;color:rgba(255,255,255,0.9);display:none;margin-right:10px;"></span>
+            <button id="docs-count-btn" style="background:var(--brand-secondary);color:white;border:none;padding:4px 10px;border-radius:var(--radius);font-size:10px;cursor:pointer;font-weight:bold;white-space:nowrap;">
+                  Docs — <span id="docs-count">0</span>
+            </button>
+            <div style="font-weight:bold;font-size:14px;color:white;margin-left:8px;letter-spacing:1px;background:rgba(0,0,0,0.2);padding:2px 6px;border-radius:4px;">NITDA DGO</div>
+            <span id="header-datetime" style="font-size:10px;color:rgba(255,255,255,0.7);margin-left:8px;white-space:nowrap;display:none;"></span>
+          </div>
+          
+          <!-- ACTION RIBBON -->
+          <div id="action-ribbon"></div>
+          
+          <!-- FILTER BAR -->
+          <div id="filter-bar">
+            <input id="global-search" placeholder="Search across all lists..." style="flex:2;min-width:180px;" type="text"/>
+            <select id="category-filter" style="flex:1;min-width:120px;">
+              <option value="All">All Categories</option>
+            </select>
+            <select id="priority-filter" style="flex:1;min-width:100px;">
+              <option value="All">All Priorities</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          
+          <!-- MAIN BODY -->
+          <div id="main-body" style="height: calc(100vh - 104px);">
+            <!-- LEFT COLUMN -->
+            <div id="col-a">
+              <div class="tab-bar">
+                <button class="tab-btn active" data-tab="matched" onclick="switchTab('matched')">📎 Matched Docs (<span id="count-matched">0</span>)</button>
+                <button class="tab-btn" data-tab="pairs" onclick="switchTab('pairs')">🔗 Doc-Email Pairs (<span id="count-pairs">0</span>)</button>
+                <button class="tab-btn" data-tab="matrix" onclick="switchTab('matrix')">📊 Response Matrix</button>
+              </div>
+              <div class="gallery-container" id="col-a-content"></div>
+            </div>
+            
+            <!-- RIGHT COLUMN -->
+            <div id="col-b">
+              <!-- Standard Detail Header -->
+              <div id="doc-header" style="background:rgba(5,88,59,0.08);padding:10px 12px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--neutral-light);min-height:52px;">
+                <button id="back-to-list-btn" onclick="clearSelection()" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span id="doc-title" style="font-weight:600;font-size:12px;color:var(--neutral-primary);"></span>
+                  <div id="doc-meta" style="font-size:9px;color:var(--neutral-secondary);"></div>
+                </div>
+                <span class="status-badge" id="doc-status-badge"></span>
+              </div>
+              
+              <!-- Email search (only for matched docs or matrix) -->
+              <div id="email-search-bar" style="padding:8px 12px;display:none;background:white;border-bottom:1px solid #f0f0f0;">
+                <input id="email-search" placeholder="Search emails (subject/body)" style="width:100%;border:1px solid var(--brand-secondary);border-radius:var(--radius);padding:8px;font-size:10px;background:var(--text-input-fill);outline:none;" type="text"/>
+              </div>
+              
+              <!-- Sub-Tabs for Matrix mode -->
+              <div class="tab-bar" id="matrix-sub-tabs" style="display:none;background:#FAFAFA;">
+                <button class="tab-btn active" id="tab-matrix-emails" onclick="switchMatrixTab('emails')">📧 Matching Emails</button>
+                <button class="tab-btn" id="tab-matrix-tasks" onclick="switchMatrixTab('tasks')">✅ Related Tasks</button>
+              </div>
+              
+              <!-- Scrollable content area for details -->
+              <div class="gallery-container" id="detail-content-area" style="background:var(--bg-secondary);position:relative;">
+                <div id="matching-emails-gallery" style="display:none;padding-bottom:16px;"></div>
+                <div id="related-tasks-gallery" style="display:none;padding:8px;"></div>
+                <!-- Empty detail state -->
+                <div class="empty-state" id="detail-empty-state">
+                  <h4>No Item Selected</h4>
+                  <p>Select an item from the list to view details.</p>
+                </div>
+              </div>
+              
+              <!-- Email detail pane (Mobile or overlay mode) -->
+              <div id="email-detail-panel" style="display:none;position:absolute;inset:0;background:white;z-index:50;flex-direction:column;">
+                <div style="background:rgba(5,88,59,0.08);padding:10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--neutral-light);">
+                  <button id="close-email-btn" onclick="closeEmailDetail()" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                    <span id="email-detail-subject" style="font-weight:600;font-size:12px;color:var(--brand-primary);"></span>
+                    <span id="email-detail-meta" style="font-size:10px;color:var(--neutral-secondary);"></span>
+                  </div>
+                </div>
+                <div id="email-detail-body" style="flex:1;overflow-y:auto;padding:12px;font-size:13px;background:white;"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- TELEMETRY PANEL -->
+          <div id="telemetry-panel" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:600;font-size:12px;color:var(--brand-primary);">Action Telemetry &amp; Performance</div>
+              <button onclick="toggleTelemetry()" style="background:none;border:none;color:var(--neutral-secondary);cursor:pointer;font-size:16px;">✕</button>
+            </div>
+            <div id="telemetry-no-data" style="font-size:10px;color:var(--neutral-secondary);">No telemetry yet. Run an action to populate metrics.</div>
+            <div id="telemetry-content" style="display:none;">
+              <table class="telemetry-table">
+                <thead>
+                  <tr><th>Timestamp</th><th>Action</th><th>Step</th><th>Status</th><th>Duration</th><th>Message</th></tr>
+                </thead>
+                <tbody id="telemetry-tbody"></tbody>
+              </table>
+              <div id="telemetry-chart" style="margin-top:12px;"></div>
+              <div style="display:flex;gap:16px;font-size:9px;color:#2D3748;margin-top:8px;"><div><span style="display:inline-block;width:12px;height:12px;background:var(--brand-primary);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Duration (ms)</div><div><span style="display:inline-block;width:12px;height:12px;background:var(--brand-secondary);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Runs</div></div>
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="/js/fast-track.js"></script>
+  </body>
+</html>

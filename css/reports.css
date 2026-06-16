@@ -1,0 +1,97 @@
+/* ============================================================
+   DGO v2.2 — Reports Component Styles (Harmonized)
+   Over opinionated root variables removed. Integrates with tokens.
+   ============================================================ */
+
+.app-screen-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--dgo-color-surface-sunken);
+  border: 1px solid var(--dgo-color-border-default);
+  border-radius: var(--dgo-radius-card);
+  overflow: hidden;
+}
+
+.cmp-screen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--dgo-color-surface-inverse);
+  color: var(--dgo-color-fg-on-brand);
+  height: 52px;
+  padding-inline: var(--dgo-s-4);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+}
+
+.cmp-screen-header .brand {
+  display: flex;
+  align-items: center;
+  gap: var(--dgo-s-3);
+  font-weight: var(--dgo-wt-700);
+}
+
+.cmp-screen-header .brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--dgo-radius-circle);
+  background: var(--dgo-color-action-accent);
+  color: var(--dgo-color-fg-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cmp-status-label {
+  padding: var(--dgo-s-3) var(--dgo-s-4);
+  background: var(--dgo-color-surface-raised);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  font-size: var(--dgo-type-body-sm);
+}
+
+.cmp-tag-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dgo-s-2);
+  padding: var(--dgo-s-3);
+  background: var(--dgo-color-surface-raised);
+  border: 1px solid var(--dgo-color-border-default);
+  border-radius: var(--dgo-radius-control);
+  margin: var(--dgo-s-3);
+}
+
+.cmp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dgo-s-3);
+  padding: var(--dgo-s-3);
+  background: var(--dgo-color-surface-raised);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+}
+
+.cmp-reports-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--dgo-color-surface-raised);
+  margin: var(--dgo-s-3);
+  border-radius: var(--dgo-radius-card);
+  border: 1px solid var(--dgo-color-border-default);
+  overflow: hidden;
+}
+
+.cmp-reports-toolbar {
+  padding: var(--dgo-s-3);
+  background: var(--dgo-color-surface-sunken);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cmp-reports-stage {
+  flex: 1;
+  overflow: auto;
+  padding: var(--dgo-s-4);
+  background: var(--dgo-color-surface-sunken);
+}

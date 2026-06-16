@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Verification &amp; Acknowledgement</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-centered" style="min-height: calc(100vh - var(--dgo-topbar-h)); padding: var(--dgo-s-6);">
+            
+            <div class="dgo-stack dgo-stack--4" style="max-width: 580px; width: 100%;">
+              
+              <!-- Manual task loader card if no id provided in url -->
+              <div class="dgo-card dgo-stack dgo-stack--4" id="manual-verifier-card" style="display: none;">
+                <div style="text-align: center;" class="dgo-stack dgo-stack--2">
+                  <svg style="width:48px; height:48px; color: var(--dgo-color-action-primary); stroke-width:1.2; margin: 0 auto;"><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
+                  <h3 class="dgo-h3">Operational Verification Portal</h3>
+                  <p class="dgo-body text-muted">Acknowledge assignments instantly to meet SLA standing guidelines. Type your assigned Task ID below to begin verification.</p>
+                </div>
+
+                <div class="dgo-form-group">
+                  <label for="input-task-id" class="dgo-label">Task Reference Identifier (TSK)</label>
+                  <input type="text" id="input-task-id" class="dgo-input" placeholder="e.g., TSK-88124" style="text-align: center; font-family: var(--dgo-family-mono); font-size: 16px; font-weight:700;">
+                </div>
+
+                <button class="dgo-btn dgo-btn--lg dgo-btn--primary" id="btn-verify-task-manual">
+                  <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-check"></use></svg>
+                  <span>Verify Task Receipt</span>
+                </button>
+              </div>
+
+              <!-- Active verification success target card -->
+              <div class="dgo-card dgo-stack dgo-stack--4" id="active-ack-card" style="display: none; border-top: 4px solid var(--dgo-color-action-accent);">
+                
+                <!-- Headline Header -->
+                <div class="dgo-cluster dgo-cluster--between" style="border-bottom: 1px solid var(--dgo-color-border-default); padding-bottom: var(--dgo-s-3);">
+                  <div class="dgo-stack dgo-stack--0">
+                    <span class="dgo-overline">Task Receipt Verification Target</span>
+                    <code style="font-size: 14px; font-weight: 700; background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius:4px;" id="ack-task-ref">TSK-xxxxx</code>
+                  </div>
+                  <span class="dgo-badge dgo-badge--pending" id="ack-task-badge">PENDING RECEIPT</span>
+                </div>
+
+                <!-- Main attributes body mapping -->
+                <div class="dgo-stack dgo-stack--4">
+                  <div class="dgo-stack dgo-stack--1">
+                    <span class="dgo-overline">Standing Directive Subject</span>
+                    <p class="dgo-body-sm text-strong" style="font-size: 15px;" id="ack-task-title">---</p>
+                  </div>
+
+                  <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3); border-top:1px dashed var(--dgo-color-border-default); padding-top:var(--dgo-s-3);">
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Lead Assignee Officer</span>
+                      <strong id="ack-task-officer">---</strong>
+                    </div>
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Dossier Association Reference</span>
+                      <code style="background:var(--dgo-color-surface-sunken); padding:1px 4px; border-radius:3px; max-width:fit-content; font-size:11px;" id="ack-doc-ref">DOC-xxxx</code>
+                    </div>
+                  </div>
+
+                  <div class="dgo-stack dgo-stack--1" style="background:var(--dgo-color-surface-sunken); padding:var(--dgo-s-3); border-radius:var(--dgo-r-md); border-left:3px solid var(--dgo-color-border-brand);">
+                    <span class="dgo-overline" style="margin-bottom:var(--dgo-s-1);">DG Mandated Instruction Text</span>
+                    <p id="ack-task-directives" class="dgo-body-sm" style="font-style:italic; line-height:1.4;">"---"</p>
+                  </div>
+
+                  <div class="dgo-stack dgo-stack--1" id="ack-progress-box" style="display:none;">
+                    <span class="dgo-overline">Initial Review Progress Completed</span>
+                    <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap;">
+                      <span style="font-family:var(--dgo-family-mono); font-weight:700;" id="ack-progress-val">10%</span>
+                      <div style="flex:1; height:6px; background:var(--dgo-color-border-default); border-radius:10px; overflow:hidden;">
+                        <div style="width:10%; height:100%; background:var(--dgo-color-action-accent); border-radius:inherit;" id="ack-progress-bar"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dynamic trigger actions segment -->
+                <div style="border-top:1px solid var(--dgo-color-border-default); padding-top:var(--dgo-s-4); text-align:center;">
+                  <button class="dgo-btn dgo-btn--lg dgo-btn--primary" id="btn-submit-ack" style="width:100%;">
+                    <svg style="width:18px; height:18px;"><use href="assets/icons/sprite.svg#i-check"></use></svg>
+                    <span>Acknowledge Official Receipt</span>
+                  </button>
+                  
+                  <div id="ack-success-notes" style="display:none;" class="dgo-stack dgo-stack--2 text-center text-success">
+                    <p style="font-weight:700; font-size: 14px; display:inline-flex; align-items:center; justify-content:center; gap: 6px; margin: 0 auto;">
+                      <svg style="width:18px; height:18px; stroke: currentColor;"><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
+                      <span>Task Acknowledged Successfully!</span>
+                    </p>
+                    <p class="dgo-caption text-muted">Verification logged. Initial draft response window has commenced under guidelines schedules.</p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Bootstrap navigation with no specific highlighting (as we are a standalone target)
+        window.Chrome.bootstrap('tasks');
+
+        let tasks = [];
+        let officers = [];
+        let activeTask = null;
+
+        // Fetch URL query parameter: tasks link `ack.html?taskId=TSK-88124`
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('taskId');
+
+        try {
+          // Synchronize core officer databases
+          const refs = await window.Lookups.loadReferences();
+          officers = refs.officers || [];
+
+          const response = await window.API.callPA('E04', {});
+          tasks = response?.records || [];
+
+          if (taskId) {
+            verifyAndRenderTaskId(taskId);
+          } else {
+            document.getElementById('manual-verifier-card').style.display = 'block';
+          }
+        } catch(err) {
+          window.Chrome.showToast('Failed to load validation registries.', 'error');
+        }
+
+        // Action on manual form verifier button
+        document.getElementById('btn-verify-task-manual').addEventListener('click', () => {
+          const rawId = document.getElementById('input-task-id').value.trim();
+          if (!rawId) {
+            window.Chrome.showToast('Please type a task identifier.', 'warning');
+            return;
+          }
+          verifyAndRenderTaskId(rawId);
+        });
+
+        function verifyAndRenderTaskId(id) {
+          const found = tasks.find(t => t.id.toUpperCase() === id.toUpperCase());
+          if (!found) {
+            window.Chrome.showToast('Task Identifier not found under active register stream.', 'error');
+            document.getElementById('manual-verifier-card').style.display = 'block';
+            document.getElementById('active-ack-card').style.display = 'none';
+            return;
+          }
+
+          activeTask = found;
+          document.getElementById('manual-verifier-card').style.display = 'none';
+          document.getElementById('active-ack-card').style.display = 'block';
+
+          // Populating targets
+          document.getElementById('ack-task-ref').textContent = found.id;
+          document.getElementById('ack-task-title').textContent = found.title;
+          document.getElementById('ack-doc-ref').textContent = found.documentId;
+          document.getElementById('ack-task-directives').textContent = found.directives || 'Directives not detailed.';
+
+          const assigneeOfficer = officers.find(o => o.id === found.assignee);
+          document.getElementById('ack-task-officer').textContent = assigneeOfficer ? assigneeOfficer.name : found.assignee;
+
+          // Adjust state display based on current task status
+          updateVisualState();
+        }
+
+        function updateVisualState() {
+          const badge = document.getElementById('ack-task-badge');
+          const btn = document.getElementById('btn-submit-ack');
+          const successDiv = document.getElementById('ack-success-notes');
+          const progressDiv = document.getElementById('ack-progress-box');
+
+          if (activeTask.status === 'PENDING') {
+            badge.className = 'dgo-badge dgo-badge--pending';
+            badge.textContent = 'PENDING RECEIPT';
+            btn.style.display = 'inline-flex';
+            successDiv.style.display = 'none';
+            progressDiv.style.display = 'none';
+          } else {
+            // Already acknowledged or completed
+            badge.className = 'dgo-badge dgo-badge--routed';
+            badge.textContent = activeTask.status === 'COMPLETED' ? 'COMPLETED' : 'ACKNOWLEDGED / REVIEWING';
+            btn.style.display = 'none';
+            successDiv.style.display = 'block';
+            
+            progressDiv.style.display = 'block';
+            document.getElementById('ack-progress-val').textContent = `${activeTask.progress}%`;
+            document.getElementById('ack-progress-bar').style.width = `${activeTask.progress}%`;
+          }
+        }
+
+        // Submit acknowledgement callback
+        document.getElementById('btn-submit-ack').addEventListener('click', async () => {
+          if (!activeTask) return;
+
+          try {
+            window.Chrome.showToast('Acknowledging receipt directly in Power Automate...');
+            
+            // Call E05 status update with ACK defaults (10% progress, ROUTED status)
+            const payload = {
+              taskId: activeTask.id,
+              progress: 10,
+              status: 'ROUTED',
+              notes: 'Receipt of executive directive verified and acknowledged by lead executor. Review in progress.'
+            };
+
+            const response = await window.API.callPA('E05', payload);
+            if (response.success) {
+              window.Chrome.showToast('Acknowledgement receipt logged!', 'success');
+              
+              // Apply update to memory
+              activeTask.progress = 10;
+              activeTask.status = 'ROUTED';
+              activeTask.lastUpdateNotes = payload.notes;
+
+              // Apply update to shared localStorage database
+              const stored = window.API.getStoredTasks();
+              const idx = stored.findIndex(t => t.id === activeTask.id);
+              if (idx !== -1) {
+                stored[idx].progress = 10;
+                stored[idx].status = 'ROUTED';
+                stored[idx].lastUpdateNotes = payload.notes;
+                stored[idx].updatedAt = new Date().toISOString();
+                window.API.saveStoredTasks(stored);
+              }
+
+              // Update visuals
+              updateVisualState();
+            } else {
+              window.Chrome.showToast('Operational gateway rejected acknowledgement.', 'error');
+            }
+          } catch(err) {
+            window.Chrome.showToast('Failed to route ACK transaction.', 'error');
+          }
+        });
+
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+/* ============================================================
+   DGO v2.2 — Offline Native Layout & Grid Tokens
+   ============================================================ */
+
+.tracker-app {
+  display: flex;
+  background-color: var(--dgo-color-surface-sunken);
+  color: var(--dgo-color-fg-default);
+  font-family: var(--dgo-family-sans);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar Styling */
+.tracker-app aside {
+  width: var(--dgo-sidebar-w);
+  background-color: var(--dgo-color-surface-inverse);
+  color: var(--dgo-color-fg-on-brand);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--dgo-color-border-default);
+}
+
+.tracker-app .nav-btn {
+  background: transparent;
+  color: var(--dgo-color-fg-on-brand);
+  padding: var(--dgo-s-3) var(--dgo-s-4);
+  border-radius: var(--dgo-radius-control);
+  text-align: left;
+  font-weight: var(--dgo-wt-600);
+  transition: background var(--dgo-motion-state);
+  display: flex;
+  align-items: center;
+  gap: var(--dgo-s-3);
+  width: 100%;
+}
+
+.tracker-app .nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.tracker-app .nav-btn.active {
+  background-color: var(--dgo-color-action-accent);
+  color: var(--dgo-white);
+}
+
+/* Main Content Grid */
+.tracker-app main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tracker-app header {
+  height: var(--dgo-topbar-h);
+  background-color: var(--dgo-color-surface-raised);
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--dgo-s-6);
+}
+
+/* KPI Metrics Row */
+.tracker-app .stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--dgo-s-4);
+  padding: var(--dgo-s-6);
+}
+
+.tracker-app .stat-card {
+  background-color: var(--dgo-color-surface-raised);
+  border: 1px solid var(--dgo-color-border-default);
+  border-radius: var(--dgo-radius-card);
+  padding: var(--dgo-s-5);
+  box-shadow: var(--dgo-elevation-card);
+}
+
+@media (max-width: 960px) {
+  .tracker-app .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .tracker-app {
+    flex-direction: column;
+  }
+  .tracker-app aside {
+    width: 100%;
+    height: auto;
+  }
+  .tracker-app .stats-row {
+    grid-template-columns: 1fr;
+  }
+}

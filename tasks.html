@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Task Tracker</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+            
+            <!-- Page Header -->
+            <div class="dgo-cluster dgo-cluster--between">
+              <div class="dgo-stack dgo-stack--1">
+                <h2 class="dgo-h2">Action Tasks Ledger</h2>
+                <p class="dgo-body text-muted">Acknowledge assignments, update progress meters, and submit feedback comments.</p>
+              </div>
+              <button id="btn-sync-tasks" class="dgo-btn dgo-btn--md dgo-btn--outline" style="height:36px;">
+                <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
+                <span>Synchronize</span>
+              </button>
+            </div>
+
+            <!-- Header Filter segment bar -->
+            <div class="dgo-card dgo-cluster dgo-cluster--density">
+              <div class="dgo-form-group" style="width: 250px;">
+                <label for="task-status-filter" class="dgo-label">Completion Status</label>
+                <select id="task-status-filter" class="dgo-select" style="height:36px;">
+                  <option value="">All Statuses</option>
+                  <option value="PENDING">Pending Action (0%)</option>
+                  <option value="ROUTED">Routed In-Progress</option>
+                  <option value="COMPLETED">Completed (100%)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Split Section -->
+            <div class="dgo-split-interactive">
+              <!-- Left list -->
+              <div class="dgo-card dgo-stack dgo-stack--3">
+                <span class="dgo-body-sm text-strong" id="tasks-count-text">0 action items identified</span>
+
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Task ID</th>
+                        <th>Directive / Owner</th>
+                        <th>Progress</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tasks-tbody">
+                      <tr>
+                        <td colspan="4" style="text-align: center; color: var(--dgo-color-fg-subtle);">Fetching assignments stream...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right Detail card -->
+              <div class="dgo-card dgo-stack dgo-stack--4" id="task-details-pane">
+                <div class="dgo-centered dgo-stack dgo-stack--2" style="min-height: 240px; color: var(--dgo-color-fg-subtle);">
+                  <svg style="width:40px; height:40px; stroke-width: 1.2;"><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
+                  <p class="dgo-body-sm">Select any assignment task record to review executive directives, check completion statuses, or log updates.</p>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modal Dialog: Update task progress status E05 -->
+    <div class="dgo-modal-overlay" id="modal-task-progress-overlay">
+      <div class="dgo-modal">
+        <div class="dgo-modal__header">
+          <h3 class="dgo-modal__title">Update Activity Progress</h3>
+          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" onclick="closeProgressModal()">
+            <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-close"></use></svg>
+          </button>
+        </div>
+        
+        <div class="dgo-modal__body dgo-stack dgo-stack--4">
+          <p class="dgo-body-sm">Updates flag action accomplishments immediate in Power Automate and trigger Slack/Teams alerts to directors.</p>
+          
+          <div class="dgo-form-group">
+            <label for="frm-prog-val" class="dgo-label dgo-label--required">Progress Completion Percent (%)</label>
+            <div style="display: flex; align-items: center; gap: var(--dgo-s-4);">
+              <input type="range" id="frm-prog-range" min="0" max="100" step="5" class="dgo-spacer" style="cursor: pointer; accent-color: var(--dgo-color-action-primary);">
+              <input type="number" id="frm-prog-val" class="dgo-input" style="width:80px; text-align:center;" min="0" max="100" required>
+            </div>
+          </div>
+
+          <div class="dgo-form-group">
+            <label for="frm-status-val" class="dgo-label dgo-label--required">Task Completion State</label>
+            <select id="frm-status-val" class="dgo-select" required>
+              <option value="PENDING">PENDING (Unacknowledged)</option>
+              <option value="ROUTED">ROUTED (In-Progress)</option>
+              <option value="COMPLETED">COMPLETED (Approved / Resolved)</option>
+            </select>
+          </div>
+
+          <div class="dgo-form-group">
+            <label for="frm-notes-val" class="dgo-label dgo-label--required">Operational Update comments</label>
+            <textarea id="frm-notes-val" class="dgo-textarea" placeholder="Detail active milestones completed, hurdles solved, or results..." required></textarea>
+          </div>
+        </div>
+
+        <div class="dgo-modal__footer">
+          <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="closeProgressModal()">Cancel</button>
+          <button class="dgo-btn dgo-btn--md dgo-btn--primary" id="btn-submit-task-update">Commit Update</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('tasks');
+
+        let tasks = [];
+        let selectedTask = null;
+        let closeTrapFn = null;
+
+        // Fetch tasks list E04
+        async function fetchAndRender() {
+          try {
+            const status = document.getElementById('task-status-filter').value;
+            document.getElementById('tasks-tbody').innerHTML = `
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--dgo-color-fg-subtle);">Fetching fresh assignments stream...</td>
+              </tr>
+            `;
+
+            const response = await window.API.callPA('E04', { status });
+            tasks = response?.records || [];
+
+            document.getElementById('tasks-count-text').textContent = `${tasks.length} action items identified`;
+            renderGrid();
+          } catch(err) {
+            window.Chrome.showToast('Failed to load assignments.', 'error');
+          }
+        }
+
+        function renderGrid() {
+          const tbody = document.getElementById('tasks-tbody');
+          if (tasks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--dgo-color-fg-subtle);">No matching assignments active.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = tasks.map(t => {
+            const officers = window.Lookups.getOfficers();
+            const officer = officers.find(o => o.id === t.assignee);
+            return `
+              <tr class="task-row" data-id="${t.id}" style="cursor: pointer;">
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${t.id}</code></td>
+                <td>
+                  <div class="dgo-stack dgo-stack--0">
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${t.title}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${officer ? officer.name : t.assignee}</span>
+                  </div>
+                </td>
+                <td style="vertical-align: middle;">
+                  <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap;">
+                    <span style="font-family: var(--dgo-family-mono); font-size: 11px; width: 36px; text-align:right;">${t.progress}%</span>
+                    <div style="flex:1; height: 6px; background: var(--dgo-color-border-default); border-radius: 9px; overflow:hidden; min-width: 60px;">
+                      <div style="width: ${t.progress}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${t.priority}</span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          // Click handler
+          tbody.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+              const id = row.getAttribute('data-id');
+              const found = tasks.find(t => t.id === id);
+              if (found) selectTask(found);
+            });
+          });
+        }
+
+        // Render Side details panel
+        function selectTask(t) {
+          selectedTask = t;
+
+          document.querySelectorAll('.task-row').forEach(row => {
+            if (row.getAttribute('data-id') === t.id) {
+              row.style.background = 'var(--dgo-green-50)';
+            } else {
+              row.style.background = '';
+            }
+          });
+
+          const pane = document.getElementById('task-details-pane');
+          const officers = window.Lookups.getOfficers();
+          const pOfficer = officers.find(o => o.id === t.assignee);
+          const cOfficer = officers.find(o => o.id === t.coAssignee);
+          
+          const cats = window.Lookups.getCategories();
+          const category = cats.find(c => c.code === t.category);
+
+          pane.innerHTML = `
+            <div class="dgo-stack dgo-stack--4">
+              <!-- Header -->
+              <div class="dgo-cluster dgo-cluster--between">
+                <h3 class="dgo-h4">Activity Directives</h3>
+                <span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : (t.status === 'ROUTED' ? 'routed' : 'pending')}">${t.status}</span>
+              </div>
+
+              <!-- Ref -->
+              <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-3);">
+                <div class="dgo-stack dgo-stack--0">
+                  <span class="dgo-overline">Task Reference</span>
+                  <code style="font-size:13px; font-weight:600; background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${t.id}</code>
+                </div>
+                <div class="dgo-stack dgo-stack--0" style="text-align:right;">
+                  <span class="dgo-overline">Dossier Association</span>
+                  <a class="dgo-link text-strong" style="font-family: var(--dgo-family-mono); font-size:12px;" href="docs.html">${t.documentId}</a>
+                </div>
+              </div>
+
+              <div class="dgo-stack dgo-stack--1">
+                <span class="dgo-overline">Directives Title</span>
+                <p class="dgo-body-sm text-strong">${t.title}</p>
+              </div>
+
+              <div class="dgo-stack dgo-stack--1">
+                <span class="dgo-overline">Process Class</span>
+                <p class="dgo-body-sm">${category ? category.name : t.category}</p>
+              </div>
+
+              <div class="dgo-grid dgo-grid--2" style="font-size: var(--dgo-type-body-sm); gap: var(--dgo-s-3);">
+                <div class="dgo-stack dgo-stack--1">
+                  <span class="dgo-overline">Lead Assignee</span>
+                  <span class="text-strong">${pOfficer ? pOfficer.name : t.assignee}</span>
+                </div>
+                <div class="dgo-stack dgo-stack--1">
+                  <span class="dgo-overline">Co-Assignee</span>
+                  <span class="text-muted">${cOfficer ? cOfficer.name : (t.coAssignee || 'None')}</span>
+                </div>
+              </div>
+
+              <div class="dgo-stack dgo-stack--1">
+                <span class="dgo-overline">Carbon Copy Watch (CC)</span>
+                <span class="text-muted">${t.cc && t.cc.length > 0 ? t.cc.join(', ') : 'None'}</span>
+              </div>
+
+              <div class="dgo-stack dgo-stack--1" style="background:var(--dgo-color-surface-sunken); padding: var(--dgo-s-3); border-radius: var(--dgo-radius-control); border-left: 3px solid var(--dgo-color-border-brand);">
+                <span class="dgo-overline" style="margin-bottom:var(--dgo-s-1);">DG Standing Mandate</span>
+                <p class="dgo-body-sm" style="font-style:italic; white-space:pre-wrap; line-height:1.4;">"${t.directives || 'No directives recorded.'}"</p>
+              </div>
+
+              <div class="dgo-stack dgo-stack--1">
+                <span class="dgo-overline">Milestone Completion Progress</span>
+                <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap;">
+                  <span style="font-family:var(--dgo-family-mono); font-weight:700; font-size:15px; width:40px;">${t.progress}%</span>
+                  <div style="flex:1; height: 8px; background: var(--dgo-color-border-default); border-radius: 9px; overflow:hidden;">
+                    <div style="width: ${t.progress}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                  </div>
+                </div>
+              </div>
+
+              ${t.lastUpdateNotes ? `
+                <div class="dgo-stack dgo-stack--1" style="border-top:1px dashed var(--dgo-color-border-default); padding-top:var(--dgo-s-3);">
+                  <span class="dgo-overline">Latest Owner Log comments</span>
+                  <p class="dgo-body-sm text-muted" style="white-space:pre-wrap;">"${t.lastUpdateNotes}"</p>
+                  <span class="dgo-caption" style="font-size:10px;">Submitted: ${new Date(t.updatedAt).toLocaleString()}</span>
+                </div>
+              ` : ''}
+
+              <!-- Action button -->
+              <div style="border-top:1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4); margin-top:var(--dgo-s-2);">
+                <button class="dgo-btn dgo-btn--md dgo-btn--primary" style="width:100%;" onclick="window.openProgressModal()">
+                  <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg>
+                  <span>Update Progress / Comments</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        // Progress Modal controllers
+        const modal = document.getElementById('modal-task-progress-overlay');
+        const range = document.getElementById('frm-prog-range');
+        const num = document.getElementById('frm-prog-val');
+
+        range.addEventListener('input', (e) => {
+          num.value = e.target.value;
+        });
+        num.addEventListener('input', (e) => {
+          range.value = e.target.value;
+        });
+
+        window.openProgressModal = () => {
+          document.getElementById('frm-prog-range').value = selectedTask.progress;
+          document.getElementById('frm-prog-val').value = selectedTask.progress;
+          document.getElementById('frm-status-val').value = selectedTask.status;
+          document.getElementById('frm-notes-val').value = selectedTask.lastUpdateNotes || '';
+
+          modal.classList.add('dgo-modal-overlay--active');
+          closeTrapFn = window.A11y.trapFocus(modal.querySelector('.dgo-modal'));
+        };
+
+        window.closeProgressModal = () => {
+          modal.classList.remove('dgo-modal-overlay--active');
+          if (closeTrapFn) {
+            closeTrapFn();
+            closeTrapFn = null;
+          }
+        };
+
+        // Submit update E05 trigger
+        document.getElementById('btn-submit-task-update').addEventListener('click', async () => {
+          const notes = document.getElementById('frm-notes-val').value;
+          if (!notes) {
+            window.Chrome.showToast('Please provide operational comments.', 'warning');
+            return;
+          }
+
+          try {
+            window.Chrome.showToast('Triggering Task Update...');
+            const progress = parseInt(num.value);
+            const status = document.getElementById('frm-status-val').value;
+
+            const payload = {
+              taskId: selectedTask.id,
+              progress,
+              status,
+              notes
+            };
+
+            const response = await window.API.callPA('E05', payload);
+            if (response.success) {
+              window.Chrome.showToast('Progress updated successfully!', 'success');
+              closeProgressModal();
+
+              // Local cache updates
+              selectedTask.progress = progress;
+              selectedTask.status = status;
+              selectedTask.lastUpdateNotes = notes;
+              selectedTask.updatedAt = new Date().toISOString();
+
+              const stored = window.API.getStoredTasks();
+              const idx = stored.findIndex(t => t.id === selectedTask.id);
+              if (idx !== -1) {
+                stored[idx].progress = progress;
+                stored[idx].status = status;
+                stored[idx].lastUpdateNotes = notes;
+                stored[idx].updatedAt = selectedTask.updatedAt;
+                window.API.saveStoredTasks(stored);
+              }
+
+              // Re-render
+              renderGrid();
+              selectTask(selectedTask);
+            } else {
+              window.Chrome.showToast('Gateway rejected progress update.', 'error');
+            }
+          } catch(err) {
+            window.Chrome.showToast(err.message, 'error');
+          }
+        });
+
+        // Event hooks
+        document.getElementById('task-status-filter').addEventListener('change', fetchAndRender);
+        document.getElementById('btn-sync-tasks').addEventListener('click', fetchAndRender);
+
+        // Initial loading loop
+        await fetchAndRender();
+      });
+    </script>
+  </body>
+</html>

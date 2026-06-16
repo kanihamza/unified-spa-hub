@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" role="img" aria-label="DGO Digital Ops white-out">
+  <rect width="220" height="56" fill="#05583B"></rect>
+  <defs>
+    <style>
+      .w { font-family: 'Outfit', sans-serif; font-weight: 800; fill: #FFFFFF; }
+      .s { font-family: 'Inter', sans-serif; font-weight: 600; fill: #FFFFFF; }
+    </style>
+  </defs>
+  <text class="w" x="14" y="40" font-size="44">D</text>
+  <text class="w" x="46" y="40" font-size="44">G</text>
+  <g transform="translate(100 28)"><circle r="14" fill="none" stroke="#17B255" stroke-width="3.5"></circle><circle r="4" fill="#FFFFFF"></circle></g>
+  <text class="s" x="130" y="22" font-size="9">DIGITAL</text>
+  <text class="s" x="130" y="38" font-size="9">OPS</text>
+  <line x1="130" y1="44" x2="200" y2="44" stroke="#17B255" stroke-width="1.5"></line>
+  <text class="s" x="130" y="54" font-size="6" letter-spacing="2">AN INITIATIVE OF NITDA</text>
+</svg>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NITDA Response Matrix | Enterprise Governance</title>
+    <!-- Visual Tailwind CDN neutralized for secure offline-first operations -->
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+    <link rel="stylesheet" href="css/response-matrix.css">
+    <style>
+        .dgo-shell * {
+            box-sizing: border-box;
+        }
+        /* Overrides tailwind reset where it conflicts with dgo shell visually */
+        .dgo-shell {
+            background-color: var(--dgo-color-bg-base);
+            color: var(--dgo-color-fg-base);
+        }
+    </style>
+</head>
+<body class="bg-[#f0f2f5] text-gray-900 font-sans">
+    <div class="dgo-shell">
+        <div class="dgo-split-sidebar">
+            <!-- Sidebar Shell Harness -->
+            <div id="dgo-sidebar-placeholder"></div>
+
+            <main class="dgo-main">
+                <!-- Topbar Utility Harness -->
+                <div id="dgo-topbar-placeholder"></div>
+
+                <div class="dgo-content-viewport dgo-stack dgo-stack--4" style="height: 100vh; overflow-y: auto;">
+                    <div id="notification" class="fixed top-24 right-6 z-[1000] hidden px-6 py-4 rounded-xl shadow-2xl border-l-8 text-white font-bold backdrop-blur-md"></div>
+
+                    <div class="max-w-7xl mx-auto p-4 lg:p-8" style="width: 100%;">
+                        <div class="flex justify-between items-center mb-8">
+                            <div class="dgo-stack dgo-stack--1">
+                                <h1 class="dgo-h2">Response Matrix</h1>
+                                <p class="dgo-body text-muted uppercase tracking-widest text-[10px] font-bold">Enterprise Registry & Decision Hub</p>
+                            </div>
+                            <button onclick="syncData()" class="dgo-btn dgo-btn--md dgo-btn--outline">
+                                <svg style="width: 16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
+                                <span>Full Matrix Sync</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Total Items</p>
+                                <h3 class="text-2xl font-black text-gray-800" id="stat-total">0</h3>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 border-l-4 border-l-red-500">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Overdue</p>
+                                <h3 class="text-2xl font-black text-red-600" id="stat-overdue">0</h3>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Awaiting Action</p>
+                                <h3 class="text-2xl font-black text-yellow-600" id="stat-pending">0</h3>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 border-l-4 border-l-green-500">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Completed</p>
+                                <h3 class="text-2xl font-black text-green-600" id="stat-completed">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">System Telemetry & Controls</h3>
+                                <div class="flex gap-4">
+                                    <label class="text-[10px] font-bold uppercase"><input type="checkbox" id="ctrlUnread" checked class="mr-1">Unread Emails</label>
+                                    <select id="ctrlFolder" class="text-[10px] border rounded px-2"><option value="Inbox">Inbox</option><option value="Archive">Archive</option></select>
+                                    <input type="number" id="ctrlTop" value="50" class="text-[10px] border rounded px-2 w-16" title="Top N">
+                                </div>
+                            </div>
+                            <canvas id="telemetryCanvas"></canvas>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-wrap gap-6 items-end">
+                            <div class="flex-1 min-w-[300px]">
+                                <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Global Matrix Search</label>
+                                <div class="relative">
+                                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search Ref ID, Task Title, Assigned Officer..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition font-medium">
+                                </div>
+                            </div>
+                            <div class="w-64">
+                                <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Classification</label>
+                                <select id="categoryFilter" onchange="applyFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+                            <div class="w-64">
+                                <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Status</label>
+                                <select id="statusFilter" onchange="applyFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending">Pending/Active</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="overdue">Overdue</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Trace ID</th>
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Execution Node (Task)</th>
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Executor</th>
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">SLA Health</th>
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Governance</th>
+                                            <th class="p-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="matrixTableBody" class="divide-y divide-gray-50">
+                                        <tr><td colspan="6" class="p-20 text-center text-gray-400 font-bold uppercase tracking-widest">Click "Sync" to load movement records...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="ackModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[2000] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200">
+            <h3 class="font-black text-lg text-teal-800 mb-2 uppercase">Acknowledge Task</h3>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Execution Notes</label>
+            <textarea id="ackNotes" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none mb-4" rows="3" placeholder="Enter acknowledgment notes..."></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeAckModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-xs uppercase">Cancel</button>
+                <button onclick="submitAck()" class="px-4 py-2 bg-teal-600 text-white rounded-lg font-bold text-xs uppercase shadow-lg">Confirm Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="matrixModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-6xl h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden border border-white/20">
+            <div class="p-6 border-b flex justify-between items-center nitda-gradient text-white">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">📋</div>
+                    <div>
+                        <h2 class="text-xl font-black uppercase tracking-tight" id="modalTitle">File Matrix Trace</h2>
+                        <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest" id="modalRef">REF: ---</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/20 text-2xl transition">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+                <div class="w-full lg:w-80 p-8 bg-gray-50 border-r overflow-y-auto">
+                    <h3 class="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">Governed Lineage</h3>
+                    
+                    <div id="metadataContainer" class="space-y-4"></div>
+
+                    <div class="mt-6 p-4 bg-gray-100 rounded-xl border border-gray-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">AI Classification</span>
+                            <span class="bg-teal-100 text-teal-800 text-[9px] px-2 rounded-full font-bold">Auto-Generated</span>
+                        </div>
+                        <p class="text-[11px] font-bold text-gray-700">Category: <span class="text-teal-700">Executive Priority</span></p>
+                        <p class="text-[11px] font-bold text-gray-700 mt-1">Action: <span class="text-teal-700">Requires DG Approval</span></p>
+                    </div>
+
+                    <div class="mt-6 dg-only flex flex-col gap-2">
+                        <label class="block text-xs font-black text-gray-700 uppercase mb-1 tracking-widest">Executive Decision</label>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow hover:bg-green-700">Accept</button>
+                            <button class="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow hover:bg-red-700">Decline</button>
+                        </div>
+                        <button class="w-full bg-yellow-500 text-white py-2 rounded-lg font-bold text-xs uppercase shadow hover:bg-yellow-600 mt-1">Delegate to EA</button>
+                    </div>
+
+                    <div class="mt-8 pt-8 border-t border-gray-200 registry-only">
+                        <label class="block text-xs font-black text-gray-700 uppercase mb-3 tracking-widest">Digital Forwarding</label>
+                        <select id="forwardDSU" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-xs font-bold mb-3 outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="">Select Target DSU...</option>
+                        </select>
+                        <textarea id="internalNote" class="w-full bg-white border border-gray-200 rounded-xl p-4 text-xs font-medium h-24 mb-4 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Enter routing instruction for the minute sheet..."></textarea>
+                        <button onclick="submitMinute()" class="w-full nitda-gradient text-white font-black py-4 rounded-xl shadow-lg hover:shadow-teal-500/20 transition active:scale-95">
+                            FORWARD FILE
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 p-8 overflow-y-auto bg-[#e5e7eb]/30">
+                    <div class="minute-sheet min-h-full p-10 rounded-xl shadow-inner border border-gray-200">
+                        <div class="text-center mb-10 pb-6 border-b-4 border-double border-gray-300">
+                            <img src="https://nitda.gov.ng/wp-content/uploads/2021/01/NITDA-Logo.png" alt="NITDA" class="h-10 mx-auto mb-4 opacity-40 grayscale">
+                            <h2 class="font-black text-xl uppercase tracking-tighter text-gray-800">Minute Sheet & Movement Record</h2>
+                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mt-1">Director General's Office (DGO)</p>
+                        </div>
+                        <div id="minuteEntries" class="space-y-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="/js/response-matrix.js"></script>
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.Chrome) window.Chrome.bootstrap('response-matrix');
+        });
+    </script>
+</body>
+</html>

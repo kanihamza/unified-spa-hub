@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Home Dashboard</title>
+    <!-- Stylesheets in cascading priority -->
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <a class="dgo-skip-link" href="#main-content">Skip to content</a>
+
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Dyn-loaded sidebar -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main" id="main-content">
+          <!-- Dyn-loaded top header -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <!-- Active Page Content Viewport -->
+          <div class="dgo-content-viewport dgo-stack dgo-stack--6">
+            
+            <!-- Welcome Header Panel -->
+            <div class="dgo-cluster dgo-cluster--between dgo-cluster--density">
+              <div class="dgo-stack dgo-stack--1">
+                <h1 class="dgo-display" style="font-size: var(--dgo-type-h1);">Executive Operations Hub</h1>
+                <p class="dgo-body-lg text-muted">NITDA Digital Operations Command Dashboard Center</p>
+              </div>
+              <div class="dgo-cluster dgo-cluster--density">
+                <span class="dgo-badge dgo-badge--draft" style="font-size: 11px; padding: 4px 10px; height: auto;" id="system-time-badge">UTC LOADING...</span>
+              </div>
+            </div>
+
+            <!-- KPI Cards Row Grid -->
+            <div class="dgo-grid dgo-grid--4 dgo-grid--density">
+              <div class="dgo-card">
+                <div class="dgo-stat-card">
+                  <div class="dgo-stat-card__icon">
+                    <svg><use href="assets/icons/sprite.svg#i-file"></use></svg>
+                  </div>
+                  <div class="dgo-stat-card__content">
+                    <span class="dgo-stat-card__value" id="kpi-docs-count">0</span>
+                    <span class="dgo-stat-card__label">Active Dossiers</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dgo-card">
+                <div class="dgo-stat-card">
+                  <div class="dgo-stat-card__icon" style="background: var(--dgo-color-danger-subtle-bg); color: var(--dgo-color-action-danger);">
+                    <svg><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
+                  </div>
+                  <div class="dgo-stat-card__content">
+                    <span class="dgo-stat-card__value" id="kpi-tasks-count" style="color: var(--dgo-color-action-danger);">0</span>
+                    <span class="dgo-stat-card__label">Action Pending</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dgo-card">
+                <div class="dgo-stat-card">
+                  <div class="dgo-stat-card__icon" style="background: var(--dgo-color-info-subtle-bg); color: var(--dgo-color-info-600);">
+                    <svg><use href="assets/icons/sprite.svg#i-mail"></use></svg>
+                  </div>
+                  <div class="dgo-stat-card__content">
+                    <span class="dgo-stat-card__value" id="kpi-emails-count" style="color: var(--dgo-color-info-600);">0</span>
+                    <span class="dgo-stat-card__label">Direct Inbound</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dgo-card">
+                <div class="dgo-stat-card">
+                  <div class="dgo-stat-card__icon" style="background: var(--dgo-color-success-subtle-bg); color: var(--dgo-color-success-subtle-fg);">
+                    <svg><use href="assets/icons/sprite.svg#i-chart"></use></svg>
+                  </div>
+                  <div class="dgo-stat-card__content">
+                    <span class="dgo-stat-card__value" id="kpi-logs-count" style="color: var(--dgo-color-success-subtle-fg);">0</span>
+                    <span class="dgo-stat-card__label">Logged Operations</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Layout Slit: List Summaries and Shortcuts -->
+            <div class="dgo-grid dgo-grid--2 dgo-grid--density">
+              <!-- Left: Unassigned Incoming Feed -->
+              <div class="dgo-card dgo-stack dgo-stack--4">
+                <div class="dgo-card__header" style="margin-bottom: 0;">
+                  <h2 class="dgo-card__title">Recent Incoming Dossiers</h2>
+                  <a class="dgo-link dgo-body-sm" href="docs.html">Manage All</a>
+                </div>
+                
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Dossier ID</th>
+                        <th>Sender / Subject</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="home-docs-tbody">
+                      <tr>
+                        <td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">Syncing streams...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right: Active Action Items -->
+              <div class="dgo-card dgo-stack dgo-stack--4">
+                <div class="dgo-card__header" style="margin-bottom: 0;">
+                  <h2 class="dgo-card__title">Recent Operations Tasks</h2>
+                  <a class="dgo-link dgo-body-sm" href="tasks.html">View Status</a>
+                </div>
+
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Task ID</th>
+                        <th>Assignee / Subject</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody id="home-tasks-tbody">
+                      <tr>
+                        <td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">Loading assignments...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Hub Panels -->
+            <div class="dgo-card dgo-stack dgo-stack--3 dgo-card--sunken">
+              <h2 class="dgo-h4" style="margin-bottom: var(--dgo-s-1);">Quick Operation Shortcuts</h2>
+              <div class="dgo-cluster dgo-cluster--density">
+                <a href="assign.html" class="dgo-btn dgo-btn--medium dgo-btn--primary">
+                  <svg style="width: 16px; height:16px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
+                  <span>Assign New Document</span>
+                </a>
+                <a href="emails.html" class="dgo-btn dgo-btn--medium dgo-btn--soft">
+                  <svg style="width: 16px; height:16px;"><use href="assets/icons/sprite.svg#i-mail"></use></svg>
+                  <span>Sync Inbound Mailbox</span>
+                </a>
+                <a href="response-track.html" class="dgo-btn dgo-btn--medium dgo-btn--outline">
+                  <svg style="width: 16px; height:16px;"><use href="assets/icons/sprite.svg#i-chart"></use></svg>
+                  <span>Cross-Match reporting</span>
+                </a>
+                <a href="settings.html" class="dgo-btn dgo-btn--medium dgo-btn--ghost">
+                  <svg style="width: 16px; height:16px;"><use href="assets/icons/sprite.svg#i-settings"></use></svg>
+                  <span>Configure PA Gateways</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Architectural Unbundling Debrief -->
+            <div class="dgo-card dgo-stack dgo-stack--3" style="background: var(--dgo-color-info-subtle-bg); border-color: var(--dgo-info-100);">
+              <div class="dgo-cluster dgo-cluster--density">
+                <svg style="width:22px; height:22px; color: var(--dgo-color-info-subtle-fg);"><use href="assets/icons/sprite.svg#i-info"></use></svg>
+                <h3 class="dgo-h4" style="color: var(--dgo-color-info-subtle-fg);">A cohesive, shared-medium, unbundled platform architectural outline</h3>
+              </div>
+              <p class="dgo-body" style="color: var(--dgo-color-info-subtle-fg); line-height: var(--dgo-lh-150);">
+                We have fully dismantled the massive, singular-file monolithic single-page application into an organized, high-performance **multi-file, multi-module static platform** conforming to standard HTML, CSS custom properties, and plain modular JavaScript:
+              </p>
+              <ul style="color: var(--dgo-color-info-subtle-fg); padding-left: 20px; line-height: 1.6;">
+                <li><strong>No heavy React compilation overhead:</strong> Run-time operations are completely plain HTML/JS which render natively instantly inside any preview console or standalone static server without Webpack or virtual DOM overhead.</li>
+                <li><strong>Unified design stylesheet tokens:</strong> Visual specifications utilize decoupled tiers (Primitive, Semantic, Theme Override data sets for Light, Dark, and High-Contrast rules, and Compact density mode variables).</li>
+                <li><strong>Shared orchestrator modules:</strong> Core logic (Power Automate core fetches, OData lookups, global telemetry logging, active session switcher identity variables, and responsive navigation drawer anchors) operate on shared scripts loaded seamlessly across pages.</li>
+              </ul>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Core Services Scripts -->
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/sanitizer.js"></script>
+    <script type="module" src="/js/identity.js"></script>
+    <script type="module" src="/js/state.js"></script>
+    <script type="module" src="/js/lookups.js"></script>
+    <script type="module" src="/js/a11y.js"></script>
+    <script type="module" src="/js/telemetry.js"></script>
+    <script type="module" src="/js/chrome.js"></script>
+
+    <!-- Page Specific Script -->
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize layout chrome
+        window.Chrome.bootstrap('home');
+
+        // Update system real-time clock indicator (UTC offset notation)
+        const clockBadge = document.getElementById('system-time-badge');
+        function updateClock() {
+          const now = new Date();
+          clockBadge.textContent = `${now.toISOString().replace('T',' ').substring(0,19)} UTC`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        try {
+          // Fire E01 references pre-load
+          await window.Lookups.loadReferences();
+
+          // Sync incoming docs E02
+          const docData = await window.API.callPA('E02', {});
+          const documents = docData?.records || [];
+
+          // Sync pending tasks E04
+          const taskData = await window.API.callPA('E04', {});
+          const tasks = taskData?.records || [];
+
+          // Sync direct inbox E09
+          const mailResponse = await window.API.callPA('E09');
+          const emails = mailResponse?.records || [];
+
+          // Sync diagnostics telemetry counters
+          const diagStats = window.Telemetry.getSummary();
+
+          // Update KPIs
+          document.getElementById('kpi-docs-count').textContent = documents.length;
+          document.getElementById('kpi-tasks-count').textContent = tasks.filter(t => t.status === 'PENDING').length;
+          document.getElementById('kpi-emails-count').textContent = emails.filter(e => e.assignmentStatus === 'PENDING').length;
+          document.getElementById('kpi-logs-count').textContent = diagStats.totalActions;
+
+          // Render Recent Incoming docs (top 4)
+          const homeDocsBody = document.getElementById('home-docs-tbody');
+          if (documents.length === 0) {
+            homeDocsBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">No active dossiers.</td></tr>`;
+          } else {
+            homeDocsBody.innerHTML = documents.slice(0, 4).map(doc => `
+              <tr>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${doc.id}</code></td>
+                <td>
+                  <div class="dgo-stack dgo-stack--0">
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${doc.title}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${doc.sender}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="dgo-badge dgo-badge--${doc.status.toLowerCase()}">${doc.status}</span>
+                </td>
+              </tr>
+            `).join('');
+          }
+
+          // Render operational tasks (top 4)
+          const homeTasksBody = document.getElementById('home-tasks-tbody');
+          if (tasks.length === 0) {
+            homeTasksBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">No action items registered.</td></tr>`;
+          } else {
+            homeTasksBody.innerHTML = tasks.slice(0, 4).map(t => {
+              const officers = window.Lookups.getOfficers();
+              const officer = officers.find(o => o.id === t.assignee);
+              return `
+                <tr>
+                  <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${t.id}</code></td>
+                  <td>
+                    <div class="dgo-stack dgo-stack--0">
+                      <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${t.title}</span>
+                      <span style="font-size:10px; color: var(--dgo-color-fg-muted);">Owner: ${officer ? officer.name : t.assignee}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="dgo-badge dgo-badge--${t.priority === 'HIGH' ? 'action' : (t.priority === 'MEDIUM' ? 'routed' : 'draft')}">${t.priority}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+        } catch (err) {
+          window.Chrome.showToast('Failed to coordinate operational streams.', 'error');
+        }
+      });
+    </script>
+  </body>
+</html>
