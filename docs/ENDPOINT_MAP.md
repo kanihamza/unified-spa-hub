@@ -8,7 +8,7 @@ inconsistent local E-numbering, so flows are matched by **purpose and payload co
 All URLs share the base:
 `https://defaultca6a4b3f912349bcbcb927085ebbf1.a1.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/<GUID>/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<SIG>`
 
-## Provisioned flows (10)
+## Provisioned flows (12)
 
 | Code | Purpose | Type | Workflow GUID | `sig` (trunc) | Deployed flow / trigger schema | Status |
 |------|---------|------|---------------|---------------|-------------------------------|--------|
@@ -22,6 +22,10 @@ All URLs share the base:
 | E07 | Uniform bulk broadcast | Write | `c4338863…5b23` | `yST47ItN…` | optimized Bulk Assign (`mode:bulk`,`SelectedItems`) | ✅ |
 | E08 | AI batch allocator | Write | `1154b50e…a02c` | `Swbi7nJC…` | Bulk Ops Assign | ✅ |
 | E10 | Email → task directive | Write | `a942d230…048b` | `KAItnmgc…` | Web - Email Task Created (`Email`,`NewActivityTask`) | ✅ |
+| E16 | OTP request | Identity | `314aaf27…5936` | `OWBIO1oo…` | Web - OTP Generate (`otp_code`) | ✅ |
+| E17 | OTP verify | Identity | `43879c51…3f27` | `zO21cB8G…` | Web - OTP Verify (`otp_code`,`channel`,`request_id`) | ✅ |
+
+OTP gateway is enabled with admin bypass (`ADMIN_ROLE_CODES = ['DG']`) — see GOVERNANCE.md EXC-01.
 
 ## Unprovisioned flows (no usable URL yet)
 
@@ -29,8 +33,6 @@ All URLs share the base:
 |------|---------|--------|------|
 | E14 | Reserved (catch-all) | ⛔ | Candidate: Dynamic Multi-Actions `bc83d98a…` (`_Co-r3TG…`) — superset action flow |
 | E15 | Reserved | ⛔ | No source flow identified |
-| E16 | OTP request | ⛔ | Flow **exists** ("Web - OTP Generate", schema: `otp_code`) — URL not provided |
-| E17 | OTP verify | ⛔ | Flow **exists** ("Web - OTP Verify", schema: `otp_code`,`channel`,`request_id`) — URL not provided |
 
 ## Revalidation corrections & open items
 
@@ -47,12 +49,14 @@ All URLs share the base:
      `verified_and_revalidated`.** Recommended: functionally validate, then promote to E02.
 3. **E07/E08 order** assigned per stakeholder confirmation (E07 = Bulk Assign `c4338863…`;
    E08 = Bulk Ops Assign `1154b50e…`).
-4. **OTP closure (EXC-01) unblocked on the flow side** — the Generate/Verify flows exist with
-   known contracts; only their trigger URLs are needed to provision E16/E17.
+4. **OTP provisioned & gateway enabled (EXC-01)** — E16/E17 wired (Generate `314aaf27…`,
+   Verify `43879c51…`); the gateway is active with a client-side admin bypass
+   (`ADMIN_ROLE_CODES = ['DG']`). Remaining: server-side OTP/role enforcement.
 
-## All 13 distinct workflow GUIDs seen across sources
+## All 15 distinct workflow GUIDs seen across sources
 
 `ff455c68` (refs), `818ec405` (docs), `5de1fc93` (docs alt), `7995c1eb` (docs verified Live-OPS),
 `37642ba3` (tasks), `3931e2ff` (emails), `6b3bad30` (create task), `c4338863` (bulk assign),
 `1154b50e` (bulk ops assign), `a942d230` (email→task), `85c556f1` (subsidiary doc actions),
-`bc83d98a` (dynamic multi-actions), `7e71fffe` (unlabeled).
+`bc83d98a` (dynamic multi-actions), `7e71fffe` (unlabeled), `314aaf27` (OTP generate),
+`43879c51` (OTP verify).

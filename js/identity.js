@@ -3,9 +3,13 @@
    ============================================================ */
 
 const Identity = (() => {
-  // CONFIGURATION SECURITY BOUNDARY: Set to false to preserve unauthenticated staging flow
-  const OTP_SECURITY_ACTIVE = false; 
-  
+  // CONFIGURATION SECURITY BOUNDARY (EXC-01). OTP gateway is active; users holding an
+  // admin role bypass it. Set to false to fully re-open the platform.
+  const OTP_SECURITY_ACTIVE = true;
+
+  // Roles permitted to bypass the OTP gateway (e.g. Director General).
+  const ADMIN_ROLE_CODES = ['DG'];
+
   const TOKEN_KEY = "dgo_auth_token";
   const USER_KEY = "dgo_session_user";
 
@@ -84,11 +88,35 @@ const Identity = (() => {
     }
   }
 
+  // Resolve the active identity: an authenticated OTP session if present, else the
+  // active platform identity (sidebar identity switcher / State default).
+  function getActiveIdentity() {
+    const session = getSession();
+    if (session && session.user) return session.user;
+    if (window.State && typeof window.State.getActiveUser === 'function') {
+      return window.State.getActiveUser();
+    }
+    try {
+      const raw = localStorage.getItem(USER_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  function isAdmin() {
+    const user = getActiveIdentity();
+    return !!(user && ADMIN_ROLE_CODES.includes(user.roleCode));
+  }
+
   function enforceGateway() {
     if (!OTP_SECURITY_ACTIVE) return;
+    if (isAdmin()) {
+      if (window.Telemetry) window.Telemetry.log("otp_admin_bypass", {});
+      return;
+    }
     const session = getSession();
     const currentPage = window.location.pathname.split("/").pop() || "index.html";
-    
+
     if (!session && currentPage !== "index.html" && currentPage !== "fast-track.html") {
       window.location.href = "index.html?auth_required=true";
     }
@@ -100,9 +128,17 @@ const Identity = (() => {
     clearSession,
     requestOTP,
     verifyOTP,
+    isAdmin,
     enforceGateway
   };
 })();
 
 window.Identity = Identity;
-Identity.enforceGateway();
+
+// Evaluate the gateway after the active identity (window.State) is available, so the
+// admin bypass can be assessed. State loads after this module.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => Identity.enforceGateway());
+} else {
+  Identity.enforceGateway();
+}

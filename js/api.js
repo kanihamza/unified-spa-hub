@@ -40,10 +40,9 @@ const API = (() => {
     E14: '', // Reserved — Dynamic Multi-Actions flow (bc83d98a) available if a catch-all is needed
     E15: '', // Reserved — no source flow identified
 
-    // Identity / OTP flows — flows exist ("Web - OTP Generate" / "Web - OTP Verify")
-    // but their trigger URLs were not supplied; OTP stays disabled this phase (EXC-01).
-    E16: '', // OTP request — schema fields: otp_code
-    E17: ''  // OTP verify  — schema fields: otp_code, channel, request_id
+    // Identity / OTP flows — provisioned. Gateway enabled with admin bypass (see js/identity.js).
+    E16: paUrl('314aaf27593147089b38322e5ca25936', 'OWBIO1ooq0y8Zh9BTPp3sBOQoyVWs_a463FhFUT66fU'), // OTP request ("Web - OTP Generate")
+    E17: paUrl('43879c5165de439680055ab4258b3f27', 'zO21cB8Gn-LDklvld-xWtGUuZDvCleHWR6j5N6s5Dyo')  // OTP verify ("Web - OTP Verify")
   };
 
   const WRITE_FLOWS = ['E03', 'E05', 'E06', 'E07', 'E08', 'E10', 'E14', 'E15'];

@@ -55,7 +55,7 @@ Outbox until a real URL is supplied.
 | E08 | AI batch allocator | ✅ |
 | E10 | Email-to-task directive | ✅ |
 | E14, E15 | Reserved | ⛔ no flow assigned |
-| E16, E17 | OTP request / verify | ⛔ flows exist; trigger URLs not provided (OTP disabled, EXC-01) |
+| E16, E17 | OTP request / verify | ✅ OTP gateway enabled (admins bypass — EXC-01) |
 
 ## Governance
 
@@ -65,5 +65,6 @@ Two governed exceptions apply to the current phase and are tracked in
 1. **Embedded flow URLs** — flow trigger URLs (with SAS signatures) are embedded in the
    frontend by design until a proxy layer is approved. Treat them as exposed secrets and
    rotate as documented.
-2. **OTP gateway disabled** — `OTP_SECURITY_ACTIVE = false` in `js/identity.js`, tracked
-   for re-enablement before final security closure.
+2. **OTP gateway enabled with admin bypass** — `OTP_SECURITY_ACTIVE = true` in `js/identity.js`;
+   roles in `ADMIN_ROLE_CODES` (default `['DG']`) bypass it. The bypass is evaluated client-side
+   and is not yet a server-enforced boundary — see EXC-01.

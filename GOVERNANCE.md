@@ -15,29 +15,32 @@ carries explicit closure criteria.
 
 | ID | Exception | Status | Governing Requirements | Closure Gate |
 |----|-----------|--------|------------------------|--------------|
-| EXC-01 | OTP authentication gateway disabled | OPEN (temporary, tracked) | FR-036, FR-037, FR-038, NFR-014, NFR-015, BRULE-009 | Final security remediation closure |
+| EXC-01 | OTP gateway — enabled with client-side admin bypass | PARTIAL (server-side enforcement pending) | FR-036, FR-037, FR-038, NFR-014, NFR-015, BRULE-009 | Server-side OTP/role enforcement |
 | EXC-02 | Power Automate flow URLs embedded in the frontend | OPEN (accepted current-phase design) | BR-006, FR-015, FR-016, FR-019, NFR-016, BRULE-005 | Approval & adoption of a proxy layer |
 
 ---
 
-## EXC-01 — OTP Authentication Gateway Disabled
+## EXC-01 — OTP Authentication Gateway (enabled, admin bypass)
 
-- **What:** The one-time-password identity gateway is inert. `OTP_SECURITY_ACTIVE = false`
-  in [`js/identity.js`](js/identity.js); `enforceGateway()` returns immediately and does not
-  redirect unauthenticated sessions. Active identity is selected client-side via the sidebar
-  identity switcher (`js/state.js`).
-- **Why (current phase):** Per Assumption 4 / FR-036, OTP is intentionally disabled to keep
-  an unauthenticated build/remediation flow for development and testing.
-- **Risk while open:** There is no enforced authentication or authorization boundary on the
-  client. Any user can select any identity (including Director General) and reach every page.
-  Role is cosmetic. This is acceptable **only** for non-production build/test use.
-- **Closure criteria (FR-038):**
-  1. Provision OTP request/verify flows `E16`/`E17`. The flows now exist ("Web - OTP Generate" /
-     "Web - OTP Verify", schemas known); only their trigger URLs are needed in `FLOW_ENDPOINTS`.
-  2. Set `OTP_SECURITY_ACTIVE = true`.
-  3. Unify the session model so `js/state.js` and `js/identity.js` write a single session
-     shape (the identity switcher must not bypass the authenticated session / `expiresAt`).
-  4. Re-test `enforceGateway()` redirects on every protected page.
+- **What:** The OTP gateway is now **enabled** (`OTP_SECURITY_ACTIVE = true` in
+  [`js/identity.js`](js/identity.js)) with `E16`/`E17` provisioned. `enforceGateway()` redirects
+  unauthenticated, non-admin sessions on protected pages to the OTP login (`index.html`).
+  **Admin roles bypass** the gateway (`ADMIN_ROLE_CODES = ['DG']`); `isAdmin()` resolves the active
+  identity from an authenticated OTP session, else the active platform identity
+  (`State.getActiveUser()`, which defaults to the Director General).
+- **Why (admin bypass):** Per stakeholder requirement, administrators retain uninterrupted access.
+  The default platform identity (DG) is an admin and is not gated, preserving operational access
+  while non-admin roles must authenticate via OTP.
+- **Residual risk (still PARTIAL):** The bypass — like the identity switcher — is evaluated
+  **client-side**. A user can select the DG identity in the switcher to obtain the bypass; nothing
+  is enforced server-side. Treat client role/bypass as advisory, not a security control, until a
+  server-side trust boundary exists.
+- **Remaining closure criteria (FR-038):**
+  1. Enforce OTP/role **server-side** (in the Power Automate flows or a future proxy) so the client
+     bypass cannot be forged.
+  2. Unify the session model so `js/state.js` and `js/identity.js` write a single session shape
+     (the switcher must not grant an implicit admin session without a token/`expiresAt`).
+  3. Validate the live `E16`/`E17` flows end-to-end (request → verify → token).
 - **Owner:** Security Reviewer (per BRD §16 sign-off).
 
 ## EXC-02 — Embedded Power Automate Flow URLs
@@ -76,15 +79,14 @@ inconsistent local E-numbering).
 See `docs/ENDPOINT_MAP.md` for the full revalidated mapping (now cross-checked against the
 deployed flow trigger/response schemas).
 
-- **Provisioned (live):** `E01`–`E10` carry real flow URLs and call Power Automate directly.
-  Write-flow mapping was **revalidated against trigger schemas**: `E03`/`E05` →
+- **Provisioned (live):** `E01`–`E10`, `E16`, `E17` carry real flow URLs and call Power Automate
+  directly. Write-flow mapping was **revalidated against trigger schemas**: `E03`/`E05` →
   "Web - Subsidiary Doc Actions" (`85c556f1…`, contract `{docId,taskId,status,acknowledgedBy}`);
   `E06` → "Deployed - Create Task" (`6b3bad30…`, contract `NewActivityTask`/`Selected`).
   (Corrected from the prior matrix-based guess that routed E03/E05 to `6b3bad30…`.)
+  `E16`/`E17` are the OTP Generate/Verify flows (gateway now enabled — see EXC-01).
 - **Unprovisioned (empty):**
   - `E14`, `E15` — reserved. `E14` candidate: "Dynamic Multi-Actions" `bc83d98a…` (catch-all).
-  - `E16`, `E17` — OTP request/verify. The flows **now exist** ("Web - OTP Generate" / "Web - OTP
-    Verify", with known schemas) but their trigger **URLs were not provided**, so they remain empty.
 - **Open data items to verify:**
   - **E02 docs — three candidate GUIDs:** `818ec405…` (wired, used by all source SPAs),
     `5de1fc93…` (endpoint-object variant), and **`7995c1eb…` ("GET_DOCS_OPS_2 / Live_OPS_Fetch_Docs",
@@ -98,5 +100,6 @@ deployed flow trigger/response schemas).
   - *Write flows* → queued in the **Outbox** with backoff; stays queued
     (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
 - **Rotation note (EXC-02):** the committed source now embeds live SAS signatures for the write
-  flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`, `a942d230…` (plus the four read flows).
-  Include all of these in the signature rotation required under EXC-02.
+  flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`, `a942d230…`, the OTP flows
+  `314aaf27…`/`43879c51…`, and the four read flows. Include all of these in the signature
+  rotation required under EXC-02.
