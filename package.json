@@ -5,7 +5,8 @@
   "description": "Dependency-free, multi-module HTML operations platform integrated with Power Automate HTTP-triggered flows. No framework, no build step, no runtime dependencies.",
   "scripts": {
     "start": "python3 -m http.server 3000",
-    "serve": "python3 -m http.server 3000"
+    "serve": "python3 -m http.server 3000",
+    "smoke": "node test/smoke.mjs"
   },
   "license": "UNLICENSED"
 }

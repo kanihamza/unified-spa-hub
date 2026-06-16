@@ -12,7 +12,9 @@
       try {
           const payload = { action, module: 'DGCEO_Tracker', data };
           if(window.API && window.API.callPA) {
-              const res = await window.API.callPA('E02', payload); 
+              // E14 = Dynamic Multi-Actions (catch-all WRITE flow). Routes through the
+              // central Outbox (queue + retry); replaces the prior incorrect E02 (read) call.
+              const res = await window.API.callPA('E14', payload);
               return { success: res.success || res.ok !== false, simulated: false };
           }
           return { success: true, simulated: true };

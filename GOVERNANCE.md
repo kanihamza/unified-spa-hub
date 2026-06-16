@@ -34,9 +34,23 @@
 > 3. ✅ Polish: home "Pending" KPI filters made case-insensitive; email "Invalid Date" fixed (read the
 >    real `received`/`receivedDateTime` field).
 >
-> **Remaining (lower priority):** the tracker persists via `callPA('E02')` (a read flow) — its
-> correspondence domain model has no dedicated write flow; CRUD is effectively local. Needs a proper
-> flow mapping. And all validation remains jsdom-based — no live browser/CSS/CORS test was possible.
+> **Follow-ups (2026-06-16, addressed):**
+> - ✅ **Navigation regression fixed:** the OTP gateway ran at module-eval time (readyState
+>   `interactive`) before `state.js` loaded, so `isAdmin()` was false and every non-index page
+>   redirected to `index.html` ("snap back to home"). `enforceGateway()` now defers to
+>   `DOMContentLoaded`.
+> - ✅ **Tracker write flow:** `dgceo-tracker` now posts CRUD to `E14` (Dynamic Multi-Actions,
+>   a write flow via the Outbox), replacing the incorrect `E02` (read) call.
+> - ✅ **External dependency removed:** `dgo-base.css` no longer `@import`s Google Fonts
+>   (Outfit/Inter/JetBrains Mono); font tokens fall back to system fonts. No external `http(s)`
+>   resource remains in any platform CSS/HTML.
+> - ✅ **Real-browser smoke test added** (`test/smoke.mjs`, Playwright — test-only, not a runtime
+>   dep): validates navigation, demo-mode data, the tracker shell, and zero console errors. Green.
+>
+> **Still open:** live data requires the Power Automate flows to permit the app origin via **CORS**
+> (a server-side flow config; browser calls otherwise fail preflight). Until then, use **Demo Mode**
+> (Settings toggle or `?demo=1`) to run the platform populated. The tracker's domain model still
+> maps to the generic `E14` catch-all rather than a dedicated correspondence flow.
 
 This document is the governance and remediation tracking artifact required by **FR-037**
 and **NFR-015**. It records the controlled exceptions that remain open during the current

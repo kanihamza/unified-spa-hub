@@ -2,7 +2,10 @@
    DGO v2.0 — Base typography + page chrome
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+/* Web fonts are intentionally NOT loaded from an external CDN (dependency-free —
+   FR-008 / BRULE-002). The font tokens fall back to system fonts (Segoe UI / Inter
+   if locally installed / system-ui). To use the brand fonts, self-host the woff2
+   files locally and add @font-face here. */
 
 html, body {
   font-family: var(--dgo-family-sans);

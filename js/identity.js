@@ -135,10 +135,12 @@ const Identity = (() => {
 
 window.Identity = Identity;
 
-// Evaluate the gateway after the active identity (window.State) is available, so the
-// admin bypass can be assessed. State loads after this module.
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => Identity.enforceGateway());
-} else {
+// Evaluate the gateway only after all sibling modules (esp. window.State, which loads
+// after this one) have run. Module scripts execute at readyState 'interactive', so we must
+// wait for DOMContentLoaded; running earlier left State undefined → isAdmin() false → every
+// non-index page wrongly redirected to index.html.
+if (document.readyState === 'complete') {
   Identity.enforceGateway();
+} else {
+  document.addEventListener('DOMContentLoaded', () => Identity.enforceGateway());
 }
