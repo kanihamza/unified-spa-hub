@@ -59,6 +59,101 @@ const API = (() => {
     return FLOW_ENDPOINTS[code] || '';
   }
 
+  // ── Demo / simulation mode (OPT-IN, OFF by default) ─────────────────────────
+  // Lets the platform run populated without live flows during build/UAT. Never
+  // the default production path (see GOVERNANCE.md). Enable via Settings or
+  // ?demo=1 (persisted); ?demo=0 disables.
+  function isDemoMode() {
+    try {
+      if (typeof location !== 'undefined' && /[?&]demo=1\b/.test(location.search)) { localStorage.setItem('dgo_demo_mode', '1'); return true; }
+      if (typeof location !== 'undefined' && /[?&]demo=0\b/.test(location.search)) { localStorage.removeItem('dgo_demo_mode'); return false; }
+      return localStorage.getItem('dgo_demo_mode') === '1';
+    } catch { return false; }
+  }
+  function setDemoMode(on) { try { on ? localStorage.setItem('dgo_demo_mode', '1') : localStorage.removeItem('dgo_demo_mode'); } catch {} }
+
+  // ── Response normalization ──────────────────────────────────────────────────
+  // Live flows wrap data in an envelope ({ok,status,timing,docs:[...]}) with
+  // PascalCase fields; several pages read a flat {records:[...]} with camelCase
+  // fields. Normalize at the gateway so EVERY page works against the live
+  // contract: expose both `records` and the entity key, add camelCase aliases,
+  // and preserve original fields (so live-shape modules keep working).
+  const ENTITY_KEY = { E02: 'docs', E04: 'tasks', E09: 'emails' };
+
+  function pick(rec, ...getters) {
+    for (const g of getters) {
+      try { const v = typeof g === 'function' ? g(rec) : rec[g]; if (v != null && v !== '') return v; } catch {}
+    }
+    return undefined;
+  }
+  const aliasDoc = (r) => Object.assign({}, r, {
+    id: pick(r, 'id', 'ID'), title: pick(r, 'title', 'Title'),
+    status: pick(r, 'status', 'AssignmentStatus', 'Status'),
+    sender: pick(r, 'sender', 'Sender', 'From') || '',
+    category: pick(r, 'category', 'Category'),
+    assignee: pick(r, 'assignee', 'AssignedTo'),
+    directives: pick(r, 'directives', 'Description')
+  });
+  const aliasTask = (r) => Object.assign({}, r, {
+    id: pick(r, 'id', 'ID'), title: pick(r, 'title', 'Title'),
+    status: pick(r, 'status', 'Progress', 'Status'),
+    priority: pick(r, 'priority', 'Priority'),
+    assignee: pick(r, 'assignee', 'AssignedTo', 'Assigned'),
+    directives: pick(r, 'directives', 'Description'),
+    dueDate: pick(r, 'dueDate', 'DueDate'),
+    category: pick(r, 'category', 'Classification', 'Category'),
+    refIDD: pick(r, 'refIDD', 'RefIDD'),
+    routing: pick(r, 'routing', 'GDSUROUT'),
+    lastUpdateNotes: pick(r, 'lastUpdateNotes', 'Comments') || ''
+  });
+  const aliasEmail = (r) => Object.assign({}, r, {
+    id: pick(r, 'id', 'ID'), subject: pick(r, 'subject', 'Subject'),
+    sender: pick(r, 'sender', 'fromAddress', (x) => x.from && x.from.emailAddress && x.from.emailAddress.address) || '',
+    body: pick(r, 'body', 'bodyPreview', (x) => x.body && x.body.content, 'bodyHtml') || '',
+    bodyPreview: pick(r, 'bodyPreview', 'body'),
+    status: pick(r, 'status', 'assignmentStatus', 'AssignmentStatus') || 'PENDING',
+    assignmentStatus: pick(r, 'assignmentStatus', 'AssignmentStatus', 'status') || 'PENDING',
+    received: pick(r, 'received', 'receivedDateTime')
+  });
+  const ALIASER = { E02: aliasDoc, E04: aliasTask, E09: aliasEmail };
+
+  function extractArray(raw, code) {
+    if (Array.isArray(raw)) return raw;
+    const r = raw || {};
+    const cands = [ENTITY_KEY[code], 'records', 'results', 'items', 'value'].filter(Boolean);
+    for (const k of cands) if (Array.isArray(r[k])) return r[k];
+    if (r.data) { if (Array.isArray(r.data)) return r.data; for (const k of cands) if (Array.isArray(r.data[k])) return r.data[k]; }
+    return [];
+  }
+  function normalizeReferences(raw) {
+    const src = (raw && raw.data && (raw.data.categories || raw.data.departments || raw.data.users)) ? raw.data : (raw || {});
+    const departments = (src.departments || []).map((d) => Object.assign({}, d, {
+      id: pick(d, 'id', 'ID'), name: pick(d, 'name', 'Title'), code: pick(d, 'code', 'DSU_KEY')
+    }));
+    const officers = ((src.officers && src.officers.length) ? src.officers : (src.users || [])).map((o) => Object.assign({}, o, {
+      id: pick(o, 'id', 'email', 'ID'), name: pick(o, 'name', 'Title'),
+      role: pick(o, 'role', 'jobTitle', 'AuthorTitle') || '', dsu: pick(o, 'dsu', 'department', 'DSU_KEY') || ''
+    }));
+    const categories = (src.categories || []).map((c) => Object.assign({}, c, {
+      code: pick(c, 'code', 'Category', 'DSU_KEY', (x) => x.ID != null ? String(x.ID) : undefined),
+      name: pick(c, 'name', 'Title', 'Category'),
+      defaultAssignee: pick(c, 'defaultAssignee'), supportDSU: pick(c, 'supportDSU', 'INFORMDSU1'),
+      defaultPriority: pick(c, 'defaultPriority', 'Priority') || 'MEDIUM'
+    }));
+    return Object.assign({}, raw, { departments, officers, categories, users: src.users || officers });
+  }
+  function normalizeResponse(code, raw) {
+    if (code === 'E01') return normalizeReferences(raw);
+    const aliaser = ALIASER[code];
+    if (!aliaser) return raw;
+    const arr = extractArray(raw, code).map(aliaser);
+    const base = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+    const out = Object.assign({}, base, { records: arr });
+    if (ENTITY_KEY[code]) out[ENTITY_KEY[code]] = arr;
+    return out;
+  }
+
+
   const Outbox = {
     get: () => {
       try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; }
@@ -146,6 +241,14 @@ const API = (() => {
     if (PAGINATED_FLOWS.includes(code)) {
       payload.pagination = payload.pagination || { top: 50, skip: 0 };
     }
+
+    // Demo/simulation mode (opt-in): never touches live flows.
+    if (isDemoMode()) {
+      if (window.Telemetry) window.Telemetry.log("api_demo_mode", { code });
+      if (WRITE_FLOWS.includes(code)) return { success: true, status: 'SIMULATED', outboxId: 'DEMO-' + Date.now() };
+      return normalizeResponse(code, getMockResponse(code, payload));
+    }
+
     if (WRITE_FLOWS.includes(code)) {
       return await Outbox.push(code, payload);
     }
@@ -154,7 +257,7 @@ const API = (() => {
     if (!url) {
       // Unprovisioned flow → deterministic local simulation (dev/offline only).
       if (window.Telemetry) window.Telemetry.log("api_simulation_fallback", { code });
-      return getMockResponse(code, payload);
+      return normalizeResponse(code, getMockResponse(code, payload));
     }
 
     const controller = new AbortController();
@@ -169,7 +272,8 @@ const API = (() => {
       });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      return await response.json();
+      // Normalize the live envelope/field shape to the platform's canonical shape.
+      return normalizeResponse(code, await response.json());
     } catch (e) {
       clearTimeout(timeoutId);
       if (window.Telemetry) window.Telemetry.log("api_invocation_error", { code, error: e.message });
@@ -177,35 +281,55 @@ const API = (() => {
     }
   }
 
+  // Seed data for demo/simulation mode (opt-in only — see GOVERNANCE.md).
+  const DEMO_REFERENCES = {
+    departments: [
+      { id: "DSU01", name: "Director General's Office (DGO)", code: "DGO" },
+      { id: "DSU02", name: "Registry Department", code: "REG" },
+      { id: "DSU03", name: "e-Government Infrastructure (EGI)", code: "EGI" },
+      { id: "DSU04", name: "Standards Guidelines & Frameworks (SGF)", code: "SGF" }
+    ],
+    officers: [
+      { id: "O01", name: "Kashifu Inuwa Abdullahi", role: "Director General (DG)", dsu: "DSU01" },
+      { id: "O02", name: "Bala Ibrahim", role: "Registry Director", dsu: "DSU02" },
+      { id: "O03", name: "Dr. Muhammad Sirajo", role: "Director (EGI)", dsu: "DSU03" },
+      { id: "O04", name: "Salisu Kaka", role: "Director (SGF)", dsu: "DSU04" }
+    ],
+    categories: [
+      { code: "CAT_INFRA", name: "Infrastructure Audit", defaultAssignee: "O03", supportDSU: "DSU03", defaultPriority: "HIGH" },
+      { code: "CAT_POLICY", name: "Policy Guidelines Compliance", defaultAssignee: "O04", supportDSU: "DSU04", defaultPriority: "MEDIUM" }
+    ]
+  };
+  const DEMO_DOCS = [
+    { id: "DOC-2026-A101", title: "NITDA Infrastructure Audit Directive", sender: "Office of the DG", status: "PENDING", category: "Infrastructure Audit", RefIDD: "DOC-2026-A101" },
+    { id: "DOC-2026-A102", title: "Policy Guidelines Compliance Review", sender: "SGF Directorate", status: "ROUTED", category: "Policy Guidelines Compliance", RefIDD: "DOC-2026-A102" },
+    { id: "DOC-2026-A103", title: "e-Gov Platform MOU Draft", sender: "EGI Department", status: "DRAFT", category: "Infrastructure Audit", RefIDD: "DOC-2026-A103" },
+    { id: "DOC-2026-A104", title: "Quarterly Registry Movement Report", sender: "Registry Dept", status: "COMPLETED", category: "Policy Guidelines Compliance", RefIDD: "DOC-2026-A104" }
+  ];
+  const DEMO_TASKS = [
+    { id: "TSK-88121", title: "Conduct EGI infra gap assessment", status: "PENDING", priority: "HIGH", assignee: "O03", refIDD: "DOC-2026-A101", dueDate: "2026-06-23", directives: "Audit core network and submit findings.", category: "Infrastructure Audit", routing: "EGI", lastUpdateNotes: "Awaiting kickoff." },
+    { id: "TSK-88122", title: "Draft compliance advisory note", status: "ROUTED", priority: "MEDIUM", assignee: "O04", refIDD: "DOC-2026-A102", dueDate: "2026-06-30", directives: "Align with SGF policy framework.", category: "Policy Guidelines Compliance", routing: "SGF", lastUpdateNotes: "Draft in progress." },
+    { id: "TSK-88123", title: "Verify registry file movements", status: "PENDING", priority: "LOW", assignee: "O02", refIDD: "DOC-2026-A104", dueDate: "2026-07-05", directives: "Cross-check movement ledger.", category: "Policy Guidelines Compliance", routing: "REG", lastUpdateNotes: "" },
+    { id: "TSK-88124", title: "Prepare MOU legal review", status: "COMPLETED", priority: "HIGH", assignee: "O03", refIDD: "DOC-2026-A103", dueDate: "2026-06-18", directives: "Submit to LSD.", category: "Infrastructure Audit", routing: "LSD", lastUpdateNotes: "Completed and routed." }
+  ];
+  const DEMO_EMAILS = [
+    { id: "EML-501", subject: "RE: Infrastructure Audit DOC-2026-A101", sender: "partner@vendor.com", body: "Please find attached the audit pre-read.", assignmentStatus: "PENDING", received: "2026-06-15T09:00:00Z" },
+    { id: "EML-502", subject: "Policy compliance clarification", sender: "legal@nitda.gov.ng", body: "Seeking clarification on DOC-2026-A102.", assignmentStatus: "PENDING", received: "2026-06-14T14:30:00Z" },
+    { id: "EML-503", subject: "MOU draft feedback", sender: "egi.lead@nitda.gov.ng", body: "Comments on the MOU draft attached.", assignmentStatus: "ROUTED", received: "2026-06-13T11:15:00Z" }
+  ];
+
   /**
-   * Deterministic local simulation payloads. Used ONLY when a flow has no
-   * configured URL (Settings "simulation" mode / offline dev). This is an
-   * explicit, opt-in fallback — not production data. See GOVERNANCE.md.
+   * Deterministic local simulation payloads. Used only in demo mode or when a
+   * flow has no configured URL. Explicit, opt-in — not production data. Prefers
+   * any real cached records (from a prior live sync) over the built-in seed.
    */
   function getMockResponse(code, payload) {
+    const cached = (getter, seed) => { const c = getter(); return (c && c.length) ? c : seed; };
     switch (code) {
-      case 'E01':
-        return {
-          departments: [
-            { id: "DSU01", name: "Director General's Office (DGO)", code: "DGO" },
-            { id: "DSU02", name: "Registry Department", code: "REG" },
-            { id: "DSU03", name: "e-Government Infrastructure (EGI)", code: "EGI" },
-            { id: "DSU04", name: "Standards Guidelines & Frameworks (SGF)", code: "SGF" }
-          ],
-          officers: [
-            { id: "O01", name: "Kashifu Inuwa Abdullahi", role: "Director General (DG)", dsu: "DSU01" },
-            { id: "O02", name: "Bala Ibrahim", role: "Registry Director", dsu: "DSU02" },
-            { id: "O03", name: "Dr. Muhammad Sirajo", role: "Director (EGI)", dsu: "DSU03" },
-            { id: "O04", name: "Salisu Kaka", role: "Director (SGF)", dsu: "DSU04" }
-          ],
-          categories: [
-            { code: "CAT_INFRA", name: "Infrastructure Audit", defaultAssignee: "O03", supportDSU: "DSU03", defaultPriority: "HIGH" },
-            { code: "CAT_POLICY", name: "Policy Guidelines Compliance", defaultAssignee: "O04", supportDSU: "DSU04", defaultPriority: "MEDIUM" }
-          ]
-        };
-      case 'E02': return { records: getStoredDocuments() };
-      case 'E04': return { records: getStoredTasks() };
-      case 'E09': return { records: getStoredEmails() };
+      case 'E01': return DEMO_REFERENCES;
+      case 'E02': return { records: cached(getStoredDocuments, DEMO_DOCS) };
+      case 'E04': return { records: cached(getStoredTasks, DEMO_TASKS) };
+      case 'E09': return { records: cached(getStoredEmails, DEMO_EMAILS) };
       default: return { success: true };
     }
   }
@@ -220,6 +344,9 @@ const API = (() => {
   return {
     Outbox,
     callPA,
+    isDemoMode,
+    setDemoMode,
+    normalizeResponse,
     getEndpoint,
     getSimulation: getMockResponse,
     FLOW_CODES,

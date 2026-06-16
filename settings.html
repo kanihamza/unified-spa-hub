@@ -126,6 +126,16 @@
                   </form>
                 </div>
 
+                <!-- Card: Demo / Simulation Mode (opt-in, non-production) -->
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <div class="dgo-cluster dgo-cluster--between">
+                    <h3 class="dgo-card__title">Demo / Simulation Mode</h3>
+                    <span class="dgo-badge dgo-badge--draft" id="demo-mode-badge">OFF</span>
+                  </div>
+                  <p class="dgo-body-sm text-muted">Populate the platform with built-in sample data without calling live Power Automate flows. For build/UAT only — not a production data source.</p>
+                  <button class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-toggle-demo" style="width:100%;">Enable Demo Mode</button>
+                </div>
+
               </div>
 
               <!-- Right: Logs, cache, and traces -->
@@ -381,6 +391,25 @@
           badge.textContent = `${count} Pending`;
           if (count > 0) badge.className = 'dgo-badge dgo-badge--action';
         }
+      });
+    </script>
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', () => {
+        const badge = document.getElementById('demo-mode-badge');
+        const btn = document.getElementById('btn-toggle-demo');
+        if (!btn || !window.API) return;
+        function refresh() {
+          const on = window.API.isDemoMode();
+          badge.textContent = on ? 'ON' : 'OFF';
+          badge.className = 'dgo-badge ' + (on ? 'dgo-badge--action' : 'dgo-badge--draft');
+          btn.textContent = on ? 'Disable Demo Mode' : 'Enable Demo Mode';
+        }
+        refresh();
+        btn.addEventListener('click', () => {
+          window.API.setDemoMode(!window.API.isDemoMode());
+          if (window.Chrome) window.Chrome.showToast('Demo mode ' + (window.API.isDemoMode() ? 'enabled' : 'disabled') + '. Reloading…', 'info');
+          setTimeout(() => location.reload(), 600);
+        });
       });
     </script>
   </body>

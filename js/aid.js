@@ -56,6 +56,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (window.Chrome) window.Chrome.bootstrap('aid');
     const syncBtn = document.getElementById('btn-sync');
     if (syncBtn) syncBtn.addEventListener('click', syncRegistry);
     syncRegistry();

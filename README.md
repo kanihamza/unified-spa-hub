@@ -43,6 +43,16 @@ for a flow code is: per-flow runtime override (Settings → localStorage `dgo_en
 read flows fall back to deterministic local simulation, and write flows stay queued in the
 Outbox until a real URL is supplied.
 
+**Response normalization.** `callPA` normalizes every read response to the platform's canonical
+shape, so all pages work against the live flow contract regardless of envelope or field casing.
+Live flows return `{ok,…,docs|tasks|emails:[{ID,Title,AssignmentStatus,…}]}`; the gateway
+unwraps the array (exposing both `records` and the entity key) and adds camelCase aliases
+(`id`,`title`,`status`,…) while preserving the original PascalCase fields.
+
+**Demo / simulation mode (opt-in, OFF by default).** Toggle in Settings or `?demo=1` (persisted;
+`?demo=0` disables). Populates the platform with built-in sample data without calling live flows —
+a build/UAT facility, **not** a production data source (see GOVERNANCE.md).
+
 | Code | Purpose | Provisioned |
 |------|---------|-------------|
 | E01 | Reference / lookup directory | ✅ |
