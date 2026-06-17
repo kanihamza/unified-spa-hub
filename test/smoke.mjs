@@ -18,7 +18,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Live-shaped mock backend (envelope + PascalCase), keyed by workflow GUID.
 const DOCS = [
   { ID: 20427, Title: 'EDO Facility Management Request', Created: '2026-06-15T15:13:36Z', AssignedTo: 'Dr. Sirajo', Category: 'Infrastructure', AssignmentStatus: 'PENDING', Description: 'Provision FM for HQ.' },
-  { ID: 20428, Title: 'Policy Compliance Review', Created: '2026-06-14T10:00:00Z', AssignedTo: 'Salisu Kaka', Category: 'Policy', AssignmentStatus: 'ROUTED', Description: 'Review policy.' }
+  { ID: 20428, Title: 'Policy Compliance Review', Created: '2026-06-14T10:00:00Z', AssignedTo: 'Salisu Kaka', Category: 'Policy', AssignmentStatus: 'ROUTED', Description: 'Review policy.' },
+  // SEC-03 regression fixture: hostile title + link that must be neutralized on render.
+  { ID: 20429, Title: '<img src=x onerror="window.__xss=1"><b id="xss-probe">P</b>', Created: '2026-06-13T09:00:00Z', AssignedTo: 'Test', Category: 'Policy', AssignmentStatus: 'PENDING', Description: 'probe', AttachmentLink: 'javascript:window.__xss=1' }
 ];
 const TASKS = [
   { ID: 88121, Title: 'Infra gap assessment', AssignedTo: 'Sirajo', RefIDD: '20427', Classification: 'Infrastructure', Priority: 'HIGH', Progress: 'Pending', DueDate: '2026-06-23', Description: 'Audit network.', GDSUROUT: 'EGI' }
@@ -85,6 +87,12 @@ try {
   const homeRows = await page.$$eval('#home-docs-tbody tr', (els) => els.length);
   check('home KPI docs > 0 (live)', Number(kpiDocs) > 0, `kpi=${kpiDocs}`);
   check('home recent-docs table has rows (live)', homeRows > 0, `rows=${homeRows}`);
+
+  // SEC-03 regression: a hostile doc title must be escaped (no injected node, no script run).
+  const xssNode = await page.$('#xss-probe');
+  const xssFlag = await page.evaluate(() => window.__xss);
+  check('hostile doc title escaped — no injected DOM node', xssNode === null);
+  check('no script executed from hostile doc fields', !xssFlag, `flag=${xssFlag}`);
 
   // Identity is live: switcher populated from references, header shows a real selectable user.
   const optionCount = await page.$$eval('#identity-switcher option', (els) => els.length);
