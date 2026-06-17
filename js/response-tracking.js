@@ -285,7 +285,7 @@
                   <div class="matrix-meta"><strong>Title:</strong> ${escapeHtml(task.parentDoc.title)}</div>
                   <div class="matrix-meta"><strong>Category:</strong> ${escapeHtml(task.parentDoc.category)}</div>
                   <div class="matrix-meta"><strong>Global Status:</strong> ${escapeHtml(task.parentDoc.status)}</div>
-                  ${task.parentDoc.link ? `<a href="${task.parentDoc.link}" target="_blank" style="display:inline-block; margin-top:10px; color:#05583B; font-weight:600; text-decoration:none;">🔗 Open Original Document in SharePoint</a>` : ''}
+                  ${task.parentDoc.link ? `<a href="${window.Sanitizer.safeUrl(task.parentDoc.link)}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:10px; color:#05583B; font-weight:600; text-decoration:none;">🔗 Open Original Document in SharePoint</a>` : ''}
               ` : `
                   <div class="matrix-meta" style="color: #666; font-style: italic;">No primary parent document explicitly mapped to this RefIDD (${escapeHtml(task.refIDD)}). This task may have originated independently.</div>
               `}

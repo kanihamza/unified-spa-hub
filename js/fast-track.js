@@ -606,9 +606,9 @@
     document.getElementById('doc-title').textContent = activeItem.Title || 'Untitled Document';
     
     let metaHtml = `ID: ${activeItem.ID} | Category: ${escapeHtml(activeItem.Category||'—')}`;
-    if (activeItem.AttachmentLink) metaHtml += ` | <a href="${activeItem.AttachmentLink}" target="_blank" style="color:var(--brand-secondary);">📎 View Document</a>`;
+    if (activeItem.AttachmentLink) metaHtml += ` | <a href="${window.Sanitizer.safeUrl(activeItem.AttachmentLink)}" target="_blank" rel="noopener noreferrer" style="color:var(--brand-secondary);">📎 View Document</a>`;
     if (activeItem.CC) {
-      const ccs = activeItem.CC.split(';').filter(Boolean).map(c=>`<span style="background:#e0e0e0;padding:2px 4px;border-radius:2px;font-size:8px;">${c}</span>`).join(' ');
+      const ccs = activeItem.CC.split(';').filter(Boolean).map(c=>`<span style="background:#e0e0e0;padding:2px 4px;border-radius:2px;font-size:8px;">${escapeHtml(c)}</span>`).join(' ');
       metaHtml += ` | CC: ${ccs}`;
     }
     document.getElementById('doc-meta').innerHTML = metaHtml;
@@ -810,8 +810,15 @@
     document.getElementById('email-detail-subject').textContent = email.Subject || 'No Subject';
     document.getElementById('email-detail-meta').textContent = `From: ${email.From} | Date: ${formatDateTime(email.DateTimeReceived)}`;
     
-    const iframeSrc = escapeHtml(email.Body);
-    document.getElementById('email-detail-body').innerHTML = `<iframe sandbox="allow-same-origin" style="width:100%;height:100%;border:none;min-height:400px;" srcdoc="${iframeSrc}"></iframe>`;
+    // Render the (untrusted) email body through the centralized sanitizer, which
+    // strips scripts/event-handlers and dangerous href/src schemes via its safelist.
+    // (Replaces the prior iframe srcdoc pattern, whose safety depended solely on the
+    // sandbox attribute and silently double-decoded the escaped body.)
+    const safeBody = (window.Sanitizer && window.Sanitizer.cleanHTML)
+      ? window.Sanitizer.cleanHTML(email.Body || '')
+      : escapeHtml(email.Body || '');
+    document.getElementById('email-detail-body').innerHTML =
+      `<div class="email-body-rendered" style="width:100%;height:100%;overflow:auto;padding:4px;">${safeBody}</div>`;
     
     panel.style.display = 'flex';
   }

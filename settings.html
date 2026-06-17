@@ -69,7 +69,7 @@
                     <h3 class="dgo-card__title">Microsoft Power Automate Gateways</h3>
                     <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-restore-endpoints-default" style="height:28px; font-size:11px;">Restore Defaults</button>
                   </div>
-                  <p class="dgo-body-sm text-muted">Map active HTTP trigger URL webhooks generated in Power Automate cloud. Clear fields default to sandboxed simulation routing.</p>
+                  <p class="dgo-body-sm text-muted">Map active HTTP trigger URL webhooks generated in Power Automate cloud. Clear a field to fall back to the built-in default endpoint for that flow.</p>
 
                   <form id="endpoints-form" class="dgo-stack dgo-stack--3" onsubmit="return false">
                     <div class="dgo-form-group">
@@ -126,6 +126,21 @@
                       <input type="url" id="ep-E10" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
                     </div>
 
+                    <div class="dgo-form-group">
+                      <label for="ep-E14" class="dgo-label">E14 — Dynamic Multi-Actions / Correspondence (Post)</label>
+                      <input type="url" id="ep-E14" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E16" class="dgo-label">E16 — OTP Request / Generate (Identity)</label>
+                      <input type="url" id="ep-E16" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
+                    <div class="dgo-form-group">
+                      <label for="ep-E17" class="dgo-label">E17 — OTP Verify (Identity)</label>
+                      <input type="url" id="ep-E17" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
+                    </div>
+
                     <button type="button" class="dgo-btn dgo-btn--md dgo-btn--primary" id="btn-save-endpoints" style="width:100%;">Commit Gateways Settings</button>
                   </form>
                 </div>
@@ -179,7 +194,7 @@
                     <h3 class="dgo-card__title">Operations Diagnostics Logs</h3>
                     <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-flush-telemetry" style="height:28px; font-size:11px; color:var(--dgo-color-action-danger);">Flush logs</button>
                   </div>
-                  <p class="dgo-body-sm text-muted">Audits real-time OData timeouts, mock cascades, API triggers, and state switches.</p>
+                  <p class="dgo-body-sm text-muted">Audits real-time flow timeouts, API invocations, sync activity, and identity switches.</p>
 
                   <div class="dgo-stack dgo-stack--2 dgo-spacer" style="overflow-y:auto; background:var(--dgo-color-surface-sunken); border-radius:var(--dgo-radius-control); padding:var(--dgo-s-3); border:1px solid var(--dgo-color-border-default);" id="telemetry-logs-tbody">
                     <!-- Logs injection -->
@@ -196,14 +211,14 @@
       </div>
     </div>
 
-    <script type="module" src="/js/api.js"></script>
-    <script type="module" src="/js/sanitizer.js"></script>
-    <script type="module" src="/js/identity.js"></script>
-    <script type="module" src="/js/state.js"></script>
-    <script type="module" src="/js/lookups.js"></script>
-    <script type="module" src="/js/a11y.js"></script>
-    <script type="module" src="/js/telemetry.js"></script>
-    <script type="module" src="/js/chrome.js"></script>
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/sanitizer.js"></script>
+    <script type="module" src="js/identity.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/lookups.js"></script>
+    <script type="module" src="js/a11y.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/chrome.js"></script>
 
     <script type="module">
       document.addEventListener('DOMContentLoaded', async () => {
@@ -270,25 +285,27 @@
         // Save customized flow URLs
         document.getElementById('btn-save-endpoints').addEventListener('click', () => {
           const formEndpoints = {};
-          const flowKeys = ['E00','E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
-          
-          flowKeys.forEach(k => {
-            const val = document.getElementById(`ep-${k}`).value;
-            formEndpoints[k] = val ? val.trim() : "";
+          // Iterate the central registry (api.js) so every flow code is covered — no
+          // hardcoded per-page key list (FR-016/FR-017).
+          (window.API.FLOW_CODES || []).forEach(k => {
+            const input = document.getElementById(`ep-${k}`);
+            if (input) formEndpoints[k] = input.value ? input.value.trim() : "";
           });
 
           window.API.saveCustomEndpoints(formEndpoints);
           window.Chrome.showToast('Logic Flow endpoint gateways committed!', 'success');
         });
 
-        // Restore URLs to defaults
+        // Restore URLs to defaults — actually clears every persisted override.
         document.getElementById('btn-restore-endpoints-default').addEventListener('click', () => {
-          const flowKeys = ['E00','E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
-          flowKeys.forEach(k => {
-            document.getElementById(`ep-${k}`).value = '';
+          const cleared = {};
+          (window.API.FLOW_CODES || []).forEach(k => {
+            const input = document.getElementById(`ep-${k}`);
+            if (input) input.value = '';
+            cleared[k] = ''; // empty value → saveCustomEndpoints removes the override
           });
-          window.API.saveCustomEndpoints({});
-          window.Chrome.showToast('Triggering default mock simulation pathways.', 'success');
+          window.API.saveCustomEndpoints(cleared);
+          window.Chrome.showToast('Reverted to built-in default endpoints.', 'success');
         });
 
         // Lookup Cache Statistics
@@ -367,7 +384,7 @@
 
         // Factory reset
         document.getElementById('btn-factory-reset').addEventListener('click', () => {
-          if (confirm('Warning! This will clear all mock database records in your local browser storage (Dossiers flags, Progress Comments logs, Mailboxes attachments, Switch logs) and restore initial state. Are you sure?')) {
+          if (confirm('Warning! This will clear all locally cached records in your browser storage (dossier flags, progress/comment logs, mailbox cache, identity selection) and restore initial state. Are you sure?')) {
             localStorage.clear();
             window.Chrome.showToast('Full factory operational reset complete! Refreshing page...', 'error');
             setTimeout(() => {

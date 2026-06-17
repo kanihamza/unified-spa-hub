@@ -99,6 +99,23 @@ const Sanitizer = (() => {
     return tr;
   }
 
+  /**
+   * Attribute-safe URL for href/src sinks. Allows http/https/mailto/tel and
+   * relative URLs; neutralizes javascript:/data:/vbscript: (and any other
+   * scheme) and attribute-encodes the value so it cannot break out of quotes.
+   */
+  function safeUrl(url) {
+    const raw = String(url == null ? '' : url).trim();
+    if (!raw) return '';
+    const scheme = (raw.match(/^([a-z][a-z0-9+.-]*):/i) || [])[1];
+    if (scheme && !['http', 'https', 'mailto', 'tel'].includes(scheme.toLowerCase())) {
+      return '#';
+    }
+    return raw
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   return {
     escape: (str) => {
       if (!str) return '';
@@ -107,6 +124,7 @@ const Sanitizer = (() => {
       return div.innerHTML;
     },
     cleanHTML,
+    safeUrl,
     createRow: createSafeRow
   };
 })();
