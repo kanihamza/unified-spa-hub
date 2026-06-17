@@ -15,11 +15,12 @@ const Lookups = (() => {
     if (!forceReload) {
       const stored = localStorage.getItem('dgo_cached_lookups');
       if (stored) {
-        try { cachedData = JSON.parse(stored); return cachedData; } catch { /* parse failed → reload */ }
+        try { cachedData = JSON.parse(stored); return cachedData; } catch { /* parse failed → wait below */ }
       }
-      // Not cached yet — wait for the in-flight startup Fetch-All, then read.
-      if (window.API && window.API.fetchAll) {
-        try { await window.API.fetchAll(false); } catch {}
+      // Not cached yet — AWAIT the in-flight startup Fetch-All (do NOT start another).
+      const pending = (window.API && window.API.pendingFetchAll) ? window.API.pendingFetchAll() : null;
+      if (pending) {
+        try { await pending; } catch {}
         const s2 = localStorage.getItem('dgo_cached_lookups');
         if (s2) { try { cachedData = JSON.parse(s2); return cachedData; } catch {} }
       }
@@ -30,7 +31,7 @@ const Lookups = (() => {
     // Forced refresh (Settings/diagnostics only) — re-run the Fetch-All.
     try {
       if (window.Telemetry) window.Telemetry.log('lookup_refresh_start', {});
-      if (window.API && window.API.fetchAll) await window.API.fetchAll(true);
+      if (window.API && window.API.fetchAll) await window.API.fetchAll();
       const s = localStorage.getItem('dgo_cached_lookups');
       if (s) { cachedData = JSON.parse(s); if (window.Telemetry) window.Telemetry.log('lookup_refresh_success', { recordsCount: (cachedData.categories || []).length }); return cachedData; }
       throw new Error('No references returned');

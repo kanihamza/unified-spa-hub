@@ -184,8 +184,11 @@ const API = (() => {
   // Uses the Fetch-All flow (E00) when configured; otherwise fans out to the
   // dedicated read flows. References are loaded here (once on startup).
   let _fetchAllPromise = null;
-  function fetchAll(force = false) {
-    if (_fetchAllPromise && !force) return _fetchAllPromise;
+  function pendingFetchAll() { return _fetchAllPromise; }
+  function fetchAll() {
+    // Singleton: if a Fetch-All is already in flight, every caller shares it — never
+    // launch several at once. (Manual settings refresh also reuses an in-flight run.)
+    if (_fetchAllPromise) return _fetchAllPromise;
     const p = (async () => {
       if (getEndpoint('E00')) {
         const resp = await doFetch('E00', { action: 'Fetch_All', operation: 'read', mode: 'read', source: 'DGO_Platform' });
@@ -338,13 +341,13 @@ const API = (() => {
     setTimeout(() => el.remove(), 450);
   }
   function boot() {
-    // Run the startup Fetch-All once per browser session, behind a loading screen.
+    // Run the startup Fetch-All exactly once per browser session, behind a loading
+    // screen. The guard is set SYNCHRONOUSLY (before the slow fetch) so re-entry or
+    // navigation during the load cannot launch additional Fetch-All runs.
     if (sessionStorage.getItem('dgo_booted') === '1') return;
+    try { sessionStorage.setItem('dgo_booted', '1'); } catch {}
     showBootOverlay();
-    fetchAll(true).catch(() => {}).finally(() => {
-      try { sessionStorage.setItem('dgo_booted', '1'); } catch {}
-      hideBootOverlay();
-    });
+    fetchAll().catch(() => {}).finally(() => hideBootOverlay());
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
@@ -354,6 +357,7 @@ const API = (() => {
     callPA,
     refresh,
     fetchAll,
+    pendingFetchAll,
     invalidate,
     isCached,
     clearCache,

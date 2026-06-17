@@ -59,9 +59,10 @@ try {
   const ctx = await browser.newContext();
   // Mock the live flows at the transport layer, counting requests per flow GUID.
   const reqCount = {};
-  await ctx.route('**/powerautomate/**', (route) => {
+  await ctx.route('**/powerautomate/**', async (route) => {
     const g = (route.request().url().match(/workflows\/([0-9a-f]{8})/) || [])[1];
     if (g) reqCount[g] = (reqCount[g] || 0) + 1;
+    if (g === '4a250f97') await sleep(300); // simulate the slow Fetch-All so concurrent callers overlap
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bodyFor(route.request().url())) });
   });
 
