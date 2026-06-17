@@ -83,7 +83,7 @@
       });
 
       if (res.success) {
-        if (window.Chrome) window.Chrome.showToast("Cleared and synchronized.", "success");
+        if (window.Chrome) window.Chrome.showToast("Action queued — syncing…", "success");
         syncNodeRegistry();
         STATE.activeNode = null;
         document.getElementById('viewActive').classList.remove('show');

@@ -133,7 +133,7 @@
       });
 
       if (res.success) {
-        if (window.Chrome) window.Chrome.showToast("Decision registered and synchronized.", "success");
+        if (window.Chrome) window.Chrome.showToast("Decision queued — syncing…", "success");
         syncHubData();
         document.getElementById('decisionNotes').value = '';
         document.getElementById('delegateOfficer').value = '';

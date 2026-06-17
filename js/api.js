@@ -10,7 +10,10 @@
 
 const API = (() => {
   const OUTBOX_KEY = 'dgo_sync_outbox';
+  const DEADLETTER_KEY = 'dgo_outbox_deadletter';
+  const OUTBOX_MAX_ATTEMPTS = 8;
   const LOOKUPS_KEY = 'dgo_cached_lookups';
+  let bootState = 'idle'; // idle | loading | ok | error
 
   // ── Central Flow Endpoint Registry ─────────────────────────────────────────
   const PA_BASE = 'https://defaultca6a4b3f912349bcbcb927085ebbf1.a1.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows';
@@ -221,6 +224,23 @@ const API = (() => {
   const Outbox = {
     get: () => { try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; } },
     save: (queue) => { localStorage.setItem(OUTBOX_KEY, JSON.stringify(queue)); },
+    // Dead-letter store: writes that exhausted their retries, surfaced for manual review.
+    deadGet: () => { try { return JSON.parse(localStorage.getItem(DEADLETTER_KEY) || '[]'); } catch { return []; } },
+    deadSave: (q) => { try { localStorage.setItem(DEADLETTER_KEY, JSON.stringify(q)); } catch {} },
+    deadLetter(item) { const dl = this.deadGet(); dl.push(item); this.deadSave(dl); },
+    getDeadLetter() { return this.deadGet(); },
+    discardDeadLetter(id) { this.deadSave(this.deadGet().filter(q => q.id !== id)); },
+    retryDeadLetter(id) {
+      const dl = this.deadGet();
+      const item = dl.find(q => q.id === id);
+      if (!item) return false;
+      this.deadSave(dl.filter(q => q.id !== id));
+      const q = this.get();
+      q.push(Object.assign({}, item, { attempts: 0, nextRetry: Date.now() }));
+      this.save(q);
+      this.process();
+      return true;
+    },
     async push(code, payload) {
       const queue = this.get();
       const outboxId = `OUTBOX-TX-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
@@ -251,10 +271,21 @@ const API = (() => {
           if (response.ok) {
             queue = this.get().filter(q => q.id !== item.id);
             this.save(queue);
+            window.dispatchEvent(new CustomEvent('dgo:outbox-delivered', { detail: { code: item.code, id: item.id } }));
             if (window.Chrome) window.Chrome.showToast(`Flow ${item.code} successfully synchronized.`, 'success');
           } else { throw new Error(`Server returned status code: ${response.status}`); }
         } catch (err) {
           item.attempts++;
+          if (item.attempts >= OUTBOX_MAX_ATTEMPTS) {
+            // Exhausted retries → move to dead-letter so it stops silently retrying and
+            // can be surfaced / retried / discarded from Settings (INT-01).
+            this.save(this.get().filter(q => q.id !== item.id));
+            this.deadLetter(Object.assign({}, item, { lastError: err && err.message, failedAt: new Date().toISOString() }));
+            window.dispatchEvent(new CustomEvent('dgo:outbox-failed', { detail: { code: item.code, id: item.id, error: err && err.message } }));
+            if (window.Telemetry) window.Telemetry.log('outbox_deadlettered', { code: item.code, txId: item.id, error: err && err.message });
+            if (window.Chrome) window.Chrome.showToast(`Flow ${item.code} failed after ${OUTBOX_MAX_ATTEMPTS} attempts — saved to outbox for review.`, 'error');
+            continue;
+          }
           const backoff = Math.min(10000 * Math.pow(2, item.attempts), 7200000);
           item.nextRetry = Date.now() + backoff;
           const currentQueue = this.get();
@@ -339,15 +370,63 @@ const API = (() => {
     el.style.opacity = '0';
     setTimeout(() => el.remove(), 450);
   }
-  function boot() {
-    // Run the startup Fetch-All exactly once per browser session, behind a loading
-    // screen. The guard is set SYNCHRONOUSLY (before the slow fetch) so re-entry or
-    // navigation during the load cannot launch additional Fetch-All runs.
+  function showBootError() {
+    if (document.getElementById('dgo-boot-error')) return;
+    const el = document.createElement('div');
+    el.id = 'dgo-boot-error';
+    el.setAttribute('role', 'alert');
+    el.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99998;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;background:#7f1d1d;color:#fff;font-family:system-ui,"Segoe UI",sans-serif;font-size:13px;padding:10px 16px;box-shadow:0 2px 8px rgba(0,0,0,.3);';
+    el.innerHTML =
+      '<span>Live data unavailable — could not reach the Power Automate flows (check connectivity / flow CORS).</span>' +
+      '<button id="dgo-boot-retry" style="background:#fff;color:#7f1d1d;border:none;border-radius:4px;padding:5px 12px;font-weight:700;cursor:pointer;">Retry</button>' +
+      '<button id="dgo-boot-dismiss" aria-label="Dismiss" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:5px 10px;cursor:pointer;">Dismiss</button>';
+    (document.body || document.documentElement).appendChild(el);
+    const r = document.getElementById('dgo-boot-retry');
+    const d = document.getElementById('dgo-boot-dismiss');
+    if (r) r.addEventListener('click', retryBoot);
+    if (d) d.addEventListener('click', removeBootError);
+  }
+  function removeBootError() { const el = document.getElementById('dgo-boot-error'); if (el) el.remove(); }
+
+  async function retryBoot() {
+    removeBootError();
+    showBootOverlay();
+    bootState = 'loading';
+    try {
+      await fetchAll();
+      bootState = 'ok';
+      try { sessionStorage.setItem('dgo_booted', '1'); } catch {}
+      window.dispatchEvent(new CustomEvent('dgo:data-refreshed'));
+    } catch (e) {
+      bootState = 'error';
+      showBootError();
+    } finally {
+      hideBootOverlay();
+    }
+  }
+
+  async function boot() {
+    // Run the startup Fetch-All once per browser session, behind a loading screen.
+    // The guard is set synchronously so navigation during the load cannot launch a
+    // second concurrent Fetch-All; on FAILURE we clear it (and show a Retry banner) so
+    // the next page load re-attempts instead of stranding the session on empty caches.
     if (sessionStorage.getItem('dgo_booted') === '1') return;
     try { sessionStorage.setItem('dgo_booted', '1'); } catch {}
     showBootOverlay();
-    fetchAll().catch(() => {}).finally(() => hideBootOverlay());
+    bootState = 'loading';
+    try {
+      await fetchAll();
+      bootState = 'ok';
+    } catch (e) {
+      bootState = 'error';
+      try { sessionStorage.removeItem('dgo_booted'); } catch {}
+      if (window.Telemetry) window.Telemetry.log('fetch_all_failed', { error: e && e.message });
+      showBootError();
+    } finally {
+      hideBootOverlay();
+    }
   }
+  function getBootState() { return bootState; }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
@@ -357,6 +436,7 @@ const API = (() => {
     refresh,
     fetchAll,
     pendingFetchAll,
+    getBootState,
     invalidate,
     isCached,
     clearCache,

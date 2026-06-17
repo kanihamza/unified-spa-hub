@@ -341,7 +341,7 @@
 
             const response = await window.API.callPA('E07', payload);
             if (response.success) {
-              window.Chrome.showToast('Uniform bulk broadcast executed successfully!', 'success');
+              window.Chrome.showToast('Bulk broadcast queued — syncing…', 'success');
               setTimeout(() => {
                 window.location.href = 'tasks.html';
               }, 1200);
@@ -455,7 +455,7 @@
 
             const response = await window.API.callPA('E08_COMMIT', payload);
             if (response.success) {
-              window.Chrome.showToast('Optimized allocations dispatched successfully!', 'success');
+              window.Chrome.showToast('Allocations queued — syncing…', 'success');
               setTimeout(() => {
                 window.location.href = 'tasks.html';
               }, 1200);

@@ -161,6 +161,14 @@
                     <button class="dgo-btn dgo-btn--sm dgo-btn--primary dgo-spacer" onclick="window.API.Outbox.process()">Flush Outbox Now</button>
                     <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="localStorage.removeItem('dgo_sync_outbox'); location.reload()">Clear Queue</button>
                   </div>
+                  <div id="deadletter-section" style="display:none; margin-top: var(--dgo-s-3); border-top:1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-3);">
+                    <div class="dgo-cluster dgo-cluster--between">
+                      <h4 class="dgo-body-sm" style="font-weight:700; color:var(--dgo-color-action-danger);">Failed deliveries</h4>
+                      <span class="dgo-badge dgo-badge--action" id="deadletter-count-badge">0</span>
+                    </div>
+                    <p class="dgo-body-sm text-muted">Writes that exhausted all retries. Retry once the flow/CORS is fixed, or discard.</p>
+                    <div id="deadletter-list" class="dgo-stack dgo-stack--2"></div>
+                  </div>
                 </div>
 
                 <div class="dgo-card dgo-stack dgo-stack--3">
@@ -397,12 +405,36 @@
     </script>
     <script type="module">
       document.addEventListener('DOMContentLoaded', () => {
-        const count = window.API.Outbox.get().length;
-        const badge = document.getElementById('outbox-count-badge');
-        if (badge) {
-          badge.textContent = `${count} Pending`;
-          if (count > 0) badge.className = 'dgo-badge dgo-badge--action';
+        function renderOutbox() {
+          const count = window.API.Outbox.get().length;
+          const badge = document.getElementById('outbox-count-badge');
+          if (badge) {
+            badge.textContent = `${count} Pending`;
+            badge.className = count > 0 ? 'dgo-badge dgo-badge--action' : 'dgo-badge dgo-badge--pending';
+          }
+          const dead = window.API.Outbox.getDeadLetter();
+          const section = document.getElementById('deadletter-section');
+          const dcount = document.getElementById('deadletter-count-badge');
+          const list = document.getElementById('deadletter-list');
+          if (section) section.style.display = dead.length ? 'block' : 'none';
+          if (dcount) dcount.textContent = String(dead.length);
+          if (list) {
+            list.innerHTML = dead.map(item => `
+              <div class="dgo-cluster dgo-cluster--between" style="font-size:11px; background:var(--dgo-color-surface-sunken); padding:6px 8px; border-radius:4px;">
+                <span style="font-family:var(--dgo-family-mono);">${Sanitizer.escape(item.code)} · ${Sanitizer.escape(item.id)}</span>
+                <span>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--outline" data-retry="${Sanitizer.escape(item.id)}">Retry</button>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-discard="${Sanitizer.escape(item.id)}">Discard</button>
+                </span>
+              </div>
+            `).join('');
+            list.querySelectorAll('[data-retry]').forEach(b => b.addEventListener('click', () => { window.API.Outbox.retryDeadLetter(b.getAttribute('data-retry')); renderOutbox(); }));
+            list.querySelectorAll('[data-discard]').forEach(b => b.addEventListener('click', () => { window.API.Outbox.discardDeadLetter(b.getAttribute('data-discard')); renderOutbox(); }));
+          }
         }
+        renderOutbox();
+        window.addEventListener('dgo:outbox-delivered', renderOutbox);
+        window.addEventListener('dgo:outbox-failed', renderOutbox);
       });
     </script>
   </body>
