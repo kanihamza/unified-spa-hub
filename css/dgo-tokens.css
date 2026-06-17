@@ -27,6 +27,16 @@
   --dgo-smart-700:  #0A5828;
   --dgo-smart-800:  #07401D;
 
+  /* NITDA brand teal + registry gold — added for module harmonization (STR-02).
+     Exact source values, so light-theme rendering of migrated modules is unchanged. */
+  --dgo-teal-300:   #4FC8C1;
+  --dgo-teal-400:   #1FB9B0;
+  --dgo-teal-500:   #00A69D;   /* NITDA brand teal */
+  --dgo-teal-600:   #00897F;
+  --dgo-teal-700:   #006B63;
+  --dgo-gold-400:   #FFB400;
+  --dgo-gold-500:   #C9A227;   /* NITDA registry gold */
+
   --dgo-ink-0:      #FFFFFF;
   --dgo-ink-25:     #FAFAF9;
   --dgo-ink-50:     #F5F4F4;
@@ -211,6 +221,11 @@
   --dgo-color-action-accent-hover:   var(--dgo-smart-500);
   --dgo-color-action-accent-press:   var(--dgo-smart-600);
   --dgo-color-action-accent-soft:    var(--dgo-smart-50);
+
+  /* NITDA brand accents (STR-02 harmonization) — single source for module brand colors */
+  --dgo-color-brand-teal:        var(--dgo-teal-500);
+  --dgo-color-brand-teal-hover:  var(--dgo-teal-600);
+  --dgo-color-brand-gold:        var(--dgo-gold-500);
 
   --dgo-color-action-secondary:      transparent;
   --dgo-color-action-secondary-hover:var(--dgo-green-50);

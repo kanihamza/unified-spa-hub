@@ -1,24 +1,27 @@
-/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
+/* DGO harmonization (STR-02): palette aliased to css/dgo-tokens.css — brand hexes map to exact token values (light theme unchanged); module now follows the shared light/dark/HC themes. Visual QA pending on branch claude/str02-design-token-migration. */
 /* Fast Track Web Ops Styles */
+/* Palette aliased to the central design tokens (STR-02). Brand colors resolve to the
+   exact source hexes, so light-theme rendering is unchanged; the module now also follows
+   the shared dark/HC themes. */
 :root {
-  --brand-primary: #05583B;
-  --brand-secondary: #00A69D;
-  --brand-accent: #FFB400;
-  --error: #DC2626;
-  --success: #16A34A;
-  --warning: #D97706;
-  --neutral-primary: #1F2937;
-  --neutral-secondary: #6B7280;
-  --neutral-light: #E5E7EB;
-  --bg-primary: #ffffff;
-  --bg-secondary: #F9FAFB;
-  --text-input-fill: #F3F4F6;
-  --radius: 6px;
-  --spacing-xs: 4px;
-  --spacing-s: 8px;
-  --spacing-m: 16px;
-  --spacing-l: 24px;
-  --font-main: Verdana, 'Segoe UI', Arial, sans-serif;
+  --brand-primary: var(--dgo-color-action-primary);
+  --brand-secondary: var(--dgo-color-brand-teal);
+  --brand-accent: var(--dgo-gold-400);
+  --error: var(--dgo-color-action-danger);
+  --success: var(--dgo-color-action-accent);
+  --warning: var(--dgo-color-warning-subtle-fg);
+  --neutral-primary: var(--dgo-color-fg-default);
+  --neutral-secondary: var(--dgo-color-fg-muted);
+  --neutral-light: var(--dgo-color-border-default);
+  --bg-primary: var(--dgo-color-surface-page);
+  --bg-secondary: var(--dgo-color-surface-sunken);
+  --text-input-fill: var(--dgo-color-surface-muted);
+  --radius: var(--dgo-radius-control);
+  --spacing-xs: var(--dgo-s-1);
+  --spacing-s: var(--dgo-s-2);
+  --spacing-m: var(--dgo-s-4);
+  --spacing-l: var(--dgo-s-6);
+  --font-main: var(--dgo-family-body);
 }
 
 .ft-app { font-family: var(--font-main); }
@@ -174,7 +177,7 @@
 }
 .ft-app .email-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
 .ft-app .email-card.selected { background: white; border-color: var(--brand-secondary); }
-.ft-app .email-card h3 { color: #05583B; font-size: 1.05rem; margin: 0 0 4px 0; line-height: 1.3; }
+.ft-app .email-card h3 { color: var(--brand-primary); font-size: 1.05rem; margin: 0 0 4px 0; line-height: 1.3; }
 .ft-app .email-card p { font-size: 0.88rem; color: #555; margin: 0 0 6px 0; }
 .ft-app .email-card .email-body-preview { border-top: 1px solid #ddd; margin-top: 6px; padding-top: 6px; font-size: 0.9rem; color: #333; line-height: 1.4; }
 

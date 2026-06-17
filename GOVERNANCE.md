@@ -25,10 +25,13 @@
 > - **CFG-01:** Settings exposes every flow override (incl. E14/E16/E17); "Restore Defaults" works.
 > - **GOV-02:** CI (`.github/workflows/ci.yml`) runs a compliance lint (BRD §13 controls) + the
 >   real-browser smoke (18/18 green).
-> - **STR-02 (residual, tracked):** module CSS (`exec-hub`, `dgceo-hub`, `response-tracking`,
->   `response-matrix`, `fast-track`) still defines local palettes rather than `dgo-tokens.css`
->   variables. Full token migration requires visual QA and is deferred to a styling pass; it is a
->   maintainability/consistency item (NFR-005), not a correctness or security gap.
+> - **STR-02 (migrated on branch `claude/str02-design-token-migration`, pending visual QA):**
+>   module CSS (`exec-hub`, `dgceo-hub`, `response-tracking`, `response-matrix`, `fast-track`)
+>   now aliases the central `dgo-tokens.css` palette. NITDA teal/gold were added as exact brand
+>   tokens, so the default light theme is visually unchanged while the modules now follow the
+>   shared light/dark/HC themes. See `docs/STR-02-CSS-MIGRATION.md` for the mapping and the
+>   visual-QA checklist. Residual: generic neutrals in the two literal-driven modules and the
+>   `response-matrix` Tailwind-shim coverage remain a follow-up.
 > - **Cross-boundary (server-side, not in this repo):** rotate the committed SAS signatures (SEC-01),
 >   enforce OTP/role **inside the flows** (SEC-01/02 closure), and set each flow's
 >   `Access-Control-Allow-Origin` to the real app origin (REL-01 / the CORS item below).

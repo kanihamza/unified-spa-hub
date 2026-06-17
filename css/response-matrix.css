@@ -1,5 +1,7 @@
-/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
-:root { --nitda-green: #05583B; --nitda-teal: #00A69D; --nitda-gold: #c9a227; --paper-bg: #fffdf0; }
+/* DGO harmonization (STR-02): palette aliased to css/dgo-tokens.css — brand hexes map to exact token values (light theme unchanged); module now follows the shared light/dark/HC themes. Visual QA pending on branch claude/str02-design-token-migration. */
+/* Brand palette aliased to central tokens (STR-02). `--paper-bg` is the intentional
+   minute-sheet cream and stays a literal. */
+:root { --nitda-green: var(--dgo-color-action-primary); --nitda-teal: var(--dgo-color-brand-teal); --nitda-gold: var(--dgo-color-brand-gold); --paper-bg: #fffdf0; }
 .nitda-gradient { background: linear-gradient(135deg, var(--nitda-green) 0%, var(--nitda-teal) 100%); }
 .minute-sheet { background-color: var(--paper-bg); border-left: 8px solid #d1d5db; font-family: 'Courier New', Courier, monospace; background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px; }
 .minute-entry { border-bottom: 1px dashed #ccc; padding: 20px; position: relative; background: rgba(255,255,255,0.4); }

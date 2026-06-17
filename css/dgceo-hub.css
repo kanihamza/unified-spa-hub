@@ -1,6 +1,8 @@
-/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
-:root { --nitda-green: #05583B; --nitda-teal: #00A69D; --nitda-gold: #c9a227; }
-body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; color: #111; margin: 0; padding: 0; }
+/* DGO harmonization (STR-02): palette aliased to css/dgo-tokens.css — brand hexes map to exact token values (light theme unchanged); module now follows the shared light/dark/HC themes. Visual QA pending on branch claude/str02-design-token-migration. */
+/* Brand palette + page frame aliased to central tokens (STR-02). Brand hexes are exact,
+   so light-theme rendering is unchanged; brand + page now follow the shared themes. */
+:root { --nitda-green: var(--dgo-color-action-primary); --nitda-teal: var(--dgo-color-brand-teal); --nitda-gold: var(--dgo-color-brand-gold); }
+body { background: var(--dgo-color-surface-sunken); font-family: var(--dgo-family-body); color: var(--dgo-color-fg-default); margin: 0; padding: 0; }
 .hub-header { background: linear-gradient(to right, var(--nitda-green), var(--nitda-teal)); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .brand { display: flex; align-items: center; gap: 15px; }
 .brand-text h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
@@ -36,7 +38,7 @@ body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; colo
 .action-box select, .action-box textarea, .action-box input { wwidth: 100%; width: -webkit-fill-available; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 10px; }
 .action-box textarea { height: 80px; resize: none; }
 .btn-primary { background: var(--nitda-green); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
-.btn-primary:hover { background: #044530; }
+.btn-primary:hover { background: var(--dgo-color-action-primary-hover); }
 .btn-secondary { background: #e0e0e0; color: #333; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
 .btn-secondary:hover { background: #ccc; }
 .btn-danger { background: #ef4444; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; font-size: 14px; }
