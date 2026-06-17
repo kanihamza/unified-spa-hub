@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Single Assignment Intake</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Dyn-loaded sidebar -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Dyn-loaded top-header -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+            
+            <!-- Page Header -->
+            <div class="dgo-stack dgo-stack--1">
+              <h2 class="dgo-h2">Activity Assignment Engine</h2>
+              <p class="dgo-body text-muted">Create formal directive assignments, map Directorate support, and dispatch notifications via Logic Flows.</p>
+            </div>
+
+            <!-- Page Split: Left Form Intake vs Right Summary Ledger -->
+            <div class="dgo-split-interactive">
+              
+              <!-- Left Column: Form Card -->
+              <div class="dgo-card dgo-stack dgo-stack--4">
+                <div class="dgo-cluster dgo-cluster--between">
+                  <h3 class="dgo-card__title">Assignment Directive Form</h3>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-reset-form" style="height:28px; font-size:11px;">Clear Fields</button>
+                </div>
+
+                <form id="assignment-form" class="dgo-stack dgo-stack--4" onsubmit="return false;">
+                  <!-- Reference ID field -->
+                  <div class="dgo-form-group">
+                    <label for="frm-document-id" class="dgo-label dgo-label--required">Reference Dossier ID</label>
+                    <div style="display: flex; gap: var(--dgo-s-2);">
+                      <input type="text" id="frm-document-id" class="dgo-input" placeholder="Select or type a valid DOC-xxxx ID" required>
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-select-doc-modal">Browse</button>
+                    </div>
+                    <span class="dgo-field-help">Link an existing inbound dossier registration reference.</span>
+                  </div>
+
+                  <!-- Directive Title -->
+                  <div class="dgo-form-group">
+                    <label for="frm-title" class="dgo-label dgo-label--required">Assignment Subject Directive</label>
+                    <input type="text" id="frm-title" class="dgo-input" placeholder="Provide action subject e.g. Audit Response Sizing..." required>
+                  </div>
+
+                  <!-- Cascade Trigger: Process Category -->
+                  <div class="dgo-form-group">
+                    <label for="frm-category" class="dgo-label dgo-label--required">Operations Process Category</label>
+                    <select id="frm-category" class="dgo-select" required>
+                      <option value="" disabled selected>(Select category to execute cascade)</option>
+                    </select>
+                    <span class="dgo-field-help">Pulls cascading default departments, assignees, and priority weights.</span>
+                  </div>
+
+                  <!-- Autocomplete 1: Principal Assignee -->
+                  <div class="dgo-form-group dgo-autocomplete">
+                    <label for="frm-assignee" class="dgo-label dgo-label--required">Lead Action Assignee Officer</label>
+                    <div style="display:flex; gap: var(--dgo-s-2);">
+                      <input type="text" id="frm-assignee" class="dgo-input" style="flex:1;" placeholder="Type name, role, or ID to match registrar..." autocomplete="off" required>
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-clear-assignee" style="display:none;">Clear</button>
+                    </div>
+                    <div class="dgo-autocomplete__dropdown" id="suggest-assignee-dropdown"></div>
+                    <input type="hidden" id="frm-assignee-val">
+                    <span class="dgo-field-help" id="resolve-primary-assignee-hint">Matches official directory registry.</span>
+                  </div>
+
+                  <!-- Autocomplete 2: Co-Assignee Support -->
+                  <div class="dgo-form-group dgo-autocomplete">
+                    <label for="frm-co-assignee" class="dgo-label">Joint Co-Assignee Officer</label>
+                    <div style="display:flex; gap: var(--dgo-s-2);">
+                      <input type="text" id="frm-co-assignee" class="dgo-input" style="flex:1;" placeholder="Search support officer list..." autocomplete="off">
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-clear-coassignee" style="display:none;">Clear</button>
+                    </div>
+                    <div class="dgo-autocomplete__dropdown" id="suggest-coassignee-dropdown"></div>
+                    <input type="hidden" id="frm-co-assignee-val">
+                  </div>
+
+                  <!-- CC: Directorate and Agencies list tags -->
+                  <div class="dgo-form-group">
+                    <label class="dgo-label">Carbon Copy Stakeholders (CC)</label>
+                    <div class="dgo-cluster dgo-cluster--density" id="cc-tags-container" style="margin-bottom: var(--dgo-s-1);">
+                      <!-- Managed Tags -->
+                    </div>
+                    <div style="display: flex; gap: var(--dgo-s-2);">
+                      <select id="select-cc-dept" class="dgo-select" style="flex:1;">
+                        <option value="" disabled selected>Add CC recipient Directorate...</option>
+                      </select>
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-add-cc">Add</button>
+                    </div>
+                  </div>
+
+                  <!-- Priority Option -->
+                  <div class="dgo-form-group">
+                    <label for="frm-priority" class="dgo-label dgo-label--required">Priority Weight</label>
+                    <select id="frm-priority" class="dgo-select" required>
+                      <option value="LOW">LOW (Weight MULTIPLIER x1.0)</option>
+                      <option value="MEDIUM">MEDIUM (Weight MULTIPLIER x1.5)</option>
+                      <option value="HIGH">HIGH (Weight MULTIPLIER x2.5)</option>
+                    </select>
+                  </div>
+
+                  <!-- Deadline Days -->
+                  <div class="dgo-form-group">
+                    <label for="frm-deadline" class="dgo-label dgo-label--required">Directive Completion Deadline (Days)</label>
+                    <input type="number" id="frm-deadline" class="dgo-input" min="1" max="90" required>
+                  </div>
+
+                  <!-- Comments & Directives Text -->
+                  <div class="dgo-form-group">
+                    <label for="frm-directives" class="dgo-label dgo-label--required">Registry Comments / DG Standing Directives</label>
+                    <textarea id="frm-directives" class="dgo-textarea" placeholder="Detail formal operational expectations, expected delivery outputs, or references..." required></textarea>
+                  </div>
+
+                  <!-- Action Button -->
+                  <button type="button" class="dgo-btn dgo-btn--lg dgo-btn--primary" id="btn-form-preview" style="margin-top:var(--dgo-s-2);">
+                    <svg style="width:20px; height: 20px;"><use href="assets/icons/sprite.svg#i-send"></use></svg>
+                    <span>Inspect Assignment Dispatch</span>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Right Column: Live Summary Ledger -->
+              <div class="dgo-stack dgo-stack--4">
+                <!-- Live Summary Screen -->
+                <div class="dgo-card dgo-stack dgo-stack--4" style="border-left: 4px solid var(--dgo-color-action-accent);">
+                  <h3 class="dgo-card__title">Real-Time Directive Summary</h3>
+                  
+                  <div class="dgo-stack dgo-stack--3" style="font-size: var(--dgo-type-body-sm);">
+                    <div class="dgo-cluster dgo-cluster--between">
+                      <span class="dgo-overline">Dossier Target</span>
+                      <code id="sum-doc-id" style="font-weight: 600;">(Undefined)</code>
+                    </div>
+
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Category Process</span>
+                      <span id="sum-category" style="font-weight: 500;">(Not Selected)</span>
+                    </div>
+
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Primary Owner</span>
+                      <span id="sum-assignee" class="text-strong">(Not Assigned)</span>
+                    </div>
+
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Co-Assignee Support</span>
+                      <span id="sum-co-assignee" class="text-muted">(None)</span>
+                    </div>
+
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">CC Recipient List</span>
+                      <span id="sum-cc" class="text-muted">(None)</span>
+                    </div>
+
+                    <div class="dgo-cluster dgo-cluster--between">
+                      <span class="dgo-overline">Priority Rank</span>
+                      <span class="dgo-badge dgo-badge--pending" id="sum-priority">MEDIUM</span>
+                    </div>
+
+                    <div class="dgo-cluster dgo-cluster--between">
+                      <span class="dgo-overline">Required Deadline</span>
+                      <span id="sum-deadline" class="text-strong">14 Days</span>
+                    </div>
+
+                    <div class="dgo-stack dgo-stack--1">
+                      <span class="dgo-overline">Standing Directives</span>
+                      <p id="sum-directives" class="dgo-body-sm text-muted" style="white-space: pre-wrap; font-style:italic;">(Enter standing directives...)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Guidance Info block -->
+                <div class="dgo-card dgo-stack dgo-stack--2" style="background:var(--dgo-color-surface-sunken); border:none;">
+                  <h4 class="dgo-h5">Cascading Directive Architecture</h4>
+                  <p class="dgo-body-sm text-muted">
+                    When you select an Operations Category, the platform matches SharePoint rules to automatically propose the primary director, default SLA timers, and support CC groups. You can override any of these details as necessary prior to firing Microsoft workflows.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modal Browser: Quick reference dossier collector modal -->
+    <div class="dgo-modal-overlay" id="modal-dossier-selector">
+      <div class="dgo-modal dgo-modal--lg">
+        <div class="dgo-modal__header">
+          <h3 class="dgo-modal__title">Collect Pending Registrations</h3>
+          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" onclick="closeDocBrowser()">
+            <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-close"></use></svg>
+          </button>
+        </div>
+        <div class="dgo-modal__body dgo-stack dgo-stack--3">
+          <p class="dgo-body-sm">Select any pending dossier record to instantly bind its reference and target metadata details.</p>
+          <div class="dgo-table-container" style="max-height: 280px;">
+            <table class="dgo-table">
+              <thead>
+                <tr>
+                  <th>Dossier ID</th>
+                  <th>Sender / Subject</th>
+                  <th>Process Category</th>
+                  <th style="text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="modal-docs-tbody">
+                <!-- Loaded doc lists -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Preview: Inspect assignment envelope and email notify layout prior to Logic dispatches E06 -->
+    <div class="dgo-modal-overlay" id="modal-envelope-preview">
+      <div class="dgo-modal dgo-modal--lg">
+        <div class="dgo-modal__header">
+          <h3 class="dgo-modal__title">Assignment Dispatch Review</h3>
+          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" onclick="closePreviewModal()">
+            <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-close"></use></svg>
+          </button>
+        </div>
+        
+        <div class="dgo-modal__body dgo-stack dgo-stack--5">
+          <p class="dgo-body-sm">Verify the final notification layout which will be sent to the executive email and flagged onto the SharePoint tracking console.</p>
+          
+          <div class="dgo-tabs">
+            <span class="dgo-tab dgo-tab--active" id="tab-btn-email" onclick="switchPreviewTab('email')">Formal Email Notification Card</span>
+            <span class="dgo-tab" id="tab-btn-json" onclick="switchPreviewTab('json')">Structured API Envelope</span>
+          </div>
+
+          <!-- Tab Content 1: Email visual card -->
+          <div id="preview-tab-email" class="dgo-stack dgo-stack--3" style="background:#0F1C16; color: #E8EDEA; padding: var(--dgo-s-5); border-radius: var(--dgo-radius-card); border: 1px solid var(--dgo-green-700);">
+            <div class="dgo-cluster dgo-cluster--between" style="border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:var(--dgo-s-3);">
+              <img src="assets/logo/white-out.svg" style="height:32px;" alt="Logo">
+              <span style="font-family: var(--dgo-family-mono); font-size:10px; color: var(--dgo-color-action-accent);">ALERT CODE: NITDA-E06-DIRECTIVE</span>
+            </div>
+
+            <div class="dgo-stack dgo-stack--2">
+              <p style="font-size: 15px; font-weight:600;">OFFICIAL MEMORANDUM DIRECTIVE FROM THE DG OFFICE</p>
+              <p style="font-size: var(--dgo-type-body-sm); color: rgba(255,255,255,0.85);">
+                Dear <strong id="email-preview-assignee" style="color:#ffffff;">[Assignee]</strong>,
+              </p>
+              <p style="font-size: var(--dgo-type-body-sm); color: rgba(255,255,255,0.85); line-height: 1.5;">
+                You have been formally designated as the **Lead Action Executive** under directive subject: <strong id="email-preview-title" style="color:var(--dgo-color-action-accent);">[Title]</strong>. This assignment relates to registered dossier ID <code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-weight:600; font-family:var(--dgo-family-mono);" id="email-preview-doc-id">[DocID]</code> received in registry.
+              </p>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); border-left:3px solid var(--dgo-color-action-accent); padding: var(--dgo-s-3); border-radius: 4px;">
+              <p style="font-size:11px; font-weight:600; text-transform:uppercase; color: rgba(255,255,255,0.6); margin-bottom: var(--dgo-s-2);">Executive Directives &amp; Action Standard</p>
+              <p style="font-size: var(--dgo-type-body-sm); font-style:italic;" id="email-preview-directives">No directives inputted.</p>
+            </div>
+
+            <div class="dgo-grid dgo-grid--3" style="font-size: 11px; margin-top:var(--dgo-s-2); border-top:1px solid rgba(255,255,255,0.15); padding-top:var(--dgo-s-3);">
+              <div>
+                <p style="color: rgba(255,255,255,0.5);">Priority Status</p>
+                <p style="font-size: 13px; font-weight:700;" id="email-preview-priority">MEDIUM</p>
+              </div>
+              <div>
+                <p style="color: rgba(255,255,255,0.5);">Direct Deadline</p>
+                <p style="font-size: 13px; font-weight:700;" id="email-preview-deadline">14 Days</p>
+              </div>
+              <div>
+                <p style="color: rgba(255,255,255,0.5);">CC Watch group</p>
+                <p id="email-preview-cc" style="font-weight:600;">None</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: JSON payload -->
+          <div id="preview-tab-json" style="display:none;">
+            <pre style="background: var(--dgo-color-surface-sunken); padding: var(--dgo-s-4); border-radius: var(--dgo-radius-card); border:1px solid var(--dgo-color-border-strong); overflow-x:auto; font-size:12px; font-family:var(--dgo-family-mono); max-height:260px;" id="json-payload-pre">{}</pre>
+          </div>
+        </div>
+
+        <div class="dgo-modal__footer">
+          <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="closePreviewModal()">Back to Edit</button>
+          <button class="dgo-btn dgo-btn--md dgo-btn--accent" id="btn-modal-dispatch">
+            <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-check"></use></svg>
+            <span>Confirm and Dispatch Directive</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/sanitizer.js"></script>
+    <script type="module" src="js/identity.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/lookups.js"></script>
+    <script type="module" src="js/a11y.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/chrome.js"></script>
+
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('assign');
+
+        const ccTags = new Set();
+        let officers = [];
+        let categories = [];
+        let depts = [];
+
+        // Check query URL params for autostart
+        const params = new URLSearchParams(window.location.search);
+        const docParam = params.get('documentId');
+        if (docParam) {
+          document.getElementById('frm-document-id').value = docParam;
+          updateLiveSummary();
+        }
+
+        // Initialize elements
+        try {
+          const refs = await window.Lookups.loadReferences();
+          officers = refs.officers || [];
+          categories = refs.categories || [];
+          depts = refs.departments || [];
+
+          // Populates Process Category select
+          const selectCat = document.getElementById('frm-category');
+          selectCat.innerHTML += categories.map(c => `<option value="${c.code}">${Sanitizer.escape(c.name)}</option>`).join('');
+
+          // Populate CC options
+          const selectCC = document.getElementById('select-cc-dept');
+          selectCC.innerHTML += depts.map(d => `<option value="${d.code}">${Sanitizer.escape(d.name)} (${d.code})</option>`).join('');
+
+        } catch (err) {
+          window.Chrome.showToast('Reference lookups sync failed.', 'error');
+        }
+
+        // CC actions tags adder
+        document.getElementById('btn-add-cc').addEventListener('click', () => {
+          const select = document.getElementById('select-cc-dept');
+          const code = select.value;
+          if (code && !ccTags.has(code)) {
+            ccTags.add(code);
+            renderCCTags();
+            updateLiveSummary();
+            select.selectedIndex = 0;
+          }
+        });
+
+        function renderCCTags() {
+          const container = document.getElementById('cc-tags-container');
+          container.innerHTML = Array.from(ccTags).map(code => `
+            <span class="dgo-badge dgo-badge--routed dgo-cluster dgo-cluster--density" style="height:26px; padding-right:4px;">
+              <span>${code}</span>
+              <button type="button" class="btn-cc-remove dgo-centered" data-code="${code}" style="width:16px; height: 16px; border-radius:50%; background:rgba(0,0,0,0.1); color: var(--dgo-color-fg-muted); margin-left:var(--dgo-s-1);">✖</button>
+            </span>
+          `).join('');
+
+          container.querySelectorAll('.btn-cc-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const code = btn.getAttribute('data-code');
+              ccTags.delete(code);
+              renderCCTags();
+              updateLiveSummary();
+            });
+          });
+        }
+
+        // Auto-resolver on process cascade choice
+        document.getElementById('frm-category').addEventListener('change', (e) => {
+          const code = e.target.value;
+          const cascade = window.Lookups.resolveCategoryCascade(code);
+          if (cascade) {
+            // Apply assignments
+            document.getElementById('frm-assignee-val').value = cascade.defaultAssigneeId;
+            document.getElementById('frm-assignee').value = cascade.defaultAssigneeName;
+            document.getElementById('btn-clear-assignee').style.display = 'inline-block';
+
+            // Priority
+            document.getElementById('frm-priority').value = cascade.defaultPriority;
+
+            // Timer
+            document.getElementById('frm-deadline').value = cascade.deadlineDays;
+
+            // CC Add defaults
+            ccTags.clear();
+            cascade.defaultCC.forEach(c => ccTags.add(c));
+            renderCCTags();
+
+            updateLiveSummary();
+            window.Chrome.showToast('Category direct cascade successfully applied!', 'success');
+          }
+        });
+
+        // Setup autocompletes
+        setupAutocompleteInput('frm-assignee', 'suggest-assignee-dropdown', 'frm-assignee-val', 'btn-clear-assignee');
+        setupAutocompleteInput('frm-co-assignee', 'suggest-coassignee-dropdown', 'frm-co-assignee-val', 'btn-clear-coassignee');
+
+        function setupAutocompleteInput(inputId, dropdownId, hiddenValId, clearId) {
+          const input = document.getElementById(inputId);
+          const dropdown = document.getElementById(dropdownId);
+          const hidden = document.getElementById(hiddenValId);
+          const clear = document.getElementById(clearId);
+
+          input.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            if (!q) {
+              dropdown.style.display = 'none';
+              return;
+            }
+
+            const matched = officers.filter(o => 
+              o.name.toLowerCase().includes(q) || 
+              o.role.toLowerCase().includes(q) || 
+              o.id.toLowerCase().includes(q)
+            );
+
+            if (matched.length === 0) {
+              dropdown.innerHTML = `<div style="padding: 8px; font-size:12px; color: var(--dgo-color-fg-subtle);">No matching official registry profiles</div>`;
+              dropdown.style.display = 'block';
+              return;
+            }
+
+            dropdown.innerHTML = matched.map(o => `
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
+              </div>
+            `).join('');
+
+            dropdown.style.display = 'block';
+
+            dropdown.querySelectorAll('.dgo-autocomplete__item').forEach(el => {
+              el.addEventListener('click', () => {
+                const id = el.getAttribute('data-id');
+                const name = el.getAttribute('data-name');
+                input.value = name;
+                hidden.value = id;
+                dropdown.style.display = 'none';
+                if (clear) clear.style.display = 'inline-block';
+                updateLiveSummary();
+              });
+            });
+          });
+
+          // Clear buttons
+          if (clear) {
+            clear.addEventListener('click', () => {
+              input.value = '';
+              hidden.value = '';
+              clear.style.display = 'none';
+              updateLiveSummary();
+            });
+          }
+
+          // Document click click-away
+          document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+              dropdown.style.display = 'none';
+            }
+          });
+        }
+
+        // Key Up events for summary sync
+        document.querySelectorAll('.dgo-input, .dgo-textarea, .dgo-select').forEach(el => {
+          el.addEventListener('change', updateLiveSummary);
+          el.addEventListener('keyup', updateLiveSummary);
+        });
+
+        function updateLiveSummary() {
+          const docId = document.getElementById('frm-document-id').value;
+          document.getElementById('sum-doc-id').textContent = docId || '(Undefined)';
+
+          const cat = document.getElementById('frm-category');
+          const catText = cat.selectedIndex > 0 ? cat.options[cat.selectedIndex].text : '(Not Selected)';
+          document.getElementById('sum-category').textContent = catText;
+
+          const assigneeName = document.getElementById('frm-assignee').value;
+          document.getElementById('sum-assignee').textContent = assigneeName || '(Not Assigned)';
+
+          const helpCo = document.getElementById('frm-co-assignee').value;
+          document.getElementById('sum-co-assignee').textContent = helpCo || '(None)';
+
+          const ccList = Array.from(ccTags).join(', ');
+          document.getElementById('sum-cc').textContent = ccList || '(None)';
+
+          const prioritySel = document.getElementById('frm-priority').value;
+          const pBadge = document.getElementById('sum-priority');
+          pBadge.textContent = prioritySel;
+          pBadge.className = `dgo-badge dgo-badge--${prioritySel === 'HIGH' ? 'action' : (prioritySel === 'MEDIUM' ? 'routed' : 'draft')}`;
+
+          const deadDays = document.getElementById('frm-deadline').value;
+          document.getElementById('sum-deadline').textContent = deadDays ? `${deadDays} Days` : '14 Days';
+
+          const directsText = document.getElementById('frm-directives').value;
+          document.getElementById('sum-directives').textContent = directsText || '(Enter standing directives...)';
+        }
+
+        // Browse docs selectors modals
+        window.openDocBrowser = async () => {
+          const docModal = document.getElementById('modal-dossier-selector');
+          docModal.classList.add('dgo-modal-overlay--active');
+          window.A11y.trapFocus(docModal.querySelector('.dgo-modal'));
+
+          try {
+            const data = await window.API.callPA('E02');
+            const docs = data?.records || [];
+            const tbody = document.getElementById('modal-docs-tbody');
+
+            tbody.innerHTML = docs.filter(d => d.status === 'PENDING').map(d => `
+              <tr>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding: 2px 6px; border-radius: 4px;">${Sanitizer.escape(d.id)}</code></td>
+                <td>
+                  <div class="dgo-stack dgo-stack--0">
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm);">${Sanitizer.escape(d.title)}</span>
+                    <span style="font-size:10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(d.sender)}</span>
+                  </div>
+                </td>
+                <td><span style="font-size: var(--dgo-type-body-sm);">${getCategoryLabel(d.category)}</span></td>
+                <td style="text-align:right;">
+                  <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--primary" onclick="window.pickDoc('${Sanitizer.escape(d.id)}')">Select</button>
+                </td>
+              </tr>
+            `).join('');
+          } catch {
+            window.Chrome.showToast('Reference document loading failed.', 'error');
+          }
+        };
+
+        window.pickDoc = (id) => {
+          document.getElementById('frm-document-id').value = id;
+          window.closeDocBrowser();
+          updateLiveSummary();
+          window.Chrome.showToast(`Dossier ${id} associated loaded!`, 'success');
+        };
+
+        window.closeDocBrowser = () => {
+          document.getElementById('modal-dossier-selector').classList.remove('dgo-modal-overlay--active');
+        };
+
+        document.getElementById('btn-select-doc-modal').addEventListener('click', window.openDocBrowser);
+
+        function getCategoryLabel(code) {
+          const cat = categories.find(c => c.code === code);
+          return cat ? cat.name : code;
+        }
+
+        // Preview actions modal
+        const previewModal = document.getElementById('modal-envelope-preview');
+        let envelopePayload = null;
+
+        window.openPreviewModal = () => {
+          const form = document.getElementById('assignment-form');
+          if (!form.reportValidity()) {
+            window.Chrome.showToast('Please satisfy form requirements first.', 'warning');
+            return;
+          }
+
+          previewModal.classList.add('dgo-modal-overlay--active');
+          window.A11y.trapFocus(previewModal.querySelector('.dgo-modal'));
+
+          // Load previews fields
+          const assigneeName = document.getElementById('frm-assignee').value;
+          const directTitle = document.getElementById('frm-title').value;
+          const parentDoc = document.getElementById('frm-document-id').value;
+          const directsText = document.getElementById('frm-directives').value;
+          const priority = document.getElementById('frm-priority').value;
+          const lengthDays = document.getElementById('frm-deadline').value;
+          const ccList = Array.from(ccTags).join(', ') || 'None';
+
+          document.getElementById('email-preview-assignee').textContent = assigneeName;
+          document.getElementById('email-preview-title').textContent = directTitle;
+          document.getElementById('email-preview-doc-id').textContent = parentDoc;
+          document.getElementById('email-preview-directives').textContent = directsText || 'No Standing directives specified.';
+          document.getElementById('email-preview-priority').textContent = priority;
+          document.getElementById('email-preview-deadline').textContent = `${lengthDays} Days`;
+          document.getElementById('email-preview-cc').textContent = ccList;
+
+          // Assemble JSON envelope
+          envelopePayload = {
+            documentId: parentDoc,
+            title: directTitle,
+            category: document.getElementById('frm-category').value,
+            assignee: document.getElementById('frm-assignee-val').value || assigneeName,
+            coAssignee: document.getElementById('frm-co-assignee-val').value || document.getElementById('frm-co-assignee').value,
+            cc: Array.from(ccTags),
+            priority: priority,
+            deadlineDays: parseInt(lengthDays),
+            directives: directsText
+          };
+
+          document.getElementById('json-payload-pre').textContent = JSON.stringify(envelopePayload, null, 2);
+          switchPreviewTab('email');
+        };
+
+        window.closePreviewModal = () => {
+          previewModal.classList.remove('dgo-modal-overlay--active');
+        };
+
+        // Modal Preview Tabs
+        window.switchPreviewTab = (tab) => {
+          const emailTab = document.getElementById('preview-tab-email');
+          const jsonTab = document.getElementById('preview-tab-json');
+          const emailBtn = document.getElementById('tab-btn-email');
+          const jsonBtn = document.getElementById('tab-btn-json');
+
+          if (tab === 'email') {
+            emailTab.style.display = 'flex';
+            jsonTab.style.display = 'none';
+            emailBtn.classList.add('dgo-tab--active');
+            jsonBtn.classList.remove('dgo-tab--active');
+          } else {
+            emailTab.style.display = 'none';
+            jsonTab.style.display = 'block';
+            emailBtn.classList.remove('dgo-tab--active');
+            jsonBtn.classList.add('dgo-tab--active');
+          }
+        };
+
+        document.getElementById('btn-form-preview').addEventListener('click', window.openPreviewModal);
+
+        // Core single assignment trigger E06 Power Automate invoke
+        document.getElementById('btn-modal-dispatch').addEventListener('click', async () => {
+          if (!envelopePayload) return;
+
+          try {
+            window.Chrome.showToast('Routing Directive to Power Automate...');
+            const response = await window.API.callPA('E06', envelopePayload);
+            
+            if (response.success) {
+              window.Chrome.showToast('Directive routed and active!', 'success');
+              closePreviewModal();
+              
+              // Clear fields
+              document.getElementById('assignment-form').reset();
+              ccTags.clear();
+              renderCCTags();
+              updateLiveSummary();
+
+              // Redirect
+              setTimeout(() => {
+                window.location.href = 'tasks.html';
+              }, 1200);
+            } else {
+              window.Chrome.showToast('Routing failed. Registry rejected payload.', 'error');
+            }
+          } catch (err) {
+            window.Chrome.showToast(err.message, 'error');
+          }
+        });
+
+        // Reset forms click
+        document.getElementById('btn-reset-form').addEventListener('click', () => {
+          document.getElementById('assignment-form').reset();
+          ccTags.clear();
+          renderCCTags();
+          updateLiveSummary();
+          window.Chrome.showToast('Form fields cleared.', 'success');
+        });
+      });
+    </script>
+  </body>
+</html>

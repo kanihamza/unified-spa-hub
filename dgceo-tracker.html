@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — DG/CEO Correspondence Tracker</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+    <link rel="stylesheet" href="css/dgceo-tracker.css">
+  </head>
+  <body>
+    <a class="dgo-skip-link" href="#main-content">Skip to content</a>
+
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main" id="main-content">
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+
+            <!-- Header + toolbar -->
+            <div class="dgo-cluster dgo-cluster--between dgo-cluster--density">
+              <div class="dgo-stack dgo-stack--1">
+                <h2 class="dgo-h2" id="page-title">Dashboard Overview</h2>
+                <p class="dgo-body-sm text-muted">DG/CEO Correspondence Tracker — log, route, and track official records.</p>
+              </div>
+              <div class="dgo-cluster dgo-cluster--density">
+                <input type="text" id="global-search" class="dgo-input" style="width: 260px;" placeholder="Search references, subjects…" autocomplete="off">
+                <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="exportToCSV()">
+                  <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-download"></use></svg>
+                  <span>Export</span>
+                </button>
+                <button class="dgo-btn dgo-btn--md dgo-btn--ghost" onclick="triggerManualSync()">
+                  <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
+                  <span>Force Sync</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab navigation -->
+            <div class="dgceo-tabs" role="tablist" aria-label="Tracker views">
+              <button id="nav-dashboard" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--primary" role="tab" aria-selected="true" onclick="switchTab('dashboard')">
+                <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-chart"></use></svg>
+                <span>Dashboard</span>
+              </button>
+              <button id="nav-new-entry" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" onclick="switchTab('new-entry')">
+                <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
+                <span>Log Correspondence</span>
+              </button>
+              <button id="nav-records" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" onclick="switchTab('records')">
+                <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-folder"></use></svg>
+                <span>Official Records</span>
+                <span class="dgo-badge dgo-badge--action" id="badge-pending" style="font-size:10px;">0</span>
+              </button>
+            </div>
+
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="tab-content active dgo-stack dgo-stack--4">
+              <div class="dgo-grid dgo-grid--4 dgo-grid--density">
+                <div class="dgo-card">
+                  <div class="dgo-stat-card">
+                    <div class="dgo-stat-card__icon"><svg><use href="assets/icons/sprite.svg#i-folder"></use></svg></div>
+                    <div class="dgo-stat-card__content">
+                      <span class="dgo-stat-card__value" id="stat-total">0</span>
+                      <span class="dgo-stat-card__label">Total Logged</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dgo-card">
+                  <div class="dgo-stat-card">
+                    <div class="dgo-stat-card__icon" style="background: var(--dgo-color-danger-subtle-bg); color: var(--dgo-color-action-danger);"><svg><use href="assets/icons/sprite.svg#i-clock"></use></svg></div>
+                    <div class="dgo-stat-card__content">
+                      <span class="dgo-stat-card__value" id="stat-pending" style="color: var(--dgo-color-action-danger);">0</span>
+                      <span class="dgo-stat-card__label">Pending Action</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dgo-card">
+                  <div class="dgo-stat-card">
+                    <div class="dgo-stat-card__icon" style="background: var(--dgo-color-success-subtle-bg); color: var(--dgo-color-success-subtle-fg);"><svg><use href="assets/icons/sprite.svg#i-check-circle"></use></svg></div>
+                    <div class="dgo-stat-card__content">
+                      <span class="dgo-stat-card__value" id="stat-accepted" style="color: var(--dgo-color-success-subtle-fg);">0</span>
+                      <span class="dgo-stat-card__label">Accepted / Treated</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dgo-card">
+                  <div class="dgo-stat-card">
+                    <div class="dgo-stat-card__icon" style="background: var(--dgo-color-info-subtle-bg); color: var(--dgo-color-info-600);"><svg><use href="assets/icons/sprite.svg#i-sparkle"></use></svg></div>
+                    <div class="dgo-stat-card__content">
+                      <span class="dgo-stat-card__value" id="stat-high" style="color: var(--dgo-color-info-600);">0</span>
+                      <span class="dgo-stat-card__label">High Priority</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dgo-card dgo-stack dgo-stack--4">
+                <div class="dgo-card__header" style="margin-bottom: 0;">
+                  <h3 class="dgo-card__title">Recent Registrations</h3>
+                  <button class="dgo-link dgo-body-sm" onclick="switchTab('records')" style="background:none;border:none;cursor:pointer;">View All →</button>
+                </div>
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr><th>Subject / Sender</th><th>Received</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody id="dashboard-recent-tbody">
+                      <tr><td colspan="4" style="text-align:center; color: var(--dgo-color-fg-subtle);">No registrations yet.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- VIEW: NEW / EDIT ENTRY -->
+            <div id="view-new-entry" class="tab-content">
+              <form id="entry-form" class="dgo-card dgo-stack dgo-stack--5">
+                <div class="dgo-cluster dgo-cluster--between">
+                  <div class="dgo-stack dgo-stack--1">
+                    <h3 class="dgo-card__title">Correspondence Registration</h3>
+                    <p class="dgo-body-sm text-muted">Map physical/digital documents into the central tracker.</p>
+                  </div>
+                  <div class="dgo-form-group" style="text-align:right;">
+                    <label class="dgo-label" for="entry-id">System Generated ID</label>
+                    <input type="text" id="entry-id" readonly placeholder="[ Auto-Generated ]" class="dgo-input" style="width: 200px; font-family: var(--dgo-family-mono); text-align:center;">
+                  </div>
+                </div>
+
+                <div class="dgo-grid dgo-grid--2 dgo-grid--density">
+                  <div class="dgo-form-group">
+                    <label class="dgo-label dgo-label--required" for="form-category">Category Classification</label>
+                    <select id="form-category" required class="dgo-select">
+                      <option value="" disabled selected>Select appropriate category…</option>
+                      <option value="Ministerial Directive">Ministerial Directive</option>
+                      <option value="Event Invitation">Event Invitation / Request</option>
+                      <option value="Project Proposal">Project Proposal / Concept Note</option>
+                      <option value="External Correspondence">External Correspondence (MDA)</option>
+                      <option value="Internal Memo">Internal Memo</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label dgo-label--required" for="form-priority">Priority Level</label>
+                    <select id="form-priority" required class="dgo-select">
+                      <option value="Normal" selected>Normal</option>
+                      <option value="High">High (Requires Immediate Attention)</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label dgo-label--required" for="form-sender">Sender / Organization</label>
+                    <input type="text" id="form-sender" required placeholder="e.g. Ministry of Communications, FMCIDE…" class="dgo-input">
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label" for="form-contact">Sender Contact (Email/Phone)</label>
+                    <input type="text" id="form-contact" placeholder="For follow-ups…" class="dgo-input">
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label dgo-label--required" for="form-received-date">Date Received</label>
+                    <input type="date" id="form-received-date" required class="dgo-input">
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label" for="form-event-date">Event Date <span class="text-muted">(if applicable)</span></label>
+                    <input type="date" id="form-event-date" class="dgo-input">
+                  </div>
+                  <div class="dgo-form-group" style="grid-column: 1 / -1;">
+                    <label class="dgo-label dgo-label--required" for="form-subject">Subject / Title</label>
+                    <input type="text" id="form-subject" required placeholder="Exact title of the document or memo…" class="dgo-input">
+                  </div>
+                  <div class="dgo-form-group" style="grid-column: 1 / -1;">
+                    <label class="dgo-label" for="form-remarks">Registry Remarks & Routing Instructions</label>
+                    <textarea id="form-remarks" rows="3" placeholder="Add specific notes, required actions, or initial routing ideas…" class="dgo-input" style="resize: vertical;"></textarea>
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label" for="form-status">Initial Status</label>
+                    <select id="form-status" class="dgo-select">
+                      <option value="Pending" selected>Pending Action</option>
+                      <option value="Accepted">Accepted / Approved</option>
+                      <option value="Declined">Declined</option>
+                      <option value="Delegated">Delegated (Tracking)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="dgo-cluster dgo-cluster--between" style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4);">
+                  <button type="button" class="dgo-btn dgo-btn--md dgo-btn--ghost" onclick="resetForm()">Clear Form</button>
+                  <button type="submit" class="dgo-btn dgo-btn--md dgo-btn--primary">
+                    <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-download"></use></svg>
+                    <span>Save &amp; Sync Record</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- VIEW: RECORDS -->
+            <div id="view-records" class="tab-content dgo-card dgo-stack dgo-stack--3">
+              <div class="dgo-cluster dgo-cluster--between dgo-cluster--density">
+                <div class="dgo-cluster dgo-cluster--density">
+                  <div class="dgo-cluster dgo-cluster--density">
+                    <svg style="width:16px;height:16px; color: var(--dgo-color-fg-muted);"><use href="assets/icons/sprite.svg#i-filter"></use></svg>
+                    <select id="filter-status" class="dgo-select" style="height:32px;" onchange="applyFilters()">
+                      <option value="All">All Statuses</option>
+                      <option value="Pending">Pending Action</option>
+                      <option value="Accepted">Accepted / Treated</option>
+                      <option value="Delegated">Delegated</option>
+                      <option value="Declined">Declined</option>
+                    </select>
+                  </div>
+                  <select id="filter-category" class="dgo-select" style="height:32px;" onchange="applyFilters()">
+                    <option value="All">All Categories</option>
+                    <option value="Ministerial Directive">Ministerial Directive</option>
+                    <option value="Event Invitation">Event Invitation</option>
+                    <option value="Project Proposal">Project Proposal</option>
+                    <option value="External Correspondence">Ext. Correspondence</option>
+                    <option value="Internal Memo">Internal Memo</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--soft" onclick="filterRecords('category', 'Event Invitation')">
+                    <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-calendar"></use></svg>
+                    <span>Events</span>
+                    <span class="dgo-badge dgo-badge--draft" id="badge-events" style="font-size:10px;">0</span>
+                  </button>
+                </div>
+                <span class="dgo-body-sm text-muted">Displaying <span id="page-start" style="color:var(--dgo-color-action-primary);">0</span>–<span id="page-end" style="color:var(--dgo-color-action-primary);">0</span> of <span id="page-total">0</span></span>
+              </div>
+
+              <div class="dgo-table-container dgceo-records-wrap">
+                <table class="dgo-table">
+                  <thead>
+                    <tr>
+                      <th>Ref ID</th><th>Subject</th><th>Sender / Org</th><th>Timeline</th><th>Priority</th><th>Status</th><th style="text-align:right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="records-tbody"></tbody>
+                </table>
+                <div id="records-empty-state" class="hidden">
+                  <svg style="width:36px;height:36px; color: var(--dgo-color-fg-subtle);"><use href="assets/icons/sprite.svg#i-folder"></use></svg>
+                  <p class="dgo-body-sm" style="font-weight:600;">No records match the current filters.</p>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="filterRecords('status','All'); filterRecords('category','All'); document.getElementById('global-search').value=''; applyFilters();">Clear All Filters</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/sanitizer.js"></script>
+    <script type="module" src="js/identity.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/lookups.js"></script>
+    <script type="module" src="js/a11y.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/chrome.js"></script>
+    <script type="module" src="js/dgceo-tracker.js"></script>
+  </body>
+</html>

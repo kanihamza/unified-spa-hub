@@ -1,0 +1,34 @@
+/* ============================================================
+   DGO v2.3 — DG/CEO Correspondence Tracker
+   View/tab mechanics layered on the shared dgo design system.
+   ============================================================ */
+
+/* Tab views */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Utility used by the records empty-state toggle */
+.hidden { display: none !important; }
+
+/* Tab navigation strip */
+.dgceo-tabs {
+  display: flex;
+  gap: var(--dgo-s-2);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--dgo-color-border-default);
+  padding-bottom: var(--dgo-s-3);
+}
+
+/* Records table empty-state overlay host */
+.dgceo-records-wrap { position: relative; min-height: 280px; }
+#records-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dgo-s-2);
+  color: var(--dgo-color-fg-subtle);
+  background: var(--dgo-color-surface-raised);
+}

@@ -1,0 +1,91 @@
+/* ============================================================
+   DGO v2.0 — Layout Primitives
+   ============================================================ */
+
+/* 1. Stacks: Vertical layout */
+.dgo-stack {
+  display: flex;
+  flex-direction: column;
+}
+.dgo-stack--0 { gap: 0; }
+.dgo-stack--1 { gap: var(--dgo-s-1); }
+.dgo-stack--2 { gap: var(--dgo-s-2); }
+.dgo-stack--3 { gap: var(--dgo-s-3); }
+.dgo-stack--4 { gap: var(--dgo-s-4); }
+.dgo-stack--6 { gap: var(--dgo-s-6); }
+.dgo-stack--8 { gap: var(--dgo-s-8); }
+.dgo-stack--density { gap: var(--dgo-density-gap); }
+
+/* 2. Clusters: Horizontal flow with wrapping */
+.dgo-cluster {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.dgo-cluster--middle { align-items: center; }
+.dgo-cluster--top    { align-items: flex-start; }
+.dgo-cluster--bottom { align-items: flex-end; }
+.dgo-cluster--right  { justify-content: flex-end; }
+.dgo-cluster--between { justify-content: space-between; }
+.dgo-cluster--0 { gap: 0; }
+.dgo-cluster--1 { gap: var(--dgo-s-1); }
+.dgo-cluster--2 { gap: var(--dgo-s-2); }
+.dgo-cluster--3 { gap: var(--dgo-s-3); }
+.dgo-cluster--4 { gap: var(--dgo-s-4); }
+.dgo-cluster--density { gap: var(--dgo-density-gap); }
+
+/* 3. Grid: Column setups */
+.dgo-grid {
+  display: grid;
+  gap: var(--dgo-s-5);
+}
+.dgo-grid--1  { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.dgo-grid--2  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dgo-grid--3  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dgo-grid--4  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dgo-grid--auto-fit { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.dgo-grid--auto-fill { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.dgo-grid--density { gap: var(--dgo-density-gap); }
+
+@media (max-width: 960px) {
+  .dgo-grid--3, .dgo-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .dgo-grid--2, .dgo-grid--3, .dgo-grid--4 { grid-template-columns: 1fr; }
+}
+
+/* 4. Column split variations */
+.dgo-split-sidebar {
+  display: grid;
+  grid-template-columns: var(--dgo-sidebar-w) 1fr;
+  min-height: 100vh;
+}
+.dgo-split-sidebar--collapsed {
+  grid-template-columns: var(--dgo-sidebar-w-collapsed) 1fr;
+}
+
+@media (max-width: 960px) {
+  .dgo-split-sidebar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dgo-split-interactive {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--dgo-s-5);
+}
+@media (max-width: 1140px) {
+  .dgo-split-interactive {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Helper flex spacers */
+.dgo-spacer { flex-grow: 1; }
+.dgo-centered {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

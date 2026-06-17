@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Response Tracker Ledger</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+            
+            <!-- Page Header -->
+            <div class="dgo-cluster dgo-cluster--between">
+              <div class="dgo-stack dgo-stack--1">
+                <h2 class="dgo-h2">Response Match &amp; Audit Logs</h2>
+                <p class="dgo-body text-muted">Audits progress matrices, maps relations between dossiers, tasks, and emails, and compile printable ledger sheets.</p>
+              </div>
+
+              <div class="dgo-cluster dgo-cluster--density">
+                <button id="btn-export-csv" class="dgo-btn dgo-btn--md dgo-btn--soft">
+                  <svg style="width:16px; height: 16px;"><use href="assets/icons/sprite.svg#i-download"></use></svg>
+                  <span>Export Active Ledger (CSV)</span>
+                </button>
+                <button id="btn-reindex" class="dgo-btn dgo-btn--md dgo-btn--primary">
+                  <svg style="width:16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
+                  <span>Re-Index Matches</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Match Indices KPI Cards -->
+            <div class="dgo-grid dgo-grid--3 dgo-grid--density">
+              <div class="dgo-card dgo-stack dgo-stack--2" style="border-left: 4px solid var(--dgo-info-400);">
+                <span class="dgo-overline" style="font-size:10px;">Inter-ledger Cross Match rate</span>
+                <div class="dgo-cluster dgo-cluster--between dgo-cluster--middle">
+                  <span class="dgo-display" style="font-size:var(--dgo-type-h1);" id="idx-cross-match-pct">0%</span>
+                  <span style="font-size:11px; color:var(--dgo-color-fg-muted);" id="idx-cross-match-count">0 of 0 dossiers linked</span>
+                </div>
+              </div>
+
+              <div class="dgo-card dgo-stack dgo-stack--2" style="border-left: 4px solid var(--dgo-color-action-accent);">
+                <span class="dgo-overline" style="font-size:10px;">Operational Task SLA Resolution</span>
+                <div class="dgo-cluster dgo-cluster--between dgo-cluster--middle">
+                  <span class="dgo-display" style="font-size:var(--dgo-type-h1);" id="idx-sla-resolved-pct">0%</span>
+                  <span style="font-size:11px; color:var(--dgo-color-fg-muted); " id="idx-sla-resolved-count">0 of 0 resolved</span>
+                </div>
+              </div>
+
+              <div class="dgo-card dgo-stack dgo-stack--2" style="border-left: 4px solid var(--dgo-color-action-danger);">
+                <span class="dgo-overline" style="font-size:10px;">Unrouted Outstandings</span>
+                <div class="dgo-cluster dgo-cluster--between dgo-cluster--middle">
+                  <span class="dgo-display" style="font-size:var(--dgo-type-h1); color: var(--dgo-color-action-danger);" id="idx-unrouted">0</span>
+                  <span style="font-size:11px; color:var(--dgo-color-fg-muted);">Immediate action required</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ledger View Tabs -->
+            <div class="dgo-card dgo-stack dgo-stack--4">
+              <div class="dgo-tabs">
+                <span class="dgo-tab dgo-tab--active" id="tab-btn-cross-match" onclick="switchLedgerTab('cross-match')">Dossier-Task Map</span>
+                <span class="dgo-tab" id="tab-btn-task-feed" onclick="switchLedgerTab('task-feed')">Task Progress log</span>
+                <span class="dgo-tab" id="tab-btn-email-map" onclick="switchLedgerTab('email-map')">Email conversions Log</span>
+              </div>
+
+              <!-- Tab Content 1: Dossier to Task Cross Match Map -->
+              <div id="tab-cross-match" class="dgo-stack dgo-stack--3">
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Dossier Ref</th>
+                        <th>Dossier Subject</th>
+                        <th>Linked Task ID</th>
+                        <th>Assignee Handled</th>
+                        <th>Task progress</th>
+                        <th>Correlation rating</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cross-match-tbody">
+                      <tr>
+                        <td colspan="6" style="text-align: center; color: var(--dgo-color-fg-subtle);">Compiling matching matrix...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab Content 2: Task details feed -->
+              <div id="tab-task-feed" class="dgo-stack dgo-stack--3" style="display:none;">
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Task ID</th>
+                        <th>Directive Subject</th>
+                        <th>Completion Status</th>
+                        <th>Last Comments Log</th>
+                        <th>Updated Date</th>
+                      </tr>
+                    </thead>
+                    <tbody id="task-feed-tbody">
+                      <tr>
+                        <td colspan="5" style="text-align: center; color: var(--dgo-color-fg-subtle);">Syncing audit logs...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab Content 3: Email conversions map -->
+              <div id="tab-email-map" class="dgo-stack dgo-stack--3" style="display:none;">
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Email Thread ID</th>
+                        <th>Thread Subject</th>
+                        <th>Sender Source</th>
+                        <th>Convert Status</th>
+                        <th>Conversion Task Code</th>
+                      </tr>
+                    </thead>
+                    <tbody id="email-map-tbody">
+                      <tr>
+                        <td colspan="5" style="text-align: center; color: var(--dgo-color-fg-subtle);">Retrieving mailbox threads...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/sanitizer.js"></script>
+    <script type="module" src="js/identity.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/lookups.js"></script>
+    <script type="module" src="js/a11y.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/chrome.js"></script>
+
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('response');
+
+        let documents = [];
+        let tasks = [];
+        let emails = [];
+        let currentTab = 'cross-match';
+
+        // Core compilation of matrix matches
+        async function runIndexing() {
+          try {
+            window.Chrome.showToast('Re-indexing inter-ledger correlations...');
+            
+            const docsData = await window.API.callPA('E02');
+            documents = docsData?.records || [];
+
+            const tasksData = await window.API.callPA('E04');
+            tasks = tasksData?.records || [];
+
+            const emailsData = await window.API.callPA('E09');
+            emails = emailsData?.records || [];
+
+            computeMatchKPIs();
+            renderCrossMatchTab();
+            renderTaskFeedTab();
+            renderEmailMapTab();
+
+            window.Chrome.showToast('Ledger audit fully synchronized!', 'success');
+          } catch(err) {
+            window.Chrome.showToast('Audit match compile failed.', 'error');
+          }
+        }
+
+        function computeMatchKPIs() {
+          const totalDocsCount = documents.length;
+          let linkedDocsCount = 0;
+          let resolvedTasksCount = 0;
+
+          documents.forEach(doc => {
+            const linked = tasks.find(t => t.documentId === doc.id);
+            if (linked) {
+              linkedDocsCount++;
+            }
+          });
+
+          tasks.forEach(t => {
+            if (t.status === 'COMPLETED' || t.progress === 100) {
+              resolvedTasksCount++;
+            }
+          });
+
+          const unroutedDocsCount = documents.filter(d => d.status === 'PENDING').length;
+
+          // Render stats
+          const crossPct = totalDocsCount > 0 ? Math.round((linkedDocsCount / totalDocsCount) * 100) : 0;
+          document.getElementById('idx-cross-match-pct').textContent = `${crossPct}%`;
+          document.getElementById('idx-cross-match-count').textContent = `${linkedDocsCount} of ${totalDocsCount} dossiers linked`;
+
+          const slaPct = tasks.length > 0 ? Math.round((resolvedTasksCount / tasks.length) * 100) : 0;
+          document.getElementById('idx-sla-resolved-pct').textContent = `${slaPct}%`;
+          document.getElementById('idx-sla-resolved-count').textContent = `${resolvedTasksCount} of ${tasks.length} resolved`;
+
+          document.getElementById('idx-unrouted').textContent = unroutedDocsCount;
+        }
+
+        function renderCrossMatchTab() {
+          const tbody = document.getElementById('cross-match-tbody');
+          if (documents.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--dgo-color-fg-subtle);">No documents in registry.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = documents.map(doc => {
+            // Find matched task E02 -> E04
+            const linkedTask = tasks.find(t => t.documentId === doc.id);
+            const officers = window.Lookups.getOfficers();
+            const officer = linkedTask ? officers.find(o => o.id === linkedTask.assignee) : null;
+            
+            let tCode = `<span style="font-size:11px; color:var(--dgo-color-fg-subtle);">(None)</span>`;
+            let tAssignee = `<span style="font-size:11px; color:var(--dgo-color-fg-subtle);">(No Active Direction)</span>`;
+            let tProg = `0%`;
+            let rating = `<span class="dgo-badge dgo-badge--action" style="font-size:10px;">UNMATCHED</span>`;
+
+            if (linkedTask) {
+              tCode = `<code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(linkedTask.id)}</code>`;
+              tAssignee = `<strong>${Sanitizer.escape(officer ? officer.name : linkedTask.assignee)}</strong>`;
+              tProg = `
+                <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap; width:100px;">
+                  <span style="font-family: var(--dgo-family-mono); font-size:11px;">${linkedTask.progress}%</span>
+                  <div style="flex:1; height:4px; background:var(--dgo-color-border-default); border-radius:6px; overflow:hidden;">
+                    <div style="width: ${linkedTask.progress}%; height:100%; background:var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                  </div>
+                </div>
+              `;
+              rating = `<span class="dgo-badge dgo-badge--replied" style="font-size:10px;">EXACT MAP</span>`;
+            }
+
+            return `
+              <tr>
+                <td><code style="background: var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(doc.id)}</code></td>
+                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(doc.title)}</span></td>
+                <td>${tCode}</td>
+                <td>${tAssignee}</td>
+                <td>${tProg}</td>
+                <td>${rating}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        function renderTaskFeedTab() {
+          const tbody = document.getElementById('task-feed-tbody');
+          if (tasks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--dgo-color-fg-subtle);">No operations tasks currently active.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = tasks.map(t => {
+            const dateStr = t.updatedAt ? new Date(t.updatedAt).toLocaleString() : 'N/A';
+            return `
+              <tr>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(t.id)}</code></td>
+                <td><span style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(t.title)}</span></td>
+                <td><span class="dgo-badge dgo-badge--${t.status === 'COMPLETED' ? 'replied' : 'pending'}">${Sanitizer.escape(t.status)} (${t.progress}%)</span></td>
+                <td><p class="dgo-body-sm text-muted" style="font-style:italic; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">"${Sanitizer.escape(t.lastUpdateNotes || 'No notes compiled.')}"</p></td>
+                <td style="font-size:11px; color:var(--dgo-color-fg-muted);">${dateStr}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        function renderEmailMapTab() {
+          const tbody = document.getElementById('email-map-tbody');
+          if (emails.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--dgo-color-fg-subtle);">No threads synced in inbox.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = emails.map(e => {
+            // Find corresponding task for emails E10
+            const linkedConvTask = tasks.find(t => t.documentId === `EMAIL_REF:${Sanitizer.escape(e.id)}`);
+            const converted = e.assignmentStatus === 'ASSIGNED';
+            
+            return `
+              <tr>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(e.id)}</code></td>
+                <td><span style="font-size:var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(e.subject)}</span></td>
+                <td><span class="text-muted" style="font-size:11px;">${Sanitizer.escape(e.sender)}</span></td>
+                <td>
+                  <span class="dgo-badge dgo-badge--${converted ? 'replied' : 'draft'}">
+                    ${converted ? 'CONVERTED' : 'UNASSIGNED'}
+                  </span>
+                </td>
+                <td>
+                  ${linkedConvTask ? `<code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(linkedConvTask.id)}</code>` : `<span style="font-size:11px; color:var(--dgo-color-fg-subtle);">(None)</span>`}
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Tab switcher orchestration
+        window.switchLedgerTab = (tab) => {
+          currentTab = tab;
+          const mapTab = document.getElementById('tab-cross-match');
+          const taskTab = document.getElementById('tab-task-feed');
+          const emailTab = document.getElementById('tab-email-map');
+
+          const btnMap = document.getElementById('tab-btn-cross-match');
+          const btnTask = document.getElementById('tab-btn-task-feed');
+          const btnEmail = document.getElementById('tab-btn-email-map');
+
+          mapTab.style.display = 'none';
+          taskTab.style.display = 'none';
+          emailTab.style.display = 'none';
+
+          btnMap.classList.remove('dgo-tab--active');
+          btnTask.classList.remove('dgo-tab--active');
+          btnEmail.classList.remove('dgo-tab--active');
+
+          if (tab === 'cross-match') {
+            mapTab.style.display = 'block';
+            btnMap.classList.add('dgo-tab--active');
+          } else if (tab === 'task-feed') {
+            taskTab.style.display = 'block';
+            btnTask.classList.add('dgo-tab--active');
+          } else if (tab === 'email-map') {
+            emailTab.style.display = 'block';
+            btnEmail.classList.add('dgo-tab--active');
+          }
+        };
+
+        // Export active CSV on fly using pure modern visual triggers
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+          let csvContent = "data:text/csv;charset=utf-8,";
+          let filename = "DGO_Audit_Ledger_Export.csv";
+
+          if (currentTab === 'cross-match') {
+            csvContent += "Dossier Reference,Dossier Subject,Linked Task ID,Priority,Status\n";
+            documents.forEach(doc => {
+              const task = tasks.find(t => t.documentId === doc.id);
+              csvContent += `"${Sanitizer.escape(doc.id)}","${doc.title.replace(/"/g, '""')}","${task ? task.id : 'None'}","${Sanitizer.escape(doc.status)}","${doc.flag || 'None'}"\n`;
+            });
+            filename = "DGO_Dossier_Task_Map.csv";
+          } else if (currentTab === 'task-feed') {
+            csvContent += "Task ID,Subject,Progress,Status,Latest Notes\n";
+            tasks.forEach(t => {
+              csvContent += `"${Sanitizer.escape(t.id)}","${t.title.replace(/"/g, '""')}","${t.progress}%","${Sanitizer.escape(t.status)}","${(t.lastUpdateNotes || '').replace(/"/g, '""')}"\n`;
+            });
+            filename = "DGO_Task_Progress_Log.csv";
+          } else if (currentTab === 'email-map') {
+            csvContent += "Email Thread ID,Subject,Sender,Status,Linked Conversion Task\n";
+            emails.forEach(e => {
+              const task = tasks.find(t => t.documentId === `EMAIL_REF:${Sanitizer.escape(e.id)}`);
+              csvContent += `"${Sanitizer.escape(e.id)}","${e.subject.replace(/"/g, '""')}","${Sanitizer.escape(e.sender)}","${e.assignmentStatus}","${task ? task.id : 'None'}"\n`;
+            });
+            filename = "DGO_Email_Conversions_Log.csv";
+          }
+
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", filename);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          window.Chrome.showToast(`CSV compiled and downloaded: ${filename}`, 'success');
+        });
+
+        // Trigger manual OData re-indexing
+        document.getElementById('btn-reindex').addEventListener('click', runIndexing);
+
+        // Run on load
+        await runIndexing();
+        window.addEventListener('dgo:data-refreshed', runIndexing); // in-place re-render
+      });
+    </script>
+  </body>
+</html>

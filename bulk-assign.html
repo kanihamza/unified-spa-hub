@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DGO Digital Operations Hub — Bulk Assignment Pipeline</title>
+    <link rel="stylesheet" href="css/dgo-tokens.css">
+    <link rel="stylesheet" href="css/dgo-reset.css">
+    <link rel="stylesheet" href="css/dgo-base.css">
+    <link rel="stylesheet" href="css/dgo-layout.css">
+    <link rel="stylesheet" href="css/dgo-components.css">
+    <link rel="stylesheet" href="css/dgo-cmdk.css">
+  </head>
+  <body>
+    <div class="dgo-shell">
+      <div class="dgo-split-sidebar">
+        <!-- Sidebar Shell Harness -->
+        <div id="dgo-sidebar-placeholder"></div>
+
+        <main class="dgo-main">
+          <!-- Topbar Utility Harness -->
+          <div id="dgo-topbar-placeholder"></div>
+
+          <div class="dgo-content-viewport dgo-stack dgo-stack--4">
+            
+            <!-- Page Header -->
+            <div class="dgo-cluster dgo-cluster--between">
+              <div class="dgo-stack dgo-stack--1">
+                <h2 class="dgo-h2">Bulk Dispatch Pipeline</h2>
+                <p class="dgo-body text-muted">Process multiple incoming dossiers inside a single workflow. Choose direct uniform broadcasting or optimal individual allocation.</p>
+              </div>
+              <a href="docs.html" class="dgo-btn dgo-btn--md dgo-btn--outline">
+                <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-arrow-right" style="transform: rotate(180deg);"></use></svg>
+                <span>Back to Dossiers</span>
+              </a>
+            </div>
+
+            <!-- Double Split: Left (Selected batch list & config) vs Right (Routing strategy details) -->
+            <div class="dgo-split-interactive">
+              
+              <!-- Left: Selected documents batch checklist -->
+              <div class="dgo-card dgo-stack dgo-stack--4">
+                <h3 class="dgo-card__title">Ready Batch Load (<span id="batch-loaded-count">0</span>)</h3>
+                
+                <div class="dgo-table-container">
+                  <table class="dgo-table">
+                    <thead>
+                      <tr>
+                        <th>Dossier Ref</th>
+                        <th>Subject &amp; sender</th>
+                        <th>Category</th>
+                      </tr>
+                    </thead>
+                    <tbody id="batch-docs-tbody">
+                      <tr>
+                        <td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">No documents loaded in batch.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="dgo-stack dgo-stack--1" style="background: var(--dgo-color-surface-sunken); padding: var(--dgo-s-3); border-radius: var(--dgo-radius-card);">
+                  <span class="dgo-overline">Security compliance flag</span>
+                  <p class="dgo-caption" style="line-height:1.4;">All bulk dispatches are fully auditable under Civil Service SLA rules. Correlation IDs will be injected across all tasks generated.</p>
+                </div>
+              </div>
+
+              <!-- Right: Dispatch configurations & strategy tab selectors -->
+              <div class="dgo-stack dgo-stack--4">
+                
+                <!-- Strategy Tabs Selection -->
+                <div class="dgo-card dgo-stack dgo-stack--4">
+                  <span class="dgo-overline text-strong" style="margin-bottom: -10px;">Select Pipeline Mode</span>
+                  <div class="dgo-tabs">
+                    <span class="dgo-tab dgo-tab--active" id="tab-btn-direct" onclick="switchStrategyTab('direct')">Direct Broadcaster (E07)</span>
+                    <span class="dgo-tab" id="tab-btn-optimized" onclick="switchStrategyTab('optimized')">AI Optimal Allocations (E08)</span>
+                  </div>
+
+                  <!-- Tab Option 1: Direct Broadcaster config -->
+                  <div id="strategy-direct" class="dgo-stack dgo-stack--4">
+                    <p class="dgo-body-sm text-muted">Broadcasting maps **identical** assignees, CC watchgroups, priorities, and SLA deadlines across the entire batch in a single dispatch click.</p>
+                    
+                    <form id="direct-broadcast-form" class="dgo-stack dgo-stack--3" onsubmit="return false">
+                      <div class="dgo-form-group">
+                        <label for="dir-frm-category" class="dgo-label dgo-label--required">Uniform Category</label>
+                        <select id="dir-frm-category" class="dgo-select" required>
+                          <option value="" disabled selected>(Select category to cascade)</option>
+                        </select>
+                      </div>
+
+                      <div class="dgo-form-group dgo-autocomplete">
+                        <label for="dir-frm-assignee" class="dgo-label dgo-label--required">Sole Assignee Principal</label>
+                        <div style="display:flex; gap: var(--dgo-s-2);">
+                          <input type="text" id="dir-frm-assignee" class="dgo-input" style="flex:1;" placeholder="Search directory profiles..." autocomplete="off" required>
+                          <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--outline" id="btn-dir-clear-assign" style="display:none;">Clear</button>
+                        </div>
+                        <div class="dgo-autocomplete__dropdown" id="dir-suggest-assignee"></div>
+                        <input type="hidden" id="dir-frm-assignee-val">
+                      </div>
+
+                      <div class="dgo-form-group">
+                        <label for="dir-frm-priority" class="dgo-label dgo-label--required">Priority status</label>
+                        <select id="dir-frm-priority" class="dgo-select" required>
+                          <option value="LOW">LOW (Multiplier x1.0)</option>
+                          <option value="MEDIUM" selected>MEDIUM (Multiplier x1.5)</option>
+                          <option value="HIGH">HIGH (Multiplier x2.5)</option>
+                        </select>
+                      </div>
+
+                      <div class="dgo-form-group">
+                        <label for="dir-frm-directives" class="dgo-label dgo-label--required">Batch Directives Instruction</label>
+                        <textarea id="dir-frm-directives" class="dgo-textarea" rows="3" placeholder="Provide general instruction directive for the batch records..." required></textarea>
+                      </div>
+
+                      <button type="button" class="dgo-btn dgo-btn--lg dgo-btn--accent" id="btn-dispatch-direct" style="width:100%;">
+                        <svg style="width:18px; height:18px;"><use href="assets/icons/sprite.svg#i-send"></use></svg>
+                        <span>Dispatch Uniform Broadcast</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  <!-- Tab Option 2: AI Optimization Analyzer pipeline -->
+                  <div id="strategy-optimized" class="dgo-stack dgo-stack--4" style="display:none;">
+                    <p class="dgo-body-sm text-muted">The AI optimized analyzer studies each dossier subject title lexical context and leverages lookup matrices to recommend the most optimal individual executor and SLA days automatically.</p>
+
+                    <div style="display:flex; justify-content:center; padding: var(--dgo-s-2); border-bottom:1px solid var(--dgo-color-border-default);">
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--primary" id="btn-trigger-optimization" style="width:100%;">
+                        <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-sparkle"></use></svg>
+                        <span>Initiate AI Optimization Analysis</span>
+                      </button>
+                    </div>
+
+                    <!-- AI Results List (interactive checklist) -->
+                    <div class="dgo-stack dgo-stack--3 text-muted" id="ai-optimized-results-pane" style="font-size:var(--dgo-type-body-sm);">
+                      <div class="dgo-centered dgo-stack dgo-stack--1" style="min-height:160px; color:var(--dgo-color-fg-muted);">
+                        <svg style="width:32px; height:32px; stroke-width:1.2;"><use href="assets/icons/sprite.svg#i-sparkle"></use></svg>
+                        <p>No optimization report built yet. Click analyze above.</p>
+                      </div>
+                    </div>
+
+                    <div id="ai-dispatch-controls" style="display:none; border-top:1px solid var(--dgo-color-border-strong); padding-top:var(--dgo-s-4);">
+                      <button type="button" class="dgo-btn dgo-btn--lg dgo-btn--accent" id="btn-dispatch-optimized" style="width:100%;">
+                        <svg style="width:18px; height:18px;"><use href="assets/icons/sprite.svg#i-check"></use></svg>
+                        <span>Apply optimized allocations</span>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/sanitizer.js"></script>
+    <script type="module" src="js/identity.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/lookups.js"></script>
+    <script type="module" src="js/a11y.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/chrome.js"></script>
+
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('docs'); // Keeps highlight on Docs section
+
+        let selectedDocIds = [];
+        let batchDocuments = [];
+        let officers = [];
+        let depts = [];
+        let categories = [];
+        let currentStrategy = 'direct';
+        let optimizedAllocationResults = [];
+
+        // Parse query params '?ids=DOC-xxxx,DOC-yyyy'
+        const params = new URLSearchParams(window.location.search);
+        const idsStr = params.get('ids');
+        if (idsStr) {
+          selectedDocIds = idsStr.split(',').filter(Boolean);
+        }
+
+        document.getElementById('batch-loaded-count').textContent = selectedDocIds.length;
+
+        // Initialize drop references
+        try {
+          const refs = await window.Lookups.loadReferences();
+          officers = refs.officers || [];
+          depts = refs.departments || [];
+          categories = refs.categories || [];
+
+          // Uniform categories select
+          const dirCatSelect = document.getElementById('dir-frm-category');
+          dirCatSelect.innerHTML += categories.map(c => `
+            <option value="${c.code}">${Sanitizer.escape(c.name)}</option>
+          `).join('');
+
+          // Load documents details from API
+          const allDocsResp = await window.API.callPA('E02');
+          const allDocs = allDocsResp?.records || [];
+          
+          batchDocuments = allDocs.filter(doc => selectedDocIds.includes(doc.id));
+          renderBatchDocsTable();
+
+        } catch(err) {
+          window.Chrome.showToast('Reference lookups sync failed.', 'error');
+        }
+
+        // Render batch loaders
+        function renderBatchDocsTable() {
+          const tbody = document.getElementById('batch-docs-tbody');
+          if (batchDocuments.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--dgo-color-fg-subtle);">No documents found inside this batch. Navigate back to Dossiers.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = batchDocuments.map(doc => {
+            const catLabel = categories.find(c => c.code === doc.category)?.name || doc.category;
+            return `
+              <tr>
+                <td><code style="background:var(--dgo-color-surface-sunken); padding:2px 6px; border-radius:4px;">${Sanitizer.escape(doc.id)}</code></td>
+                <td>
+                  <div class="dgo-stack dgo-stack--0" style="font-size:var(--dgo-type-body-sm);">
+                    <strong style="color:var(--dgo-color-fg-strong);">${Sanitizer.escape(doc.title)}</strong>
+                    <span style="font-size:10px; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(doc.sender)}</span>
+                  </div>
+                </td>
+                <td><span style="font-size:var(--dgo-type-body-sm);">${catLabel}</span></td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Auto selection on direct category cascade
+        document.getElementById('dir-frm-category').addEventListener('change', (e) => {
+          const code = e.target.value;
+          const cascade = window.Lookups.resolveCategoryCascade(code);
+          if (cascade) {
+            document.getElementById('dir-frm-assignee').value = cascade.defaultAssigneeName;
+            document.getElementById('dir-frm-assignee-val').value = cascade.defaultAssigneeId;
+            document.getElementById('dir-frm-priority').value = cascade.defaultPriority;
+            document.getElementById('btn-dir-clear-assign').style.display = 'inline-block';
+            window.Chrome.showToast('Uniform direct cascade values proposed.', 'success');
+          }
+        });
+
+        // Setup autocomplete
+        setupAutocompleteInput('dir-frm-assignee', 'dir-suggest-assignee', 'dir-frm-assignee-val', 'btn-dir-clear-assign');
+
+        function setupAutocompleteInput(inputId, dropdownId, hiddenValId, clearId) {
+          const input = document.getElementById(inputId);
+          const dropdown = document.getElementById(dropdownId);
+          const hidden = document.getElementById(hiddenValId);
+          const clear = document.getElementById(clearId);
+
+          input.addEventListener('input', (event) => {
+            const q = event.target.value.toLowerCase();
+            if (!q) {
+              dropdown.style.display = 'none';
+              return;
+            }
+
+            const matched = officers.filter(o => 
+              o.name.toLowerCase().includes(q) || 
+              o.role.toLowerCase().includes(q) || 
+              o.id.toLowerCase().includes(q)
+            );
+
+            if (matched.length === 0) {
+              dropdown.innerHTML = `<div style="padding: 8px; font-size:12px; color: var(--dgo-color-fg-subtle);">No matching official registry profiles</div>`;
+              dropdown.style.display = 'block';
+              return;
+            }
+
+            dropdown.innerHTML = matched.map(o => `
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
+              </div>
+            `).join('');
+
+            dropdown.style.display = 'block';
+
+            dropdown.querySelectorAll('.dgo-autocomplete__item').forEach(el => {
+              el.addEventListener('click', () => {
+                const id = el.getAttribute('data-id');
+                const name = el.getAttribute('data-name');
+                input.value = name;
+                hidden.value = id;
+                dropdown.style.display = 'none';
+                if (clear) clear.style.display = 'inline-block';
+              });
+            });
+          });
+
+          if (clear) {
+            clear.addEventListener('click', () => {
+              input.value = '';
+              hidden.value = '';
+              clear.style.display = 'none';
+            });
+          }
+
+          document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+              dropdown.style.display = 'none';
+            }
+          });
+        }
+
+        // Broadcaster E07 dispatches
+        document.getElementById('btn-dispatch-direct').addEventListener('click', async () => {
+          const form = document.getElementById('direct-broadcast-form');
+          if (!form.reportValidity()) return;
+
+          if (batchDocuments.length === 0) {
+            window.Chrome.showToast('Loaded batch empty.', 'warning');
+            return;
+          }
+
+          try {
+            window.Chrome.showToast('Broadcasting Direct Route (E07)...');
+            
+            const assignee = document.getElementById('dir-frm-assignee-val').value || document.getElementById('dir-frm-assignee').value;
+            const category = document.getElementById('dir-frm-category').value;
+            const priority = document.getElementById('dir-frm-priority').value;
+            const directives = document.getElementById('dir-frm-directives').value;
+
+            const payload = {
+              documentIds: selectedDocIds,
+              assignee,
+              category,
+              priority,
+              directives
+            };
+
+            const response = await window.API.callPA('E07', payload);
+            if (response.success) {
+              window.Chrome.showToast('Bulk broadcast queued — syncing…', 'success');
+              setTimeout(() => {
+                window.location.href = 'tasks.html';
+              }, 1200);
+            } else {
+              window.Chrome.showToast('Gateway rejected bulk broadcast request.', 'error');
+            }
+          } catch(err) {
+            window.Chrome.showToast(err.message, 'error');
+          }
+        });
+
+        // AI analyzer E08 simulation builds
+        document.getElementById('btn-trigger-optimization').addEventListener('click', async () => {
+          if (batchDocuments.length === 0) {
+            window.Chrome.showToast('Bulk batch loader empty.', 'warning');
+            return;
+          }
+
+          try {
+            window.Chrome.showToast('Executing AI Allocation matrices E08...');
+            
+            const payload = {
+              documentIds: selectedDocIds
+            };
+
+            const response = await window.API.callPA('E08', payload);
+            optimizedAllocationResults = response.allocations || [];
+
+            renderOptimizedAIPane();
+            document.getElementById('ai-dispatch-controls').style.display = 'block';
+            window.Chrome.showToast('AI Allocations mapped successfully!', 'success');
+
+          } catch(err) {
+            window.Chrome.showToast('Optimization analysis failed.', 'error');
+          }
+        });
+
+        function renderOptimizedAIPane() {
+          const pane = document.getElementById('ai-optimized-results-pane');
+          if (optimizedAllocationResults.length === 0) {
+            pane.innerHTML = `<p>AI optimization compiled clean results.</p>`;
+            return;
+          }
+
+          pane.innerHTML = optimizedAllocationResults.map((alloc, idx) => {
+            const officerOptions = officers.map(o => `
+              <option value="${Sanitizer.escape(o.id)}" ${o.id === alloc.proposedAssigneeId ? 'selected' : ''}>${Sanitizer.escape(o.name)}</option>
+            `).join('');
+
+            return `
+              <div class="dgo-card dgo-stack dgo-stack--2" style="border-left: 3.5px solid var(--dgo-color-action-accent); padding: var(--dgo-s-3); margin-bottom:var(--dgo-s-1);">
+                <div class="dgo-cluster dgo-cluster--between">
+                  <code style="background:var(--dgo-color-surface-sunken); padding:2px 4px; border-radius:4px; font-weight:700; font-size:11px;">${alloc.documentId}</code>
+                  <div class="dgo-cluster dgo-cluster--density">
+                    <span style="font-size:10px; color:var(--dgo-color-fg-muted);">Confidence Score:</span>
+                    <span class="dgo-badge dgo-badge--replied" style="font-size:10px; padding-inline:4px; font-weight:700;">${Math.round(alloc.confidenceScore * 100)}%</span>
+                  </div>
+                </div>
+
+                <div class="dgo-stack dgo-stack--1">
+                  <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--dgo-color-fg-muted);">Dossier text</span>
+                  <span style="font-weight:600; font-size:13px; color:var(--dgo-color-fg-strong);">${Sanitizer.escape(alloc.title)}</span>
+                </div>
+
+                <div class="dgo-grid dgo-grid--2" style="gap:var(--dgo-s-2); margin-top:var(--dgo-s-1);">
+                  <div class="dgo-form-group">
+                    <label class="dgo-label" style="font-size:9px; text-transform:uppercase;">Proposed Executor</label>
+                    <select class="dgo-select sel-ai-assignee" data-index="${idx}" style="height:32px; font-size:11px; padding-inline: var(--dgo-s-2);">
+                      ${officerOptions}
+                    </select>
+                  </div>
+                  <div class="dgo-form-group">
+                    <label class="dgo-label" style="font-size:9px; text-transform:uppercase;">SLA Timer (Days)</label>
+                    <input type="number" class="dgo-input inp-ai-deadline" data-index="${idx}" style="height:32px; font-size:11px; padding-inline: var(--dgo-s-2);" value="${alloc.proposedDeadlineDays}" min="1" max="90">
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Bind local adjustments
+          pane.querySelectorAll('.sel-ai-assignee').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+              const idx = parseInt(sel.getAttribute('data-index'));
+              optimizedAllocationResults[idx].proposedAssigneeId = e.target.value;
+            });
+          });
+
+          pane.querySelectorAll('.inp-ai-deadline').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const idx = parseInt(inp.getAttribute('data-index'));
+              optimizedAllocationResults[idx].proposedDeadlineDays = parseInt(e.target.value) || 7;
+            });
+          });
+        }
+
+        // Apply Optimized Routing Dispatch E08
+        document.getElementById('btn-dispatch-optimized').addEventListener('click', async () => {
+          if (optimizedAllocationResults.length === 0) return;
+
+          try {
+            window.Chrome.showToast('Routing dispatch optimizations...');
+            
+            const payload = {
+              allocations: optimizedAllocationResults.map(a => ({
+                documentId: a.documentId,
+                assigneeId: a.proposedAssigneeId,
+                deadlineDays: a.proposedDeadlineDays
+              }))
+            };
+
+            const response = await window.API.callPA('E08_COMMIT', payload);
+            if (response.success) {
+              window.Chrome.showToast('Allocations queued — syncing…', 'success');
+              setTimeout(() => {
+                window.location.href = 'tasks.html';
+              }, 1200);
+            } else {
+              window.Chrome.showToast('Operational gate rejected optimized allocations.', 'error');
+            }
+
+          } catch(err) {
+            window.Chrome.showToast(err.message, 'error');
+          }
+        });
+
+        // Tabs managers
+        window.switchStrategyTab = (tab) => {
+          currentStrategy = tab;
+          const directDiv = document.getElementById('strategy-direct');
+          const optDiv = document.getElementById('strategy-optimized');
+
+          const btnDir = document.getElementById('tab-btn-direct');
+          const btnOpt = document.getElementById('tab-btn-optimized');
+
+          directDiv.style.display = 'none';
+          optDiv.style.display = 'none';
+
+          btnDir.classList.remove('dgo-tab--active');
+          btnOpt.classList.remove('dgo-tab--active');
+
+          if (tab === 'direct') {
+            directDiv.style.display = 'block';
+            btnDir.classList.add('dgo-tab--active');
+          } else {
+            optDiv.style.display = 'block';
+            btnOpt.classList.add('dgo-tab--active');
+          }
+        };
+
+      });
+    </script>
+  </body>
+</html>
