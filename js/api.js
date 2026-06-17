@@ -19,9 +19,7 @@ const API = (() => {
 
   const FLOW_ENDPOINTS = {
     // Startup Fetch-All Data & References Matrix (one call → docs, tasks, emails, references).
-    // Provide its HTTP trigger URL here or in Settings; until then the platform fans out to the
-    // dedicated read flows below on startup.
-    E00: '',
+    E00: paUrl('4a250f97181b4a28abc1d0fb0f7d4c4d', 'eM0zd03iNHh7yWDWaXc9KRI-brj36NNqCgmZNKao5Wo'),
 
     // Read flows (dedicated, used for module-level forced refresh + as the startup fallback)
     E01: paUrl('ff455c68e9ac493e858fb984bcfd01fb', 'jajFVxbv67HbcKqvV8h6JBPm9TPG60yDnhRjy9WmpPU'), // References / lookups (officers, departments, categories)

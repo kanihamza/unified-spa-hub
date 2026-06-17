@@ -33,6 +33,11 @@ const REFS = { ok: true, data: {
 } };
 function bodyFor(url) {
   const g = (url.match(/workflows\/([0-9a-f]{8})/) || [])[1];
+  if (g === '4a250f97') return { // Fetch-All Data & References Matrix (E00)
+    ok: true, status: { http: 200, code: 'OK', message: 'Success' }, request: {}, timing: {},
+    data: { docs: DOCS, tasks: TASKS, emails: EMAILS, users: REFS.data.users, categories: REFS.data.categories, departments: REFS.data.departments, taskComments: [] },
+    errors: [], meta: {}
+  };
   if (g === 'ff455c68') return REFS;
   if (g === '7995c1eb') return { ok: true, timing: {}, docs: DOCS };
   if (g === '37642ba3') return { ok: true, timing: {}, tasks: TASKS };
@@ -95,10 +100,11 @@ try {
   const booted = await page.evaluate(() => sessionStorage.getItem('dgo_booted'));
   check('startup Fetch-All ran (booted once per session)', booted === '1', `booted=${booted}`);
 
-  // Caching: across docs→tasks→index→docs→tracker navigations, each read flow is
-  // fetched ONCE (by the startup Fetch-All) and served from cache thereafter.
-  check('docs flow (E02) fetched once across navigations', reqCount['7995c1eb'] === 1, `E02 fetches=${reqCount['7995c1eb']}`);
-  check('tasks flow (E04) fetched once across navigations', reqCount['37642ba3'] === 1, `E04 fetches=${reqCount['37642ba3']}`);
+  // Single-call mode: the Fetch-All (E00) is hit once on startup; the dedicated docs/tasks
+  // flows are NOT re-called by navigation (served from the Fetch-All cache).
+  check('Fetch-All (E00) called once on startup', reqCount['4a250f97'] === 1, `E00 fetches=${reqCount['4a250f97']}`);
+  check('dedicated docs flow not re-called (served by Fetch-All cache)', !reqCount['7995c1eb'], `E02 fetches=${reqCount['7995c1eb'] || 0}`);
+  check('dedicated tasks flow not re-called (served by Fetch-All cache)', !reqCount['37642ba3'], `E04 fetches=${reqCount['37642ba3'] || 0}`);
 
   check('no console/page errors', errors.length === 0, errors.join(' | '));
   await browser.close();

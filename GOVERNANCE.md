@@ -152,7 +152,7 @@ deployed flow trigger/response schemas).
     URL is absent — an explicit, opt-in dev/offline fallback, logged as `api_simulation_fallback`.
   - *Write flows* → queued in the **Outbox** with backoff; stays queued
     (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
-- **Rotation note (EXC-02):** the committed source now embeds live SAS signatures for the write
-  flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`, `a942d230…`, the OTP flows
-  `314aaf27…`/`43879c51…`, and the four read flows. Include all of these in the signature
-  rotation required under EXC-02.
+- **Rotation note (EXC-02):** the committed source now embeds live SAS signatures for the Fetch-All
+  flow `4a250f97…` (E00), the write flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`,
+  `a942d230…`, the OTP flows `314aaf27…`/`43879c51…`, and the four dedicated read flows. Include all of
+  these in the signature rotation required under EXC-02.
