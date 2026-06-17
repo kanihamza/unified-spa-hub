@@ -412,8 +412,7 @@
     }
   }
 
-  function getNavItemsForUser(userEmail) {
-    const email = (userEmail || '').toLowerCase();
+  function getNavItemsForUser() {
     const allItems = [
       { name: 'Home', view: 'home', icon: '🏠', color: '#05583B' },
       { name: 'E-mails', view: 'emails', icon: '📧', color: '#373435' },
@@ -424,13 +423,9 @@
       { name: 'Maintenance', view: 'maintenance', icon: '🔧', color: '#373435' },
       { name: 'Settings', view: 'settings', icon: '⚙️', color: '#05583B' },
     ];
-    let allowed = [];
-    if (email === 'dgsregistry@nitda.gov.ng') allowed = allItems.map(i=>i.view);
-    else if (email === 'dgs@nitda.gov.ng') allowed = ['home','emails','activities','tasks','support','maintenance'];
-    else if (email === 'dg@nitda.gov.ng') allowed = ['home','emails','activities','tasks','support'];
-    else allowed = ['home','emails','tasks','support'];
-    
-    return [allItems[0], ...allItems.filter(i=>allowed.includes(i.view) && i.view!=='home').sort((a,b)=>a.name.localeCompare(b.name))];
+    // Section labels are NOT gated by hardcoded emails (DATA-01). Access control is the
+    // responsibility of the shared identity / gateway model (window.Identity).
+    return [allItems[0], ...allItems.filter(i => i.view !== 'home').sort((a, b) => a.name.localeCompare(b.name))];
   }
 
   function render() {
@@ -728,9 +723,9 @@
   }
 
   function renderSideNav() {
-    const items = getNavItemsForUser(state.userEmail);
+    const items = getNavItemsForUser();
     const navUser = document.getElementById('nav-user-email');
-    if(navUser) navUser.textContent = state.userEmail || 'Guest (Please set email)';
+    if(navUser) navUser.textContent = state.userEmail || 'No identity selected';
     const cont = document.getElementById('nav-items-container');
     if(!cont) return;
     const html = items.map(i => `
@@ -854,7 +849,6 @@
     const val = el ? el.value.trim() : '';
     if(val) {
       state.userEmail = val;
-      localStorage.setItem('dgo_user_email', val);
       const modal = document.getElementById('email-prompt-modal');
       if(modal) modal.style.display = 'none';
       const hdr = document.getElementById('header-user-info');
@@ -927,18 +921,18 @@
   function init() {
     if (window.Chrome) window.Chrome.bootstrap('fast-track');
 
-    const savedEmail = localStorage.getItem('dgo_user_email') || '';
-    if (savedEmail) {
-      state.userEmail = savedEmail;
-      const hdr = document.getElementById('header-user-info');
-      if(hdr) {
-        hdr.textContent = savedEmail;
-        hdr.style.display = 'block';
-      }
-    } else {
-      const modal = document.getElementById('email-prompt-modal');
-      if(modal) modal.style.display = 'flex';
+    // Identity comes from the shared model (sidebar switcher / OTP session), not a
+    // separate fast-track email prompt (DATA-01). Changing identity reloads the page,
+    // so reading it here keeps fast-track in sync.
+    const activeUser = (window.State && window.State.getActiveUser) ? window.State.getActiveUser() : null;
+    state.userEmail = (activeUser && activeUser.email) ? activeUser.email : '';
+    const hdr = document.getElementById('header-user-info');
+    if (hdr) {
+      hdr.textContent = state.userEmail || 'Select identity in the sidebar';
+      hdr.style.display = 'block';
     }
+    const modal = document.getElementById('email-prompt-modal');
+    if (modal) modal.style.display = 'none';
 
     state.varIsCompact = window.innerWidth < 768;
     state.locShowFilters = !state.varIsCompact;

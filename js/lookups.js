@@ -72,11 +72,19 @@ const Lookups = (() => {
     const assignee = officers.find(o => o.id === cat.defaultAssignee) || null;
     const supportDept = depts.find(d => d.id === cat.supportDSU) || null;
 
-    // Determine default CC recipients based on cascade constraints
+    // Default CC recipients are derived from the live reference record (supporting DSU
+    // plus any additional CC codes the category itself defines) — no hardcoded per-category
+    // rules / category codes (DATA-02).
     const ccCodes = [];
-    if (supportDept) ccCodes.push(supportDept.code);
-    if (categoryCode === 'CAT_INFRA') ccCodes.push('SGF');
-    if (categoryCode === 'CAT_MOU') ccCodes.push('LSD');
+    if (supportDept && supportDept.code) ccCodes.push(supportDept.code);
+    const extraCC = cat.defaultCC || cat.ccCodes;
+    if (Array.isArray(extraCC)) {
+      extraCC.forEach(c => { if (c && !ccCodes.includes(c)) ccCodes.push(c); });
+    } else if (typeof extraCC === 'string' && extraCC.trim()) {
+      extraCC.split(/[;,]/).map(s => s.trim()).filter(Boolean).forEach(c => { if (!ccCodes.includes(c)) ccCodes.push(c); });
+    }
+
+    const deadlineDays = Number(cat.deadlineDays || cat.slaDays) || 14;
 
     return {
       defaultAssigneeId: cat.defaultAssignee,
@@ -85,7 +93,7 @@ const Lookups = (() => {
       supportDeptName: supportDept ? supportDept.name : '',
       defaultPriority: cat.defaultPriority || 'MEDIUM',
       defaultCC: ccCodes,
-      deadlineDays: categoryCode === 'CAT_INFRA' ? 7 : (categoryCode === 'CAT_MOU' ? 5 : 14)
+      deadlineDays
     };
   }
 

@@ -105,7 +105,12 @@ const Identity = (() => {
   }
 
   function isAdmin() {
-    const user = getActiveIdentity();
+    // Admin bypass requires a server-issued (token-backed) OTP session — never a merely
+    // client-selected identity — so the bypass cannot be forged from localStorage alone
+    // (SEC-02). Closure item: the OTP flow / future proxy must also validate the role
+    // server-side; the client check is necessary but not sufficient.
+    const session = getSession();
+    const user = session && session.user;
     return !!(user && ADMIN_ROLE_CODES.includes(user.roleCode));
   }
 

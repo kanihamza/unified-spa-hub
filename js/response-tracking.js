@@ -5,7 +5,7 @@
   // via window.API.callPA('E0x', ...) — no isolated endpoint configuration here.
 
   const state = {
-      userEmail: 'dgsregistry@nitda.gov.ng',
+      userEmail: (window.State && window.State.getActiveUser && (window.State.getActiveUser() || {}).email) || '',
       rawTasks: [],
       rawDocs: [],
       rawEmails: [],

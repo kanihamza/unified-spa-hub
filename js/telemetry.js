@@ -6,8 +6,13 @@ const Telemetry = (() => {
   const MAX_LOGS = 100;
   
   function getLogs() {
-    const raw = localStorage.getItem('dgo_telemetry_logs');
-    return raw ? JSON.parse(raw) : [];
+    try {
+      const raw = localStorage.getItem('dgo_telemetry_logs');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      // Corrupted store must not cascade into every log() call (OBS-01).
+      return [];
+    }
   }
 
   function log(actionName, details = {}) {

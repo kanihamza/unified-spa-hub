@@ -20,6 +20,7 @@ const Chrome = (() => {
     { code: 'dgceo-hub', label: 'DGCEO Decision Hub', url: 'dgceo-hub.html', icon: 'i-shield' },
     { code: 'dgceo-tracker', label: 'DGCEO Tracker', url: 'dgceo-tracker.html', icon: 'i-folder' },
     { code: 'exec-hub', label: 'Executive Ops Hub', url: 'exec-hub.html', icon: 'i-building' },
+    { code: 'fast-track', label: 'Fast-Track Correlation', url: 'fast-track.html', icon: 'i-sparkle' },
     { code: 'settings', label: 'Settings & Station', url: 'settings.html', icon: 'i-settings' }
   ];
 
@@ -270,6 +271,7 @@ const Chrome = (() => {
       { text: 'Go to DGCEO Decision Hub', url: 'dgceo-hub.html', icon: 'i-shield', cat: 'Navigation' },
       { text: 'Go to DGCEO Correspondence Tracker', url: 'dgceo-tracker.html', icon: 'i-folder', cat: 'Navigation' },
       { text: 'Go to Executive Ops Hub', url: 'exec-hub.html', icon: 'i-building', cat: 'Navigation' },
+      { text: 'Go to Fast-Track Correlation', url: 'fast-track.html', icon: 'i-sparkle', cat: 'Navigation' },
       { text: 'Change Endpoint Station', url: 'settings.html', icon: 'i-settings', cat: 'Navigation' },
       { text: 'Switch: Theme Mode Cycle', action: 'toggleTheme', icon: 'i-sparkle', cat: 'System Action', shortcut: 'T' },
       { text: 'Switch: Density Mode Toggle', action: 'toggleDensity', icon: 'i-grid', cat: 'System Action', shortcut: 'D' }
