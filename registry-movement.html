@@ -482,6 +482,9 @@
           }
         });
 
+        // In-place re-render on global refresh
+        window.addEventListener('dgo:data-refreshed', () => { loadGrid(); }); // in-place re-render
+
       });
     </script>
   </body>

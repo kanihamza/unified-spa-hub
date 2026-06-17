@@ -373,6 +373,7 @@
     setupEventListeners();
     await loadRecords(false); // initial = cached (no refetch on navigation)
     updateUI();
+    window.addEventListener('dgo:data-refreshed', async () => { await loadRecords(false); updateUI(); }); // in-place re-render
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

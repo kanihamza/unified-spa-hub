@@ -635,6 +635,12 @@
           }
         };
 
+        // In-place re-render on global refresh (data already updated in cache)
+        window.addEventListener('dgo:data-refreshed', async () => {
+          await loadFreshData();
+          if (window.triggerLookupSearch) window.triggerLookupSearch();
+        });
+
       });
     </script>
   </body>

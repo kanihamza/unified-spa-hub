@@ -499,6 +499,7 @@
         document.getElementById('btn-sync-emails').addEventListener('click', fetchAndRender);
 
         await fetchAndRender();
+        window.addEventListener('dgo:data-refreshed', fetchAndRender); // in-place re-render
       });
     </script>
   </body>

@@ -325,7 +325,7 @@
         varStepStart = new Date();
         updateLoadingStatus('Fetching Documents...');
         try {
-          const res = await window.API.callPA('E02', { action: 'getDocs', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail, odataFilter: '' }, { force: true });
+          const res = await window.API.callPA('E02', { action: 'getDocs', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail, odataFilter: '' });
           state.colDocsTracking = parseDocs(res.records || res.docs || res.data?.docs);
           state.varDocCount = state.colDocsTracking.length;
           logTelemetry(new Date(), actionLabel, 'Docs_Fetch_Parse', 'Success', msDiff(varStepStart), `Rows: ${state.varDocCount}`);
@@ -340,7 +340,7 @@
         updateLoadingStatus('Fetching Tasks...');
         state.gblStartTime = new Date();
         try {
-          const res = await window.API.callPA('E04', { action: 'getTasks', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail, odataFilter: '' }, { force: true });
+          const res = await window.API.callPA('E04', { action: 'getTasks', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail, odataFilter: '' });
           state.colTasksTracking = parseTasks(res.records || res.tasks || res.data?.tasks);
           state.varTaskCount = state.colTasksTracking.length;
           state.gblEndTime = new Date();
@@ -356,7 +356,7 @@
         varStepStart = new Date();
         updateLoadingStatus('Fetching Emails...');
         try {
-          const res = await window.API.callPA('E09', { action: 'emailsfetch', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', folderPath: 'Inbox', top: 50, skip: 0, fetchOnlyUnread: false }, { force: true });
+          const res = await window.API.callPA('E09', { action: 'emailsfetch', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', folderPath: 'Inbox', top: 50, skip: 0, fetchOnlyUnread: false });
           state.colEmailsTracking = parseEmails(res.records || res.emails || res.data?.emails);
           state.varEmailsCount = state.colEmailsTracking.length;
           logTelemetry(new Date(), actionLabel, 'Emails_Fetch_Parse', 'Success', msDiff(varStepStart), `Rows: ${state.varEmailsCount}`);
@@ -370,7 +370,7 @@
         varStepStart = new Date();
         updateLoadingStatus('Fetching References...');
         try {
-          const res = await window.API.callPA('E01', { action: 'lookups', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail }, { force: true });
+          const res = await window.API.callPA('E01', { action: 'lookups', operation: 'read', mode: 'read', source: 'DGO_FAST_Track_WEB_OPS', userEmail: state.userEmail });
           const data = res.data || res;
           state.colCategoriesInfo = data.categories || [];
           state.colUsers = data.users || [];
@@ -937,14 +937,8 @@
     state.locShowFilters = !state.varIsCompact;
     render();
 
-    setInterval(() => {
-      state.varDocCount = state.colDocsTracking.length;
-      state.varTaskCount = state.colTasksTracking.length;
-      state.varEmailsCount = state.colEmailsTracking.length;
-      state.varEmailPairsCount = state.colDocEmailPairs.length;
-      state.varMatchedCount = state.colMatchedDocs.length;
-      renderHeader();
-    }, 5000);
+    // No auto-refresh: counts update on user action / global refresh, not on a timer.
+    window.addEventListener('dgo:data-refreshed', () => { if (window.executeAction) window.executeAction('ReloadAll', 'Refresh'); });
 
     window.addEventListener('resize', () => {
       state.varIsCompact = window.innerWidth < 768;

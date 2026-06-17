@@ -60,5 +60,6 @@
     const syncBtn = document.getElementById('btn-sync');
     if (syncBtn) syncBtn.addEventListener('click', () => syncRegistry(true)); // manual refresh = force
     syncRegistry(false); // initial = cached (no refetch on navigation)
+    window.addEventListener('dgo:data-refreshed', () => syncRegistry(false)); // in-place re-render after global refresh
   });
 })();

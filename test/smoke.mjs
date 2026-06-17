@@ -107,13 +107,20 @@ try {
   check('dedicated docs flow not re-called (served by Fetch-All cache)', !reqCount['7995c1eb'], `E02 fetches=${reqCount['7995c1eb'] || 0}`);
   check('dedicated tasks flow not re-called (served by Fetch-All cache)', !reqCount['37642ba3'], `E04 fetches=${reqCount['37642ba3'] || 0}`);
 
+  // Back on home to validate in-place refresh against a visible data list.
+  await page.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+  await sleep(300);
   // Refresh button is in the shared topbar → present on home and every module.
   check('global Refresh button present (home + every module)', !!(await page.$('#btn-global-refresh')));
-  // Clicking it re-runs the single Fetch-All (and only that — no dedicated subset flows).
+  // Clicking it refreshes IN-PLACE: re-runs the single Fetch-All (and only that —
+  // no dedicated subset flows) and re-renders without navigating away.
+  const urlBeforeRefresh = page.url();
   await page.click('#btn-global-refresh');
-  await page.waitForLoadState('networkidle');
-  await sleep(500);
+  await sleep(800); // allow Fetch-All (300ms mock) + dgo:data-refreshed re-render
+  check('Refresh is in-place (no page navigation)', page.url() === urlBeforeRefresh, `url=${page.url()}`);
   check('Refresh re-runs the Fetch-All (superset only)', reqCount['4a250f97'] === 2 && !reqCount['7995c1eb'], `E00=${reqCount['4a250f97']} E02=${reqCount['7995c1eb'] || 0}`);
+  const rowsAfterRefresh = await page.$$eval('#home-docs-tbody tr', (els) => els.length);
+  check('data still rendered after in-place refresh', rowsAfterRefresh > 0, `rows=${rowsAfterRefresh}`);
 
   check('no console/page errors', errors.length === 0, errors.join(' | '));
   await browser.close();

@@ -98,5 +98,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     if (window.Chrome) window.Chrome.bootstrap('exec-hub');
     syncNodeRegistry();
+    window.addEventListener('dgo:data-refreshed', syncNodeRegistry); // in-place re-render
   });
 })();

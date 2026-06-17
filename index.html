@@ -211,6 +211,7 @@
         updateClock();
         setInterval(updateClock, 1000);
 
+        async function loadHome() {
         try {
           // Fire E01 references pre-load
           await window.Lookups.loadReferences();
@@ -285,6 +286,9 @@
         } catch (err) {
           window.Chrome.showToast('Failed to coordinate operational streams.', 'error');
         }
+        }
+        loadHome();
+        window.addEventListener('dgo:data-refreshed', loadHome); // in-place re-render
       });
     </script>
   </body>

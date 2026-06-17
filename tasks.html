@@ -400,6 +400,7 @@
 
         // Initial loading loop
         await fetchAndRender();
+        window.addEventListener('dgo:data-refreshed', fetchAndRender); // in-place re-render
       });
     </script>
   </body>

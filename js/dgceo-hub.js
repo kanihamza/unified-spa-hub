@@ -149,5 +149,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     if (window.Chrome) window.Chrome.bootstrap('dgceo-hub');
     syncHubData();
+    window.addEventListener('dgo:data-refreshed', syncHubData); // in-place re-render
   });
 })();

@@ -336,6 +336,7 @@
       
       updateAvatar();
       window.syncData();
+      window.addEventListener('dgo:data-refreshed', () => window.syncData()); // in-place re-render
   });
 
 })();

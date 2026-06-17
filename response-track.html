@@ -396,6 +396,7 @@
 
         // Run on load
         await runIndexing();
+        window.addEventListener('dgo:data-refreshed', runIndexing); // in-place re-render
       });
     </script>
   </body>

@@ -406,13 +406,27 @@ const Chrome = (() => {
     Chrome.showCommandPalette = () => toggleCommandPalette(true);
   }
 
-  // Global data refresh: re-run the single Fetch-All (superset) and re-render every
-  // module. Clearing the once-per-session boot guard makes the startup Fetch-All run
-  // again (behind the loading screen); cached primary data is preserved until the
-  // fresh data overwrites it, so nothing is lost.
-  function refreshData() {
-    try { sessionStorage.removeItem('dgo_booted'); } catch {}
-    window.location.reload();
+  // Global data refresh (IN-PLACE — no page reload). Re-runs the single Fetch-All
+  // (superset) and notifies every module to re-render from the refreshed cache via the
+  // `dgo:data-refreshed` event. Cached primary data is preserved until fresh data
+  // overwrites it, so nothing is lost and scroll/form state is kept.
+  let _refreshing = false;
+  async function refreshData() {
+    if (_refreshing) return;
+    _refreshing = true;
+    const btn = document.getElementById('btn-global-refresh');
+    if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+    showToast('Refreshing data…', 'info');
+    try {
+      if (window.API && window.API.fetchAll) await window.API.fetchAll();
+      window.dispatchEvent(new CustomEvent('dgo:data-refreshed'));
+      showToast('Data refreshed.', 'success');
+    } catch (e) {
+      showToast('Refresh failed — showing last loaded data.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+      _refreshing = false;
+    }
   }
 
   return {

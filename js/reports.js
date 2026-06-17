@@ -84,6 +84,7 @@
     
     syncStatusLabel();
     fetchReportData();
+    window.addEventListener('dgo:data-refreshed', fetchReportData); // in-place re-render
 
     const printBtn = document.getElementById('btnPrint');
     if (printBtn) printBtn.addEventListener('click', () => window.print());
