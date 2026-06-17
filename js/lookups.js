@@ -9,56 +9,42 @@ const Lookups = (() => {
     return cachedData !== null;
   }
 
-  // Retrieve details or download via Power Automate E01
+  // References are loaded ONCE on startup as part of the Fetch-All (api.js). They are
+  // mostly static; a manual refresh (Settings/diagnostics) re-runs the Fetch-All.
   async function loadReferences(forceReload = false) {
     if (!forceReload) {
       const stored = localStorage.getItem('dgo_cached_lookups');
       if (stored) {
-        try {
-          cachedData = JSON.parse(stored);
-          if (window.Telemetry) {
-            window.Telemetry.log('lookup_load', { source: 'local_cache', recordsCount: cachedData.categories.length });
-          }
-          return cachedData;
-        } catch {
-          // parse failed, fetch fresh
-        }
+        try { cachedData = JSON.parse(stored); return cachedData; } catch { /* parse failed → reload */ }
       }
+      // Not cached yet — wait for the in-flight startup Fetch-All, then read.
+      if (window.API && window.API.fetchAll) {
+        try { await window.API.fetchAll(false); } catch {}
+        const s2 = localStorage.getItem('dgo_cached_lookups');
+        if (s2) { try { cachedData = JSON.parse(s2); return cachedData; } catch {} }
+      }
+      cachedData = cachedData || { categories: [], departments: [], officers: [] };
+      return cachedData;
     }
 
+    // Forced refresh (Settings/diagnostics only) — re-run the Fetch-All.
     try {
-      if (window.Telemetry) {
-        window.Telemetry.log('lookup_fetch_start', { forceReload });
-      }
-      
-      const response = await window.API.callPA('E01');
-      if (response && response.categories) {
-        cachedData = response;
-        localStorage.setItem('dgo_cached_lookups', JSON.stringify(response));
-        if (window.Telemetry) {
-          window.Telemetry.log('lookup_fetch_success', { recordsCount: response.categories.length });
-        }
-        return cachedData;
-      }
-      throw new Error("Invalid lookups payload representation received");
+      if (window.Telemetry) window.Telemetry.log('lookup_refresh_start', {});
+      if (window.API && window.API.fetchAll) await window.API.fetchAll(true);
+      const s = localStorage.getItem('dgo_cached_lookups');
+      if (s) { cachedData = JSON.parse(s); if (window.Telemetry) window.Telemetry.log('lookup_refresh_success', { recordsCount: (cachedData.categories || []).length }); return cachedData; }
+      throw new Error('No references returned');
     } catch (err) {
-      if (window.Telemetry) {
-        window.Telemetry.log('lookup_fetch_failure', { error: err.message });
-      }
-      // No live references available — return empty structures (never sample data).
-      // Do not persist empties, so a later successful load can populate the cache.
+      if (window.Telemetry) window.Telemetry.log('lookup_refresh_failure', { error: err.message });
       cachedData = cachedData || { categories: [], departments: [], officers: [] };
       return cachedData;
     }
   }
 
-  // Pre-populate lookups cache immediately to avoid blank selections
+  // Pre-populate the in-memory lookups from the persisted cache (set by the Fetch-All).
   function bootstrapCache() {
-    if (!localStorage.getItem('dgo_cached_lookups')) {
-      loadReferences(false);
-    } else {
-      cachedData = JSON.parse(localStorage.getItem('dgo_cached_lookups'));
-    }
+    const stored = localStorage.getItem('dgo_cached_lookups');
+    if (stored) { try { cachedData = JSON.parse(stored); } catch { cachedData = null; } }
   }
 
   function getCategories() {

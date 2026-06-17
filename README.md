@@ -53,13 +53,21 @@ unwraps the array (exposing both `records` and the entity key) and adds camelCas
 when a flow returns nothing or is unreachable, pages show genuine empty/error states. Live data
 requires the flows to permit the app origin via **CORS** (a server-side flow config).
 
-**Fetch & cache strategy.** Read data is fetched **once** (on first need / app start) and cached in
-`localStorage` per flow (`dgo_cache_<code>`). Navigating to or landing on a module **does not refetch** —
-it reads the cache. Data refreshes only on an explicit trigger: a **write** to a related flow
-(auto-invalidates the affected module's cache, so its next read is fresh) or a **manual refresh button**
-(`API.refresh(code)` / `callPA(code, payload, { force: true })`) — e.g. AID "Sync Registry", the
-tracker "Force Sync", and the Fast-Track toolbar actions. Each module refreshes via its own dedicated
-flow. `API.clearCache()` (Settings → "Flush offline cache") drops all cached reads.
+**Startup fetch-all + loading screen.** On app start (once per browser session) a non-navigable
+**loading screen** is shown while a single **Fetch-All** loads docs, tasks, emails and references
+(users / departments / categories) in one pass and caches them. If the Fetch-All flow URL (`E00`) is
+configured (Settings → "E00 — Fetch-All"), it's one call; otherwise the platform fans out to the
+dedicated read flows. The overlay clears when data is ready.
+
+**Fetch & cache strategy.** Read data is cached in `localStorage` per flow (`dgo_cache_<code>`).
+Navigating to or landing on a module **does not refetch** — it reads the cache. Data refreshes only on
+an explicit trigger: a **write** to a related flow (auto-invalidates the affected module's cache) or a
+**manual refresh button** (`API.refresh(code)` / `{ force: true }`) — e.g. AID "Sync Registry", the
+tracker "Force Sync", the Fast-Track toolbar actions — each via its own dedicated flow.
+
+**References load once** on startup (they're mostly static). A manual references refresh re-runs the
+Fetch-All and is only exposed via Settings / diagnostics (Settings → "Rebuild Lookup cache"), not as a
+per-module button. `API.clearCache()` (Settings → "Flush offline cache") drops cached reads.
 
 | Code | Purpose | Provisioned |
 |------|---------|-------------|

@@ -46,6 +46,17 @@
 > refetch (`API.refresh` / `callPA(code, …, { force: true })`). Verified in the smoke test (E02/E04
 > fetched exactly once across docs→tasks→index→docs→tracker navigations).
 >
+> **Startup Fetch-All + loading screen (2026-06-16):** on app start (once per session) a non-navigable
+> loading overlay is shown while a single **Fetch-All** loads docs, tasks, emails and references in one
+> pass and caches them; navigation then reads the cache. The Fetch-All uses flow **E00** when its URL is
+> configured (Settings) and otherwise fans out to the dedicated read flows. **References load once** on
+> startup; a manual references refresh re-runs the Fetch-All and is exposed only via Settings/diagnostics.
+> The gateway is **shape-aligned to the Fetch-All contract** (`{ok,…,data:{docs,tasks,emails,users,
+> categories,departments}}`), including tasks' boolean `Description` (exposed as `hasDescription`) and the
+> `RoutedToDSU`/`AssignedToDSU` routing fields. The Fetch-All flow's Response sets
+> `Access-Control-Allow-Origin: https://your-host` — **change that placeholder to the app's real origin**
+> (this is the CORS item below).
+>
 > **Still open (environmental):** live data requires the Power Automate flows to permit the app origin
 > via **CORS** (a server-side flow config — browser calls otherwise fail the preflight). This is the
 > only remaining dependency for live data; proxies are out of scope (FR-011). The tracker maps to the

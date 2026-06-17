@@ -91,8 +91,12 @@ try {
   const total = await page.textContent('#stat-total');
   check('tracker loaded records from live flow', Number(total) >= 0, `total=${total}`);
 
+  // Startup: the Fetch-All ran once (loading boot) and populated everything.
+  const booted = await page.evaluate(() => sessionStorage.getItem('dgo_booted'));
+  check('startup Fetch-All ran (booted once per session)', booted === '1', `booted=${booted}`);
+
   // Caching: across docs→tasks→index→docs→tracker navigations, each read flow is
-  // fetched ONCE and served from cache thereafter (no refetch just by navigating).
+  // fetched ONCE (by the startup Fetch-All) and served from cache thereafter.
   check('docs flow (E02) fetched once across navigations', reqCount['7995c1eb'] === 1, `E02 fetches=${reqCount['7995c1eb']}`);
   check('tasks flow (E04) fetched once across navigations', reqCount['37642ba3'] === 1, `E04 fetches=${reqCount['37642ba3']}`);
 

@@ -73,6 +73,10 @@
 
                   <form id="endpoints-form" class="dgo-stack dgo-stack--3" onsubmit="return false">
                     <div class="dgo-form-group">
+                      <label for="ep-E00" class="dgo-label">E00 — Fetch-All Data &amp; References (startup)</label>
+                      <input type="url" id="ep-E00" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="Fetch-All flow URL (one call: docs, tasks, emails, references)">
+                    </div>
+                    <div class="dgo-form-group">
                       <label for="ep-E01" class="dgo-label">E01 — Reference Directory Lookup Feed</label>
                       <input type="url" id="ep-E01" class="dgo-input" style="height: 32px; font-size:11px;" placeholder="URL Endpoint">
                     </div>
@@ -266,7 +270,7 @@
         // Save customized flow URLs
         document.getElementById('btn-save-endpoints').addEventListener('click', () => {
           const formEndpoints = {};
-          const flowKeys = ['E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
+          const flowKeys = ['E00','E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
           
           flowKeys.forEach(k => {
             const val = document.getElementById(`ep-${k}`).value;
@@ -279,7 +283,7 @@
 
         // Restore URLs to defaults
         document.getElementById('btn-restore-endpoints-default').addEventListener('click', () => {
-          const flowKeys = ['E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
+          const flowKeys = ['E00','E01','E02','E03','E04','E05','E06','E07','E08','E09','E10'];
           flowKeys.forEach(k => {
             document.getElementById(`ep-${k}`).value = '';
           });

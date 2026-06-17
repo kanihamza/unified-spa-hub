@@ -1,26 +1,29 @@
 /* ============================================================
-   DGO v2.4 — Secure API Gateway & Outbox Orchestrator
+   DGO v2.5 — Secure API Gateway, Startup Fetch-All & Outbox
    ------------------------------------------------------------
    SINGLE SOURCE OF TRUTH for every Power Automate HTTP-trigger
-   flow endpoint. No other module may define its own flow URLs.
-   Live-only: the platform calls the real flows directly; there
-   is no demo/sample/mock data anywhere (FR-031..FR-034).
+   flow endpoint. Live-only: no demo/sample/mock data anywhere.
+   On app start, a single Fetch-All loads docs, tasks, emails and
+   references in one pass (behind a loading screen); navigation
+   then reads the cache. References are loaded once on startup.
    ============================================================ */
 
 const API = (() => {
   const OUTBOX_KEY = 'dgo_sync_outbox';
+  const LOOKUPS_KEY = 'dgo_cached_lookups';
 
   // ── Central Flow Endpoint Registry ─────────────────────────────────────────
-  // Flow URLs are embedded in the frontend during the current delivery phase
-  // (no proxy/intermediary — BR-006 / FR-015 / FR-016) and centrally managed
-  // here. Each URL is built from its workflow id + SAS signature so rotation is
-  // a one-line change per flow. Per-flow runtime overrides may be set in Settings.
   const PA_BASE = 'https://defaultca6a4b3f912349bcbcb927085ebbf1.a1.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows';
   const PA_QS = 'api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0';
   const paUrl = (workflowId, sig) => `${PA_BASE}/${workflowId}/triggers/manual/paths/invoke?${PA_QS}&sig=${sig}`;
 
   const FLOW_ENDPOINTS = {
-    // Read flows
+    // Startup Fetch-All Data & References Matrix (one call → docs, tasks, emails, references).
+    // Provide its HTTP trigger URL here or in Settings; until then the platform fans out to the
+    // dedicated read flows below on startup.
+    E00: '',
+
+    // Read flows (dedicated, used for module-level forced refresh + as the startup fallback)
     E01: paUrl('ff455c68e9ac493e858fb984bcfd01fb', 'jajFVxbv67HbcKqvV8h6JBPm9TPG60yDnhRjy9WmpPU'), // References / lookups (officers, departments, categories)
     E02: paUrl('7995c1eb50d94d5daa2780e71391d874', 'G9ti0-fzVRwt8fdGGheNgSrvIoMCcXKEibCaBDci4oE'), // Inbound dossiers / correspondence (GET_DOCS_OPS_2)
     E04: paUrl('37642ba3597f4cf58288cc71b5e6b519', 'hklOSh62A6jmQuhX28NYQMaxlVEG8fC05LVsyVz7YX4'), // Action tasks
@@ -44,12 +47,7 @@ const API = (() => {
   const PAGINATED_FLOWS = ['E02', 'E04', 'E09'];
   const FLOW_CODES = Object.keys(FLOW_ENDPOINTS);
 
-  // ── Client-side read cache (per flow, persisted in localStorage) ────────────
-  // Read data is fetched once (on first need / app start) and served from cache
-  // on subsequent navigation — it is NOT re-fetched just by landing on a module.
-  // It refreshes only on an explicit trigger: a write to a related flow
-  // (auto-invalidation) or a forced refresh (opts.force, used by module refresh
-  // buttons / predefined actions). References (E01) are cached by Lookups itself.
+  // ── Client-side read cache (per flow, persisted) ────────────────────────────
   const READ_CACHE_FLOWS = ['E02', 'E04', 'E09'];
   const CACHE_PREFIX = 'dgo_cache_';
   const WRITE_INVALIDATES = { E03: ['E02'], E05: ['E04'], E06: ['E04'], E07: ['E04'], E08: ['E04'], E10: ['E04', 'E09'], E14: ['E02'] };
@@ -67,12 +65,11 @@ const API = (() => {
     return FLOW_ENDPOINTS[code] || '';
   }
 
-  // ── Response normalization ──────────────────────────────────────────────────
-  // Live flows wrap data in an envelope ({ok,status,timing,docs:[...]}) with
-  // PascalCase fields; several pages read a flat {records:[...]} with camelCase
-  // fields. Normalize at the gateway so every page works against the live
-  // contract: expose both `records` and the entity key, add camelCase aliases,
-  // and preserve original fields (so live-shape modules keep working).
+  // ── Response normalization (aligned to the Fetch-All flow contract) ─────────
+  // Fetch-All returns { ok, status, request, timing, data:{docs,tasks,emails,
+  // users,categories,departments,taskComments}, errors, meta }. Per-entity flows
+  // return the same row shapes under their own key. Normalize so every page works:
+  // expose `records` + the entity key, add camelCase aliases, keep originals.
   const ENTITY_KEY = { E02: 'docs', E04: 'tasks', E09: 'emails' };
 
   function pick(rec, ...getters) {
@@ -86,25 +83,30 @@ const API = (() => {
     status: pick(r, 'status', 'AssignmentStatus', 'Status'),
     sender: pick(r, 'sender', 'Sender', 'From') || '',
     category: pick(r, 'category', 'Category'),
-    assignee: pick(r, 'assignee', 'AssignedTo'),
-    directives: pick(r, 'directives', 'Description')
+    assignee: pick(r, 'assignee', 'AssignedTo', 'Assigned'),
+    directives: pick(r, 'directives', 'Description') || '',
+    link: pick(r, 'link', 'AttachmentLink') || '',
+    routing: pick(r, 'routing', 'RoutedToDSU') || ''
   });
   const aliasTask = (r) => Object.assign({}, r, {
     id: pick(r, 'id', 'ID'), title: pick(r, 'title', 'Title'),
     status: pick(r, 'status', 'Progress', 'Status'),
     priority: pick(r, 'priority', 'Priority'),
     assignee: pick(r, 'assignee', 'AssignedTo', 'Assigned'),
-    directives: pick(r, 'directives', 'Description'),
+    // In this flow the task `Description` is a BOOLEAN (has-description). Only treat a
+    // real string as directives; expose the boolean separately.
+    directives: (typeof r.directives === 'string' ? r.directives : '') || '',
+    hasDescription: (typeof r.Description === 'boolean' ? r.Description : undefined),
     dueDate: pick(r, 'dueDate', 'DueDate'),
     category: pick(r, 'category', 'Classification', 'Category'),
-    refIDD: pick(r, 'refIDD', 'RefIDD'),
-    routing: pick(r, 'routing', 'GDSUROUT'),
+    refIDD: pick(r, 'refIDD', 'RefIDD', 'Reference_ID'),
+    routing: pick(r, 'routing', 'RoutedToDSU', 'AssignedToDSU', 'GDSUROUT') || '',
     lastUpdateNotes: pick(r, 'lastUpdateNotes', 'Comments') || ''
   });
   const aliasEmail = (r) => Object.assign({}, r, {
     id: pick(r, 'id', 'ID'), subject: pick(r, 'subject', 'Subject'),
-    sender: pick(r, 'sender', 'fromAddress', (x) => x.from && x.from.emailAddress && x.from.emailAddress.address) || '',
-    body: pick(r, 'body', 'bodyPreview', (x) => x.body && x.body.content, 'bodyHtml') || '',
+    sender: pick(r, 'sender', 'fromAddress', 'fromName', (x) => x.from && x.from.emailAddress && x.from.emailAddress.address) || '',
+    body: pick(r, 'body', 'bodyContent', 'bodyPreview', (x) => x.body && x.body.content, 'bodyHtml') || '',
     bodyPreview: pick(r, 'bodyPreview', 'body'),
     status: pick(r, 'status', 'assignmentStatus', 'AssignmentStatus') || '',
     assignmentStatus: pick(r, 'assignmentStatus', 'AssignmentStatus', 'status') || '',
@@ -131,9 +133,10 @@ const API = (() => {
       email: pick(o, 'email', 'Email') || ''
     }));
     const categories = (src.categories || []).map((c) => Object.assign({}, c, {
-      code: pick(c, 'code', 'Category', 'DSU_KEY', (x) => x.ID != null ? String(x.ID) : undefined),
+      code: pick(c, 'code', 'Category Code', 'Category', 'DSU_KEY', (x) => x.ID != null ? String(x.ID) : undefined),
       name: pick(c, 'name', 'Title', 'Category'),
-      defaultAssignee: pick(c, 'defaultAssignee'), supportDSU: pick(c, 'supportDSU', 'INFORMDSU1'),
+      defaultAssignee: pick(c, 'defaultAssignee', 'Default Primary Responsible'),
+      supportDSU: pick(c, 'supportDSU', 'Default Supporting Department/Unit', 'INFORMDSU1'),
       defaultPriority: pick(c, 'defaultPriority', 'Priority') || 'MEDIUM'
     }));
     return Object.assign({}, raw, { departments, officers, categories, users: src.users || officers });
@@ -149,10 +152,72 @@ const API = (() => {
     return out;
   }
 
+  // ── Low-level fetch (no caching) ────────────────────────────────────────────
+  async function doFetch(code, payload) {
+    const url = getEndpoint(code);
+    if (!url) return null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Client', 'X-Correlation-ID': `DGO-TX-${Date.now()}` },
+        body: JSON.stringify(payload || {}),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      return await response.json();
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (window.Telemetry) window.Telemetry.log('api_invocation_error', { code, error: e.message });
+      throw e;
+    }
+  }
+
+  function cacheReferences(refsRaw) {
+    const norm = normalizeReferences(refsRaw);
+    try { localStorage.setItem(LOOKUPS_KEY, JSON.stringify(norm)); } catch {}
+    return norm;
+  }
+
+  // ── Startup Fetch-All ───────────────────────────────────────────────────────
+  // One pass that populates docs/tasks/emails caches and the references cache.
+  // Uses the Fetch-All flow (E00) when configured; otherwise fans out to the
+  // dedicated read flows. References are loaded here (once on startup).
+  let _fetchAllPromise = null;
+  function fetchAll(force = false) {
+    if (_fetchAllPromise && !force) return _fetchAllPromise;
+    const p = (async () => {
+      if (getEndpoint('E00')) {
+        const resp = await doFetch('E00', { action: 'Fetch_All', operation: 'read', mode: 'read', source: 'DGO_Platform' });
+        const data = (resp && resp.data) || {};
+        writeCache('E02', normalizeResponse('E02', { docs: data.docs || [] }));
+        writeCache('E04', normalizeResponse('E04', { tasks: data.tasks || [] }));
+        writeCache('E09', normalizeResponse('E09', { emails: data.emails || [] }));
+        cacheReferences({ data: { users: data.users || [], categories: data.categories || [], departments: data.departments || [] } });
+        return data;
+      }
+      // Fallback: dedicated flows in parallel (until E00 URL is provided).
+      const [refs, docs, tasks, emails] = await Promise.allSettled([
+        doFetch('E01', { action: 'lookups', operation: 'read', source: 'DGO_Platform' }),
+        doFetch('E02', { action: 'getDocs', operation: 'read', source: 'DGO_Platform' }),
+        doFetch('E04', { action: 'getTasks', operation: 'read', source: 'DGO_Platform' }),
+        doFetch('E09', { action: 'emailsfetch', operation: 'read', source: 'DGO_Platform' })
+      ]);
+      if (docs.status === 'fulfilled' && docs.value != null) writeCache('E02', normalizeResponse('E02', docs.value));
+      if (tasks.status === 'fulfilled' && tasks.value != null) writeCache('E04', normalizeResponse('E04', tasks.value));
+      if (emails.status === 'fulfilled' && emails.value != null) writeCache('E09', normalizeResponse('E09', emails.value));
+      if (refs.status === 'fulfilled' && refs.value != null) cacheReferences(refs.value);
+      return null;
+    })();
+    _fetchAllPromise = p;
+    p.catch(() => {}).finally(() => { if (_fetchAllPromise === p) _fetchAllPromise = null; });
+    return p;
+  }
+
   const Outbox = {
-    get: () => {
-      try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; }
-    },
+    get: () => { try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; } },
     save: (queue) => { localStorage.setItem(OUTBOX_KEY, JSON.stringify(queue)); },
     async push(code, payload) {
       const queue = this.get();
@@ -170,41 +235,29 @@ const API = (() => {
       }
       let queue = this.get();
       if (queue.length === 0) return;
-
       const activeQueue = [...queue];
       for (let item of activeQueue) {
         if (item.nextRetry > Date.now()) continue;
         try {
           const url = getEndpoint(item.code);
-          if (!url) {
-            if (window.Telemetry) window.Telemetry.log("outbox_flow_not_configured", { code: item.code, txId: item.id });
-            continue;
-          }
-
+          if (!url) { if (window.Telemetry) window.Telemetry.log("outbox_flow_not_configured", { code: item.code, txId: item.id }); continue; }
           const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Outbox-Agent', 'X-DGO-Tx-ID': item.id },
             body: JSON.stringify(item.payload)
           });
-
           if (response.ok) {
             queue = this.get().filter(q => q.id !== item.id);
             this.save(queue);
             if (window.Chrome) window.Chrome.showToast(`Flow ${item.code} successfully synchronized.`, 'success');
-          } else {
-            throw new Error(`Server returned status code: ${response.status}`);
-          }
+          } else { throw new Error(`Server returned status code: ${response.status}`); }
         } catch (err) {
           item.attempts++;
           const backoff = Math.min(10000 * Math.pow(2, item.attempts), 7200000);
           item.nextRetry = Date.now() + backoff;
           const currentQueue = this.get();
           const target = currentQueue.find(q => q.id === item.id);
-          if (target) {
-            target.attempts = item.attempts;
-            target.nextRetry = item.nextRetry;
-            this.save(currentQueue);
-          }
+          if (target) { target.attempts = item.attempts; target.nextRetry = item.nextRetry; this.save(currentQueue); }
         }
       }
     }
@@ -220,81 +273,89 @@ const API = (() => {
     FLOW_CODES.forEach(k => { ep[k] = localStorage.getItem(`dgo_endpoint_${k}`) || ''; });
     return ep;
   }
-
   function saveCustomEndpoints(endpoints) {
     for (const key in endpoints) {
-      if (endpoints[key]) {
-        localStorage.setItem(`dgo_endpoint_${key}`, endpoints[key]);
-      } else {
-        localStorage.removeItem(`dgo_endpoint_${key}`);
-      }
+      if (endpoints[key]) localStorage.setItem(`dgo_endpoint_${key}`, endpoints[key]);
+      else localStorage.removeItem(`dgo_endpoint_${key}`);
     }
   }
 
   async function callPA(code, payload = {}, opts = {}) {
-    if (PAGINATED_FLOWS.includes(code)) {
-      payload.pagination = payload.pagination || { top: 50, skip: 0 };
-    }
+    if (PAGINATED_FLOWS.includes(code)) payload.pagination = payload.pagination || { top: 50, skip: 0 };
 
     if (WRITE_FLOWS.includes(code)) {
       const res = await Outbox.push(code, payload);
-      // A write invalidates the related module caches so their next read refetches.
       if (WRITE_INVALIDATES[code]) invalidate(WRITE_INVALIDATES[code]);
       return res;
     }
 
     // Serve cached read data unless an explicit refresh is requested (opts.force).
     if (READ_CACHE_FLOWS.includes(code) && opts.force !== true) {
-      const cached = readCache(code);
+      let cached = readCache(code);
       if (cached !== null) return cached;
+      // Cold cache: if the startup Fetch-All is in flight, wait for it rather than fetch again.
+      if (_fetchAllPromise) { try { await _fetchAllPromise; } catch {} cached = readCache(code); if (cached !== null) return cached; }
     }
 
-    const url = getEndpoint(code);
-    if (!url) {
-      // No live endpoint configured. Return an empty (normalized) result — never sample data.
+    const raw = await doFetch(code, payload);
+    if (raw == null) {
       if (window.Telemetry) window.Telemetry.log("api_flow_not_configured", { code });
       return normalizeResponse(code, { records: [] });
     }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Client', 'X-Correlation-ID': `DGO-TX-${Date.now()}` },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      // Normalize the live envelope/field shape to the platform's canonical shape, then cache.
-      const normalized = normalizeResponse(code, await response.json());
-      if (READ_CACHE_FLOWS.includes(code)) writeCache(code, normalized);
-      return normalized;
-    } catch (e) {
-      clearTimeout(timeoutId);
-      if (window.Telemetry) window.Telemetry.log("api_invocation_error", { code, error: e.message });
-      throw e;
-    }
+    const normalized = normalizeResponse(code, raw);
+    if (READ_CACHE_FLOWS.includes(code)) writeCache(code, normalized);
+    return normalized;
   }
 
-  // Forced refresh for a flow (module refresh buttons / predefined refetch actions).
   function refresh(code, payload) { return callPA(code, payload || {}, { force: true }); }
 
-  // Local cache of the last successful live sync (used by pages for offline continuity;
-  // empty until a live flow returns data — never seeded with sample content).
-  function getStoredDocuments() { return JSON.parse(localStorage.getItem('dgo_cached_docs') || '[]'); }
+  // Local write-through store (used by some pages for optimistic edits; empty until
+  // a live flow / fetch-all populates it — never seeded with sample content).
+  function getStoredDocuments() { try { return JSON.parse(localStorage.getItem('dgo_cached_docs') || '[]'); } catch { return []; } }
   function saveStoredDocuments(docs) { localStorage.setItem('dgo_cached_docs', JSON.stringify(docs)); }
-  function getStoredTasks() { return JSON.parse(localStorage.getItem('dgo_cached_tasks') || '[]'); }
+  function getStoredTasks() { try { return JSON.parse(localStorage.getItem('dgo_cached_tasks') || '[]'); } catch { return []; } }
   function saveStoredTasks(tasks) { localStorage.setItem('dgo_cached_tasks', JSON.stringify(tasks)); }
-  function getStoredEmails() { return JSON.parse(localStorage.getItem('dgo_cached_emails') || '[]'); }
+  function getStoredEmails() { try { return JSON.parse(localStorage.getItem('dgo_cached_emails') || '[]'); } catch { return []; } }
   function saveStoredEmails(emails) { localStorage.setItem('dgo_cached_emails', JSON.stringify(emails)); }
+
+  // ── Startup boot: loading screen + Fetch-All (once per browser session) ─────
+  function showBootOverlay() {
+    if (document.getElementById('dgo-boot-overlay')) return;
+    const el = document.createElement('div');
+    el.id = 'dgo-boot-overlay';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b3d2e;color:#fff;font-family:system-ui,"Segoe UI",sans-serif;transition:opacity .4s ease;';
+    el.innerHTML =
+      '<img src="assets/logo/white-out.svg" alt="" style="height:46px;width:auto;opacity:.95;">' +
+      '<div style="width:42px;height:42px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:dgo-spin 1s linear infinite;"></div>' +
+      '<div style="font-size:14px;font-weight:600;letter-spacing:.02em;">Loading platform data…</div>' +
+      '<style>@keyframes dgo-spin{to{transform:rotate(360deg)}}</style>';
+    (document.body || document.documentElement).appendChild(el);
+  }
+  function hideBootOverlay() {
+    const el = document.getElementById('dgo-boot-overlay');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 450);
+  }
+  function boot() {
+    // Run the startup Fetch-All once per browser session, behind a loading screen.
+    if (sessionStorage.getItem('dgo_booted') === '1') return;
+    showBootOverlay();
+    fetchAll(true).catch(() => {}).finally(() => {
+      try { sessionStorage.setItem('dgo_booted', '1'); } catch {}
+      hideBootOverlay();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 
   return {
     Outbox,
     callPA,
     refresh,
+    fetchAll,
     invalidate,
     isCached,
     clearCache,
