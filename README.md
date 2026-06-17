@@ -59,11 +59,15 @@ requires the flows to permit the app origin via **CORS** (a server-side flow con
 configured (Settings → "E00 — Fetch-All"), it's one call; otherwise the platform fans out to the
 dedicated read flows. The overlay clears when data is ready.
 
-**Fetch & cache strategy.** Read data is cached in `localStorage` per flow (`dgo_cache_<code>`).
-Navigating to or landing on a module **does not refetch** — it reads the cache. Data refreshes only on
-an explicit trigger: a **write** to a related flow (auto-invalidates the affected module's cache) or a
-**manual refresh button** (`API.refresh(code)` / `{ force: true }`) — e.g. AID "Sync Registry", the
-tracker "Force Sync", the Fast-Track toolbar actions — each via its own dedicated flow.
+**Fetch & cache strategy.** The **Fetch-All is the single source of truth** — docs, tasks, emails and
+references are all subsets of it. Modules **never** fetch their own flow: on load (or becoming visible)
+they only **read the cache** (`dgo_cache_<code>` / `dgo_cached_lookups`) populated by the Fetch-All —
+there is no auto-refresh and no per-module fetch running alongside the Fetch-All. Cached primary data
+persists across navigation. The dedicated read flows (E01/E02/E04/E09) are only used as the startup
+**fallback** when `E00` isn't configured. **Refresh** (the global topbar **Refresh** button on every
+module/home, plus the in-module refresh buttons) re-runs the single Fetch-All and re-renders — it never
+triggers a dedicated subset flow. A write to a flow also marks the related cache stale for the next
+refresh.
 
 **References load once** on startup (they're mostly static). A manual references refresh re-runs the
 Fetch-All and is only exposed via Settings / diagnostics (Settings → "Rebuild Lookup cache"), not as a

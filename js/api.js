@@ -178,6 +178,7 @@ const API = (() => {
     try { localStorage.setItem(LOOKUPS_KEY, JSON.stringify(norm)); } catch {}
     return norm;
   }
+  function readLookups() { try { const s = localStorage.getItem(LOOKUPS_KEY); return s ? JSON.parse(s) : null; } catch { return null; } }
 
   // ── Startup Fetch-All ───────────────────────────────────────────────────────
   // One pass that populates docs/tasks/emails caches and the references cache.
@@ -282,30 +283,28 @@ const API = (() => {
   }
 
   async function callPA(code, payload = {}, opts = {}) {
-    if (PAGINATED_FLOWS.includes(code)) payload.pagination = payload.pagination || { top: 50, skip: 0 };
-
     if (WRITE_FLOWS.includes(code)) {
       const res = await Outbox.push(code, payload);
       if (WRITE_INVALIDATES[code]) invalidate(WRITE_INVALIDATES[code]);
       return res;
     }
 
-    // Serve cached read data unless an explicit refresh is requested (opts.force).
-    if (READ_CACHE_FLOWS.includes(code) && opts.force !== true) {
-      let cached = readCache(code);
-      if (cached !== null) return cached;
-      // Cold cache: if the startup Fetch-All is in flight, wait for it rather than fetch again.
-      if (_fetchAllPromise) { try { await _fetchAllPromise; } catch {} cached = readCache(code); if (cached !== null) return cached; }
+    // Read flows (docs/tasks/emails/references) are SUBSETS of the Fetch-All superset.
+    // Modules NEVER fetch a dedicated read flow — they read the cache populated by the
+    // Fetch-All. A forced refresh (opts.force) re-runs the single Fetch-All; otherwise,
+    // if the cache is still cold and a Fetch-All is in flight, we wait for it. No
+    // dedicated read flow ever runs alongside the Fetch-All.
+    if (READ_CACHE_FLOWS.includes(code) || code === 'E01') {
+      if (opts.force === true) { try { await fetchAll(); } catch {} }
+      else if (_fetchAllPromise) { try { await _fetchAllPromise; } catch {} }
+      if (code === 'E01') return readLookups() || normalizeReferences({});
+      const cached = readCache(code);
+      return cached !== null ? cached : normalizeResponse(code, { records: [] });
     }
 
+    // Non-cached, non-write flows (e.g. OTP E16/E17) — direct call.
     const raw = await doFetch(code, payload);
-    if (raw == null) {
-      if (window.Telemetry) window.Telemetry.log("api_flow_not_configured", { code });
-      return normalizeResponse(code, { records: [] });
-    }
-    const normalized = normalizeResponse(code, raw);
-    if (READ_CACHE_FLOWS.includes(code)) writeCache(code, normalized);
-    return normalized;
+    return raw == null ? { success: false } : raw;
   }
 
   function refresh(code, payload) { return callPA(code, payload || {}, { force: true }); }

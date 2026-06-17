@@ -136,12 +136,17 @@ const Chrome = (() => {
         </div>
 
         <div class="dgo-cluster dgo-cluster--density">
+          <!-- Global data refresh: re-runs the single Fetch-All (superset) for every module -->
+          <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" onclick="Chrome.refreshData()" id="btn-global-refresh" aria-label="Refresh all data" title="Refresh data (re-runs the Fetch-All)">
+            <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
+            <span style="font-size: 11px;">Refresh</span>
+          </button>
           <!-- Command palette trigger suggestion -->
           <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" onclick="Chrome.showCommandPalette()" aria-label="Open Command Box">
             <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-search"></use></svg>
             <span style="font-size: 11px;">Search <kbd style="font-family: var(--dgo-family-mono); background: var(--dgo-color-surface-sunken); padding-inline: 4px; border-radius: 2px;">Ctrl+K</kbd></span>
           </button>
-          
+
           <div class="dgo-userbox">
             <div class="dgo-userbox__avatar" id="avatar-circle">
               ${Sanitizer.escape(userInitials(user))}
@@ -401,9 +406,19 @@ const Chrome = (() => {
     Chrome.showCommandPalette = () => toggleCommandPalette(true);
   }
 
+  // Global data refresh: re-run the single Fetch-All (superset) and re-render every
+  // module. Clearing the once-per-session boot guard makes the startup Fetch-All run
+  // again (behind the loading screen); cached primary data is preserved until the
+  // fresh data overwrites it, so nothing is lost.
+  function refreshData() {
+    try { sessionStorage.removeItem('dgo_booted'); } catch {}
+    window.location.reload();
+  }
+
   return {
     bootstrap,
-    showToast
+    showToast,
+    refreshData
   };
 })();
 
