@@ -1,3 +1,4 @@
+/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
 :root {
     --bg: #0f172a;
     --card: #1e293b;

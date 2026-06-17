@@ -1,3 +1,4 @@
+/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
 :root { --nitda-green: #05583B; --nitda-teal: #00A69D; --nitda-gold: #c9a227; }
 body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; color: #111; margin: 0; padding: 0; }
 .hub-header { background: linear-gradient(to right, var(--nitda-green), var(--nitda-teal)); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }

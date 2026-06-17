@@ -1,3 +1,4 @@
+/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
 /* Fast Track Web Ops Styles */
 :root {
   --brand-primary: #05583B;

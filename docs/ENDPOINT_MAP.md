@@ -25,14 +25,20 @@ All URLs share the base:
 | E16 | OTP request | Identity | `314aaf27…5936` | `OWBIO1oo…` | Web - OTP Generate (`otp_code`) | ✅ |
 | E17 | OTP verify | Identity | `43879c51…3f27` | `zO21cB8G…` | Web - OTP Verify (`otp_code`,`channel`,`request_id`) | ✅ |
 
-OTP gateway is enabled with admin bypass (`ADMIN_ROLE_CODES = ['DG']`) — see GOVERNANCE.md EXC-01.
+OTP gateway is **disabled** this phase (`OTP_SECURITY_ACTIVE = false`; tracked exception EXC-01 /
+FR-036). The gateway + admin-bypass logic (`ADMIN_ROLE_CODES = ['DG']`, now requiring a
+**token-backed session** so it cannot be forged from localStorage) remain in code for re-enablement
+at security closure (FR-038).
 
-## Unprovisioned flows (no usable URL yet)
+## Provisioned action/identity flows (now wired)
 
-| Code | Purpose | Status | Note |
-|------|---------|--------|------|
-| E14 | Reserved (catch-all) | ⛔ | Candidate: Dynamic Multi-Actions `bc83d98a…` (`_Co-r3TG…`) — superset action flow |
-| E15 | Reserved | ⛔ | No source flow identified |
+| Code | Purpose | Type | Workflow GUID | Status |
+|------|---------|------|---------------|--------|
+| E14 | Dynamic Multi-Actions (catch-all; correspondence-tracker writes) | Write | `bc83d98a…` (`_Co-r3TG…`) | ✅ wired in `FLOW_ENDPOINTS`; overridable in Settings |
+
+All declared flow codes (E00–E10, E14, E16, E17) carry a registry URL in `js/api.js`. **E15** from
+the prior source matrix was a phantom (no source flow identified) and is intentionally **not declared**
+in code.
 
 ## Revalidation corrections & open items
 

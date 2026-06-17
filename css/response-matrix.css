@@ -1,3 +1,4 @@
+/* DGO harmonization (tracked, STR-02): migrate local palette/body rules to css/dgo-tokens.css variables. Pending visual QA — see GOVERNANCE.md. */
 :root { --nitda-green: #05583B; --nitda-teal: #00A69D; --nitda-gold: #c9a227; --paper-bg: #fffdf0; }
 .nitda-gradient { background: linear-gradient(135deg, var(--nitda-green) 0%, var(--nitda-teal) 100%); }
 .minute-sheet { background-color: var(--paper-bg); border-left: 8px solid #d1d5db; font-family: 'Courier New', Courier, monospace; background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px; }

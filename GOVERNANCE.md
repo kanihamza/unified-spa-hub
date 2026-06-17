@@ -2,7 +2,36 @@
 
 **Platform:** Unified SPA Hub (DGO Digital Operations Hub)
 **Baseline:** Dependency-Free HTML Multi-Module Platform with Power Automate HTTP Flow Integration (BRD/FRD v1.0)
-**Last updated:** 2026-06-16
+**Last updated:** 2026-06-17
+
+> **Audit remediation (2026-06-17) — in-repo phases P0–P4 complete.** Implemented against the
+> Architecture & Structural Audit. Summary:
+> - **DEP-01:** all script `src` are relative (`js/…`), so the app loads on non-root hosts.
+> - **SEC-03 (completed):** added `Sanitizer.safeUrl()` (scheme allowlist + attribute encoding)
+>   and applied it to the previously-unescaped doc-link sinks (`response-tracking`, `fast-track`
+>   `AttachmentLink`, `CC`); email bodies now render via `Sanitizer.cleanHTML()` instead of the
+>   fragile iframe `srcdoc`. A runtime XSS-regression test guards this. (Supersedes the residual
+>   "not yet `javascript:`-scheme filtered" note below.)
+> - **REL-01:** startup Fetch-All retries on failure (no stranded empty session) and shows a
+>   dismissible Retry banner; `API.getBootState()` exposed.
+> - **INT-01:** writes are confirmed on delivery, not on enqueue (`dgo:outbox-delivered` /
+>   `dgo:outbox-failed`); exhausted writes go to a dead-letter store with retry/discard in Settings.
+> - **DATA-01:** removed all hardcoded role emails; identity is sourced only from `State`/`Identity`.
+> - **STR-01:** `fast-track` is registered in the shared navigation/command palette (no longer an
+>   orphaned micro-app) and uses the shared identity.
+> - **DATA-02:** category cascade is data-driven from live E01 records.
+> - **SEC-02:** admin-bypass requires a token-backed session (still inert while OTP is disabled).
+> - **OBS-01:** a conservative CSP ships on every page; telemetry tolerates a corrupted store.
+> - **CFG-01:** Settings exposes every flow override (incl. E14/E16/E17); "Restore Defaults" works.
+> - **GOV-02:** CI (`.github/workflows/ci.yml`) runs a compliance lint (BRD §13 controls) + the
+>   real-browser smoke (18/18 green).
+> - **STR-02 (residual, tracked):** module CSS (`exec-hub`, `dgceo-hub`, `response-tracking`,
+>   `response-matrix`, `fast-track`) still defines local palettes rather than `dgo-tokens.css`
+>   variables. Full token migration requires visual QA and is deferred to a styling pass; it is a
+>   maintainability/consistency item (NFR-005), not a correctness or security gap.
+> - **Cross-boundary (server-side, not in this repo):** rotate the committed SAS signatures (SEC-01),
+>   enforce OTP/role **inside the flows** (SEC-01/02 closure), and set each flow's
+>   `Access-Control-Allow-Origin` to the real app origin (REL-01 / the CORS item below).
 
 > **Security hardening (2026-06-16):** Output-encoding remediation applied across the
 > client. All dynamic external data rendered into `innerHTML` now passes through
@@ -147,11 +176,12 @@ deployed flow trigger/response schemas).
     promote it to E02; the current `818ec405…` is retained meanwhile to avoid regressing a live read.
   - **E07/E08 order:** assigned per stakeholder confirmation (E07 = `c4338863…`; E08 = `1154b50e…`).
   - **Unmapped extra flow:** `7e71fffe…` (unlabeled) — assign or retire deliberately.
-- **Behavior of an unprovisioned flow:**
-  - *Read flows* → deterministic **local simulation** (`API.getSimulation`), used only when a
-    URL is absent — an explicit, opt-in dev/offline fallback, logged as `api_simulation_fallback`.
-  - *Write flows* → queued in the **Outbox** with backoff; stays queued
-    (logged as `outbox_flow_unprovisioned`) until a real URL is configured.
+- **Behavior when a flow URL is absent (no registry default and no Settings override):**
+  - *Read flows* → a genuine **empty state** (no records). There is **no** simulation/sample
+    fallback — `API.getSimulation` does not exist (live-only build, FR-031–034).
+  - *Write flows* → queued in the **Outbox** with exponential backoff; after
+    `OUTBOX_MAX_ATTEMPTS` (or while no URL is configured, logged `outbox_flow_not_configured`)
+    they move to the **dead-letter** store, surfaced in Settings for retry/discard (INT-01).
 - **Rotation note (EXC-02):** the committed source now embeds live SAS signatures for the Fetch-All
   flow `4a250f97…` (E00), the write flows `85c556f1…`, `6b3bad30…`, `c4338863…`, `1154b50e…`,
   `a942d230…`, the OTP flows `314aaf27…`/`43879c51…`, and the four dedicated read flows. Include all of
