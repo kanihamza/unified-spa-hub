@@ -17,8 +17,8 @@ python3 -m http.server 3000
 # or any equivalent static server, then open http://localhost:3000
 ```
 
-> Pages reference shared scripts with root-absolute paths (e.g. `/js/api.js`), so the
-> server must be rooted at the project directory.
+> Pages reference shared scripts and assets with **relative paths** (e.g. `js/api.js`), so the
+> platform also works when served from a sub-path (project sites, reverse-proxy subfolders).
 
 ## Architecture
 
@@ -40,8 +40,9 @@ The frontend calls Power Automate flows directly (current phase — no proxy). E
 URL lives **only** in `js/api.js`; no module defines its own endpoint. Resolution order
 for a flow code is: per-flow runtime override (Settings → localStorage `dgo_endpoint_<code>`)
 → central `FLOW_ENDPOINTS` default. A flow with an empty URL is treated as *unprovisioned*:
-read flows fall back to deterministic local simulation, and write flows stay queued in the
-Outbox until a real URL is supplied.
+read flows return a genuine **empty state** (there is no simulation/sample fallback — live-only),
+and write flows stay queued in the Outbox (moving to a dead-letter store after retries) until a
+real URL is supplied.
 
 **Response normalization.** `callPA` normalizes every read response to the platform's canonical
 shape, so all pages work against the live flow contract regardless of envelope or field casing.
@@ -84,8 +85,10 @@ per-module button. `API.clearCache()` (Settings → "Flush offline cache") drops
 | E07 | Uniform bulk broadcast | ✅ |
 | E08 | AI batch allocator | ✅ |
 | E10 | Email-to-task directive | ✅ |
-| E14, E15 | Reserved | ⛔ no flow assigned |
+| E14 | Dynamic Multi-Actions (catch-all; correspondence writes) | ✅ |
 | E16, E17 | OTP request / verify | ✅ provisioned (OTP disabled this phase — FR-036 / EXC-01) |
+
+> `E15` from the prior source matrix was a phantom (no source flow) and is intentionally not declared.
 
 ## Governance
 
@@ -98,3 +101,28 @@ Two governed exceptions apply to the current phase and are tracked in
 2. **OTP disabled this phase** — `OTP_SECURITY_ACTIVE = false` in `js/identity.js`, a tracked
    exception per FR-036. The gateway and admin-bypass logic remain in place for re-enablement at
    closure. Identity is selected from the live officer directory (no hardcoded user) — see EXC-01.
+
+## Compliance & CI
+
+This platform is vanilla **HTML5 / CSS3 / ES6+** with **no build step**. The following are
+**absent from the codebase and actively blocked** by the compliance lint
+([`test/compliance-lint.mjs`](test/compliance-lint.mjs)), which runs in CI
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on every push and pull request:
+
+- **React** — no `react` / `react-dom` dependency, no `React.*` / `createRoot` usage.
+- **Vite** and other bundlers — no `vite` / `@vitejs/*` dependency, no `vite.config.*` /
+  `webpack.config.*` / `rollup.config.*`.
+- **JSX / TSX** — no `.jsx` / `.tsx` source files.
+- **TypeScript build config** — no `tsconfig*.json`.
+- **Runtime / build dependencies** — `package.json` declares **no** `dependencies`; the only
+  dev-dependency is Playwright, used solely by the real-browser smoke test.
+
+The lint also enforces the platform's structural rules: relative script paths, flow endpoints
+defined only in `js/api.js`, no hardcoded identities, no demo/simulation scaffolding, no
+script-enabled iframes, and a Content-Security-Policy on every page.
+
+```bash
+npm run lint     # compliance lint (no dependencies needed)
+npm run smoke    # real-browser smoke (installs Playwright + Chromium)
+npm test         # both gates
+```

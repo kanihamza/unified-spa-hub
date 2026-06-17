@@ -1,7 +1,7 @@
 // Compliance lint — automates the BRD §13 governance controls so prohibited
 // patterns cannot regress into the platform. Pure Node, no dependencies.
 // Run:  npm run lint   (or: node test/compliance-lint.mjs)
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,6 +42,22 @@ for (const f of walk(ROOT, ['.tsx', '.jsx'])) fail('JSX_FILE', `${rel(f)} (React
 for (const f of jsFiles) {
   if (/\bfrom\s+['"]react['"]|\bReact\.createElement|createRoot\s*\(/.test(read(f))) fail('REACT_USAGE', `${rel(f)} references React`);
 }
+
+// 2b. No build-tool config files and no runtime dependencies (no build step; vanilla only).
+const bannedConfigs = ['vite.config.js', 'vite.config.ts', 'vite.config.mjs', 'vite.config.cjs',
+  'webpack.config.js', 'rollup.config.js', 'rollup.config.mjs', 'babel.config.js', '.babelrc'];
+for (const name of bannedConfigs) {
+  if (existsSync(path.join(ROOT, name))) fail('BUILD_CONFIG', `${name} present (no bundler/build step allowed)`);
+}
+for (const f of readdirSync(ROOT)) {
+  if (/^tsconfig.*\.json$/.test(f)) fail('BUILD_CONFIG', `${f} present (TypeScript build config not allowed)`);
+}
+try {
+  const pkg2 = JSON.parse(read(path.join(ROOT, 'package.json')));
+  if (pkg2.dependencies && Object.keys(pkg2.dependencies).length) {
+    fail('RUNTIME_DEP', `package.json declares runtime dependencies: ${Object.keys(pkg2.dependencies).join(', ')}`);
+  }
+} catch { /* handled above */ }
 
 // 3. Flow endpoints must live ONLY in js/api.js (FR-016/017/024).
 for (const f of jsFiles) {
