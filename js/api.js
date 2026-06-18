@@ -48,21 +48,71 @@ const API = (() => {
   const PAGINATED_FLOWS = ['E02', 'E04', 'E09'];
   const FLOW_CODES = Object.keys(FLOW_ENDPOINTS);
 
+  // ── Environment segregation (INF-01) ────────────────────────────────────────
+  // FLOW_ENDPOINTS above is the PRODUCTION registry. Non-prod environments resolve
+  // their own (separately-rotated) signatures from ENV_ENDPOINTS, selected centrally
+  // by host or an explicit Settings profile (`dgo_env_profile`). Dev/test start EMPTY
+  // and inherit prod until ops populate them with their own rotated URLs — no fabricated
+  // or sample endpoints are shipped (FR-031–034). This removes the "one credential set
+  // for every environment" risk while keeping a single central authority.
+  const ENV_ENDPOINTS = { dev: {}, test: {} }; // prod = FLOW_ENDPOINTS
+  function detectEnvironment() {
+    try {
+      const forced = localStorage.getItem('dgo_env_profile');
+      if (forced === 'dev' || forced === 'test' || forced === 'prod') return forced;
+    } catch {}
+    let h = '';
+    try { h = (location.hostname || '').toLowerCase(); } catch {}
+    if (h === 'localhost' || h === '127.0.0.1' || h === '' || h.endsWith('.local')) return 'dev';
+    if (h.includes('staging') || h.includes('test') || h.includes('uat')) return 'test';
+    return 'prod';
+  }
+  const ACTIVE_ENV = detectEnvironment();
+  function getEnvironment() { return ACTIVE_ENV; }
+
   // ── Client-side read cache (per flow, persisted) ────────────────────────────
   const READ_CACHE_FLOWS = ['E02', 'E04', 'E09'];
   const CACHE_PREFIX = 'dgo_cache_';
   const WRITE_INVALIDATES = { E03: ['E02'], E05: ['E04'], E06: ['E04'], E07: ['E04'], E08: ['E04'], E10: ['E04', 'E09'], E14: ['E02'] };
   const cacheKey = (code) => CACHE_PREFIX + code;
   function readCache(code) { try { const raw = localStorage.getItem(cacheKey(code)); return raw ? JSON.parse(raw) : null; } catch { return null; } }
-  function writeCache(code, resp) { try { localStorage.setItem(cacheKey(code), JSON.stringify(resp)); } catch {} }
+  function writeCache(code, resp) { safeSetItem(cacheKey(code), JSON.stringify(resp)); }
   function invalidate(codes) { (Array.isArray(codes) ? codes : [codes]).forEach(c => { try { localStorage.removeItem(cacheKey(c)); } catch {} }); }
   function isCached(code) { try { return localStorage.getItem(cacheKey(code)) !== null; } catch { return false; } }
   function clearCache() { invalidate(READ_CACHE_FLOWS); }
 
-  /** Active URL for a flow code: per-flow runtime override (Settings) wins over the registry. */
+  // ── Storage with surfaced failures (DATA-01) ────────────────────────────────
+  // localStorage is the durable substrate for caches and the write Outbox. A failed
+  // write must NOT be swallowed (the prior silent `catch {}` blanked caches invisibly,
+  // producing empty pages with no error). On quota pressure we evict the largest read
+  // cache and retry once; a persistent failure is surfaced via telemetry + a
+  // 'dgo:storage-error' event so the UI/operator can react instead of failing silently.
+  function evictLargestCache(exceptKey) {
+    let largest = null, largestLen = 0;
+    for (const c of READ_CACHE_FLOWS) {
+      const k = cacheKey(c);
+      if (k === exceptKey) continue;
+      try { const v = localStorage.getItem(k); if (v && v.length > largestLen) { largestLen = v.length; largest = k; } } catch {}
+    }
+    if (largest) { try { localStorage.removeItem(largest); } catch {} return true; }
+    return false;
+  }
+  function safeSetItem(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch (e) {
+      if (evictLargestCache(key)) { try { localStorage.setItem(key, value); return true; } catch {} }
+      try { window.dispatchEvent(new CustomEvent('dgo:storage-error', { detail: { key, error: e && e.message } })); } catch {}
+      if (window.Telemetry) { try { window.Telemetry.log('storage_write_failed', { key, error: e && e.message }); } catch {} }
+      return false;
+    }
+  }
+
+  /** Active URL for a flow code: per-flow runtime override (Settings) > per-env central
+   *  set (INF-01) > production registry. */
   function getEndpoint(code) {
-    const override = localStorage.getItem(`dgo_endpoint_${code}`);
-    if (override) return override;
+    try { const override = localStorage.getItem(`dgo_endpoint_${code}`); if (override) return override; } catch {}
+    const envSet = ENV_ENDPOINTS[ACTIVE_ENV];
+    if (envSet && envSet[code]) return envSet[code];
     return FLOW_ENDPOINTS[code] || '';
   }
 
@@ -178,7 +228,7 @@ const API = (() => {
 
   function cacheReferences(refsRaw) {
     const norm = normalizeReferences(refsRaw);
-    try { localStorage.setItem(LOOKUPS_KEY, JSON.stringify(norm)); } catch {}
+    safeSetItem(LOOKUPS_KEY, JSON.stringify(norm));
     return norm;
   }
   function readLookups() { try { const s = localStorage.getItem(LOOKUPS_KEY); return s ? JSON.parse(s) : null; } catch { return null; } }
@@ -222,8 +272,11 @@ const API = (() => {
   }
 
   const Outbox = {
+    _processing: null, // single-flight guard (INT-01)
     get: () => { try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; } },
-    save: (queue) => { localStorage.setItem(OUTBOX_KEY, JSON.stringify(queue)); },
+    save: (queue) => { safeSetItem(OUTBOX_KEY, JSON.stringify(queue)); },
+    // Public queue clear (STR-03) — pages must not poke the private OUTBOX_KEY directly.
+    clearQueue() { try { localStorage.removeItem(OUTBOX_KEY); } catch {} },
     // Dead-letter store: writes that exhausted their retries, surfaced for manual review.
     deadGet: () => { try { return JSON.parse(localStorage.getItem(DEADLETTER_KEY) || '[]'); } catch { return []; } },
     deadSave: (q) => { try { localStorage.setItem(DEADLETTER_KEY, JSON.stringify(q)); } catch {} },
@@ -250,7 +303,17 @@ const API = (() => {
       this.process();
       return { success: true, outboxId, status: 'QUEUED_LOCAL' };
     },
-    async process() {
+    // Single-flight gate (INT-01): concurrent triggers — push(), the `online` event,
+    // retryDeadLetter(), callPA() — must NEVER run overlapping passes, or the same item
+    // could be POSTed twice (it is removed from the queue only AFTER a 200). All callers
+    // share the one in-flight run.
+    process() {
+      if (this._processing) return this._processing;
+      const p = this._processOnce().catch(() => {}).finally(() => { if (this._processing === p) this._processing = null; });
+      this._processing = p;
+      return p;
+    },
+    async _processOnce() {
       if (!navigator.onLine) {
         if (window.Chrome) window.Chrome.showToast("Offline mode active. Operations queued.", "warning");
         return;
@@ -260,14 +323,20 @@ const API = (() => {
       const activeQueue = [...queue];
       for (let item of activeQueue) {
         if (item.nextRetry > Date.now()) continue;
+        // Bounded write (REL-01): a hung POST must not stall the queue or widen the
+        // duplicate-delivery window. Matches the 20s read timeout in doFetch().
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
         try {
           const url = getEndpoint(item.code);
-          if (!url) { if (window.Telemetry) window.Telemetry.log("outbox_flow_not_configured", { code: item.code, txId: item.id }); continue; }
+          if (!url) { clearTimeout(timeoutId); if (window.Telemetry) window.Telemetry.log("outbox_flow_not_configured", { code: item.code, txId: item.id }); continue; }
           const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Outbox-Agent', 'X-DGO-Tx-ID': item.id },
-            body: JSON.stringify(item.payload)
+            headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Outbox-Agent', 'X-DGO-Tx-ID': item.id, 'X-Correlation-ID': item.id },
+            body: JSON.stringify(item.payload),
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
           if (response.ok) {
             queue = this.get().filter(q => q.id !== item.id);
             this.save(queue);
@@ -275,6 +344,7 @@ const API = (() => {
             if (window.Chrome) window.Chrome.showToast(`Flow ${item.code} successfully synchronized.`, 'success');
           } else { throw new Error(`Server returned status code: ${response.status}`); }
         } catch (err) {
+          clearTimeout(timeoutId);
           item.attempts++;
           if (item.attempts >= OUTBOX_MAX_ATTEMPTS) {
             // Exhausted retries → move to dead-letter so it stops silently retrying and
@@ -417,6 +487,10 @@ const API = (() => {
     try {
       await fetchAll();
       bootState = 'ok';
+      // REL-01: notify pages that rendered against a cold cache (e.g. a fast navigation
+      // before the Fetch-All resolved) so they re-render in place instead of stranding
+      // on an empty state with no recovery.
+      try { window.dispatchEvent(new CustomEvent('dgo:data-refreshed')); } catch {}
     } catch (e) {
       bootState = 'error';
       try { sessionStorage.removeItem('dgo_booted'); } catch {}
@@ -437,6 +511,7 @@ const API = (() => {
     fetchAll,
     pendingFetchAll,
     getBootState,
+    getEnvironment,
     invalidate,
     isCached,
     clearCache,

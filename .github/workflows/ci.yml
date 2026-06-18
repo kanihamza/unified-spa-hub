@@ -16,6 +16,8 @@ jobs:
           node-version: '20'
       # No dependencies required — pure Node static checks.
       - run: node test/compliance-lint.mjs
+      - name: Unit tests (headless core logic; no dependencies)
+        run: node test/unit.mjs
 
   smoke:
     name: Real-browser smoke (Playwright + Chromium)

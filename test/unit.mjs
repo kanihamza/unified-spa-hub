@@ -1,0 +1,160 @@
+// Dependency-free unit tests for the platform's core logic (api.js + sanitizer.js).
+// Pure Node + the built-in `vm` module — NO runtime/test dependencies are added.
+// The browser globals the modules touch are shimmed minimally so the IIFEs can run
+// headless. Covers the remediations the real-browser smoke cannot reach deeply:
+//   INT-01 (outbox single-flight / exactly-once + idempotency header)
+//   REL-01 (write timeout path is present)
+//   DATA-01 (storage-failure surfaced, not swallowed)
+//   INF-01 (environment profile selection)
+//   INT-02 (response normalization contract)
+//   STR-01/SEC-03 (single canonical escaper + safeUrl scheme filtering)
+// Run:  node test/unit.mjs   (or: npm run unit)
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+let failures = 0;
+function assert(name, cond, detail) {
+  console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`);
+  if (!cond) failures++;
+}
+const tick = () => new Promise((r) => setTimeout(r, 5));
+
+function makeStore() {
+  let m = {}; let throwOnSet = false;
+  return {
+    getItem: (k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null),
+    setItem: (k, v) => {
+      if (throwOnSet) { const e = new Error('QuotaExceededError'); e.name = 'QuotaExceededError'; throw e; }
+      m[k] = String(v);
+    },
+    removeItem: (k) => { delete m[k]; },
+    clear: () => { m = {}; },
+    get length() { return Object.keys(m).length; },
+    __setThrow: (b) => { throwOnSet = b; },
+    __dump: () => ({ ...m })
+  };
+}
+
+// Build a fresh headless platform context and run sanitizer.js + api.js inside it.
+function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profile = null } = {}) {
+  const listeners = {};
+  const ls = makeStore();
+  if (profile) ls.setItem('dgo_env_profile', profile);
+  const ss = makeStore();
+  const sandbox = {
+    console, JSON, Math, Date, Promise, Object, Array, String, Number, Boolean, RegExp, Error,
+    setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
+    AbortController, CustomEvent,
+    localStorage: ls, sessionStorage: ss,
+    navigator: { onLine: online },
+    location: { hostname },
+    addEventListener: (t, cb) => { (listeners[t] ||= []).push(cb); },
+    removeEventListener: (t, cb) => { listeners[t] = (listeners[t] || []).filter((f) => f !== cb); },
+    dispatchEvent: (evt) => { (listeners[evt.type] || []).forEach((cb) => { try { cb(evt); } catch {} }); return true; },
+    document: {
+      readyState: 'loading', // defer boot() so tests drive fetchAll() explicitly
+      addEventListener: (t, cb) => { (listeners['doc:' + t] ||= []).push(cb); },
+      getElementById: () => null,
+      createElement: () => ({ style: {}, setAttribute() {}, appendChild() {}, addEventListener() {}, remove() {}, innerHTML: '' }),
+      body: { appendChild() {} }, documentElement: { appendChild() {} }
+    }
+  };
+  sandbox.fetch = (...a) => sandbox.__fetch(...a);
+  sandbox.__fetch = fetchImpl || (async () => ({ ok: true, json: async () => ({ success: true }) }));
+  sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.self = sandbox;
+  vm.createContext(sandbox);
+  for (const f of ['js/sanitizer.js', 'js/api.js']) {
+    vm.runInContext(readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
+  }
+  return { sandbox, ls, ss, listeners };
+}
+
+(async () => {
+  // ── INT-01: outbox single-flight / exactly-once + idempotency header ──────────
+  {
+    let calls = 0; let lastHeaders = null;
+    const { sandbox } = loadPlatform({
+      fetchImpl: async (url, opts) => { calls++; lastHeaders = opts.headers; await tick(); return { ok: true, json: async () => ({ success: true }) }; }
+    });
+    const API = sandbox.window.API;
+    await API.callPA('E03', { docId: 1, status: 'CLEARED' }); // write → enqueue + kick process
+    const p1 = API.Outbox.process();   // concurrent triggers must coalesce
+    const p2 = API.Outbox.process();
+    await Promise.all([p1, p2]);
+    await API.Outbox.process();
+    assert('INT-01 write delivered exactly once under concurrency', calls === 1, `fetches=${calls}`);
+    assert('INT-01 idempotency key sent (X-DGO-Tx-ID)', !!(lastHeaders && lastHeaders['X-DGO-Tx-ID']));
+    assert('INT-01 queue drained after delivery', API.Outbox.get().length === 0, `len=${API.Outbox.get().length}`);
+  }
+
+  // ── INT-01: two distinct writes both delivered (single-flight ≠ dropped work) ──
+  {
+    let calls = 0;
+    const { sandbox } = loadPlatform({ fetchImpl: async () => { calls++; await tick(); return { ok: true, json: async () => ({}) }; } });
+    const API = sandbox.window.API;
+    await API.callPA('E03', { a: 1 });
+    await API.callPA('E06', { b: 2 });
+    const a = API.Outbox.process(); const b = API.Outbox.process();
+    await Promise.all([a, b]); await API.Outbox.process();
+    assert('INT-01 two queued writes deliver exactly twice (no loss, no dupes)', calls === 2, `fetches=${calls}`);
+  }
+
+  // ── INT-01/REL-01: a failed write is retried, never lost (stays queued) ────────
+  {
+    let calls = 0;
+    const { sandbox } = loadPlatform({ fetchImpl: async () => { calls++; return { ok: false, status: 500, json: async () => ({}) }; } });
+    const API = sandbox.window.API;
+    await API.callPA('E03', { a: 1 });
+    await API.Outbox.process();
+    const q = API.Outbox.get();
+    assert('REL-01 failed write retained in queue with incremented attempts', q.length === 1 && q[0].attempts >= 1, `len=${q.length} attempts=${q[0] && q[0].attempts}`);
+  }
+
+  // ── DATA-01: storage write failure is surfaced, not silently swallowed ─────────
+  {
+    const data = { ok: true, data: { docs: [{ ID: 1, Title: 't' }], tasks: [], emails: [], users: [], categories: [], departments: [] } };
+    const { sandbox, ls } = loadPlatform({ fetchImpl: async () => ({ ok: true, json: async () => data }) });
+    const API = sandbox.window.API;
+    let errFired = false;
+    sandbox.window.addEventListener('dgo:storage-error', () => { errFired = true; });
+    ls.__setThrow(true);
+    await API.fetchAll();
+    assert('DATA-01 storage failure surfaced via dgo:storage-error', errFired);
+    ls.__setThrow(false);
+  }
+
+  // ── INF-01: environment profile selection ─────────────────────────────────────
+  {
+    assert('INF-01 localhost → dev', loadPlatform({ hostname: 'localhost' }).sandbox.window.API.getEnvironment() === 'dev');
+    assert('INF-01 staging host → test', loadPlatform({ hostname: 'dgo.staging.gov.ng' }).sandbox.window.API.getEnvironment() === 'test');
+    assert('INF-01 prod host → prod', loadPlatform({ hostname: 'hub.nitda.gov.ng' }).sandbox.window.API.getEnvironment() === 'prod');
+    assert('INF-01 forced profile overrides host', loadPlatform({ hostname: 'localhost', profile: 'prod' }).sandbox.window.API.getEnvironment() === 'prod');
+  }
+
+  // ── INT-02: response normalization contract (live envelope → canonical records) ─
+  {
+    const { sandbox } = loadPlatform();
+    const API = sandbox.window.API;
+    const d = API.normalizeResponse('E02', { docs: [{ ID: 9, Title: 'X', AssignmentStatus: 'ROUTED' }] });
+    assert('INT-02 E02 docs normalized (id/title/status + records)', d.records[0].id === 9 && d.records[0].title === 'X' && d.records[0].status === 'ROUTED');
+    const t = API.normalizeResponse('E04', { tasks: [{ ID: 1, Title: 'Y', Progress: 'Pending', Description: true }] });
+    assert('INT-02 E04 boolean Description exposed as hasDescription', t.records[0].hasDescription === true && t.records[0].status === 'Pending');
+  }
+
+  // ── STR-01/SEC-03: single canonical escaper + safeUrl scheme filtering ─────────
+  {
+    const { sandbox } = loadPlatform();
+    const S = sandbox.window.Sanitizer;
+    assert('STR-01 escapeHtml encodes all five metacharacters', S.escapeHtml(`<b>&"'`) === '&lt;b&gt;&amp;&quot;&#39;', S.escapeHtml(`<b>&"'`));
+    assert('STR-01 escape() delegates to the single escapeHtml impl', S.escape === S.escapeHtml);
+    assert('SEC-03 safeUrl neutralizes javascript: scheme', S.safeUrl('javascript:alert(1)') === '#');
+    assert('SEC-03 safeUrl attribute-encodes ampersands', S.safeUrl('https://x.test/a?b=1&c=2').includes('&amp;'));
+    assert('SEC-03 safeUrl preserves http/https', S.safeUrl('https://x.test/a').startsWith('https://'));
+  }
+
+  console.log(`\n${failures ? 'UNIT FAILED (' + failures + ')' : 'UNIT PASSED'} `);
+  process.exit(failures ? 1 : 0);
+})();
