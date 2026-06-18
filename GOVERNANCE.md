@@ -2,7 +2,34 @@
 
 **Platform:** Unified SPA Hub (DGO Digital Operations Hub)
 **Baseline:** Dependency-Free HTML Multi-Module Platform with Power Automate HTTP Flow Integration (BRD/FRD v1.0)
-**Last updated:** 2026-06-17
+**Last updated:** 2026-06-18
+
+> **Remediation round 2 (2026-06-18) — Architecture & Structural Audit findings.** Implemented
+> against the 21-finding audit, strictly within the BRD/FRD (dependency-free, native vanilla JS,
+> Power Automate flows as the sole integration, no proxy/intermediary, OTP kept disabled per
+> FR-036). In-repo (R) changes are verified by `npm test` (compliance lint + 21 headless unit
+> assertions + real-browser smoke). Cross-boundary (F) items live in the flows and are tracked
+> below. Summary:
+> - **STR-01/SEC-03:** single canonical output-encoder (`Sanitizer.escapeHtml`); the three
+>   duplicate `escapeHtml` re-implementations removed. CI lint `LOCAL_ESCAPER` prevents regression.
+> - **INT-01:** `Outbox.process()` is single-flight (no double-delivery under concurrent triggers);
+>   `X-DGO-Tx-ID` idempotency key sent on every write (flows MUST dedupe — see below).
+> - **REL-01:** outbox write has a 20s `AbortController` timeout; a successful boot emits
+>   `dgo:data-refreshed` so cold-cache renders recover in place.
+> - **DATA-01:** `safeSetItem()` evicts-and-retries on quota pressure and surfaces a persistent
+>   failure via `dgo:storage-error` + telemetry — the prior silent `catch{}` is gone.
+> - **DATA-02 / EXC-01 closure item:** one canonical session shape, written only through `State`;
+>   Identity owns only the token; expiry honored consistently.
+> - **INF-01:** environment profiles (dev/test/prod) resolved centrally by host or a Settings
+>   profile (`dgo_env_profile`); non-prod inherit prod until ops populate their own rotated URLs.
+> - **STR-03:** pages use public APIs (`Outbox.clearQueue`, `Lookups.clearCache`); CI lint
+>   `PRIVATE_KEY_IN_HTML` blocks reaching into another module's storage key.
+> - **INT-02/GOV-01:** E02 resolved to `7995c1eb…` in code AND `ENDPOINT_MAP.md`; `FLOW_CONTRACTS.md`
+>   added; CI lint `ENDPOINT_MAP_DRIFT` fails the build on doc/code GUID divergence.
+> - **SEC-03 (CSP) / ARC-02 / ARC-01 (in progress this round):** page logic is being externalized
+>   to `js/pages/*.js` and inline handlers removed so `script-src` can drop `'unsafe-inline'`.
+>   Tracked per page; the CSP is tightened only once a page is inline-script/handler free and the
+>   smoke is green for it.
 
 > **Audit remediation (2026-06-17) — in-repo phases P0–P4 complete.** Implemented against the
 > Architecture & Structural Audit. Summary:
@@ -151,6 +178,31 @@ carries explicit closure criteria.
   holds signed URLs server-side and exposes only relative endpoints to the client; then
   remove embedded URLs from `FLOW_ENDPOINTS`. This is a future phase, not current scope.
 - **Owner:** Architecture Reviewer + Security Reviewer.
+
+### Signature Rotation Log (SEC-01)
+
+Every signature that has been committed must be treated as exposed and rotated. Rotation is a
+one-line change per flow in `FLOW_ENDPOINTS` (`paUrl(workflowId, sig)`), or a Settings override
+with no redeploy. **Action owner: Security Reviewer.** Record each rotation here.
+
+| Date | Flow code(s) | Workflow GUID(s) | Rotated by | Notes |
+|------|--------------|------------------|-----------|-------|
+| _pending_ | E00,E01,E02,E03/E05,E04,E06,E07,E08,E09,E10,E14,E16,E17 | all committed GUIDs | — | Initial mandatory rotation of all committed signatures (treat prior values as compromised). |
+
+### Flow-side obligations (cross-boundary, BRULE-001 — implemented IN the flows, not a proxy)
+
+These are the server-side controls the audit requires; they live in the Power Automate flows
+(the sole approved integration), tracked here per FR-037 / NFR-015. Owner: Security + Architecture.
+
+1. **Payload-schema validation** on every flow → `4xx` on violation (SEC-01/SEC-04).
+2. **Per-caller rate limiting** (SEC-01).
+3. **CORS:** set `Access-Control-Allow-Origin` to the **exact** app origin, never `*` (INT-03 / REL-01).
+4. **Idempotency:** dedupe writes on `X-DGO-Tx-ID`; a repeated id returns the original result
+   without re-executing (INT-01 end-to-end guarantee; client single-flight already lands).
+5. **OTP/role enforcement (EXC-01 closure):** E16/E17 issue a server-signed token; sensitive
+   flows validate token + role server-side so the client cannot forge access (SEC-02/SEC-04).
+6. **Diagnostics sink (REL-02):** optional flow to receive batched telemetry; the client sink is
+   built and off until the URL is provisioned in Settings.
 
 ---
 

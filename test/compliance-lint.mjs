@@ -90,6 +90,44 @@ for (const f of htmlFiles) {
   if (!/http-equiv=["']Content-Security-Policy["']/i.test(read(f))) fail('MISSING_CSP', `${rel(f)} has no CSP meta`);
 }
 
+// 8. No page may reach into another module's PRIVATE storage key (STR-03). Pages must
+//    use the owning module's public API (Outbox.clearQueue / Lookups.clearCache / API.*).
+const PRIVATE_KEYS = /localStorage\.(?:get|set|remove)Item\(\s*['"`](dgo_sync_outbox|dgo_outbox_deadletter|dgo_cached_lookups|dgo_cache_[a-z0-9_]*)/i;
+for (const f of htmlFiles) {
+  const m = read(f).match(PRIVATE_KEYS);
+  if (m) fail('PRIVATE_KEY_IN_HTML', `${rel(f)} accesses private storage key "${m[1]}" (use the owning module's public API)`);
+}
+
+// 9. Output-encoding is centralized (STR-01). No module other than sanitizer.js may
+//    re-implement an HTML escaper (a function or an inline &<>"' replace map).
+for (const f of jsFiles) {
+  if (path.basename(f) === 'sanitizer.js') continue;
+  const s = read(f);
+  if (/function\s+escapeHtml\s*\(/.test(s) || /escapeHtml\s*=\s*function/.test(s)) fail('LOCAL_ESCAPER', `${rel(f)} re-implements escapeHtml (use Sanitizer.escapeHtml)`);
+  if (/\.replace\(\s*\/\[&<>/.test(s)) fail('LOCAL_ESCAPER', `${rel(f)} inlines an HTML-escape replace map (use Sanitizer.escapeHtml)`);
+}
+
+// 10. Endpoint registry must not drift from its documentation (GOV-01 / INT-02). Every
+//     flow code present in BOTH js/api.js and docs/ENDPOINT_MAP.md must share a workflow GUID.
+try {
+  const apiSrc = read(path.join(ROOT, 'js', 'api.js'));
+  const codeGuids = {};
+  for (const m of apiSrc.matchAll(/\b(E\d{2}):\s*paUrl\(\s*['"]([0-9a-f]{8})/g)) codeGuids[m[1]] = m[2];
+  const mapPath = path.join(ROOT, 'docs', 'ENDPOINT_MAP.md');
+  if (existsSync(mapPath)) {
+    for (const line of read(mapPath).split('\n')) {
+      const codeM = line.match(/^\|\s*(E\d{2})\s*\|/);
+      if (!codeM) continue;
+      const guidM = line.match(/`([0-9a-f]{8})(?:…|\.\.\.)/); // first truncated GUID cell on the row
+      if (!guidM) continue;
+      const code = codeM[1], mapGuid = guidM[1];
+      if (codeGuids[code] && codeGuids[code] !== mapGuid) {
+        fail('ENDPOINT_MAP_DRIFT', `${code}: api.js=${codeGuids[code]} but ENDPOINT_MAP.md=${mapGuid}`);
+      }
+    }
+  }
+} catch (e) { fail('ENDPOINT_MAP_DRIFT', `parity check failed: ${e.message}`); }
+
 if (failures.length) {
   console.error(`\nCompliance lint FAILED (${failures.length}):`);
   for (const x of failures) console.error('  ✗ ' + x);

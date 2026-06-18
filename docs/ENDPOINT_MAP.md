@@ -13,7 +13,7 @@ All URLs share the base:
 | Code | Purpose | Type | Workflow GUID | `sig` (trunc) | Deployed flow / trigger schema | Status |
 |------|---------|------|---------------|---------------|-------------------------------|--------|
 | E01 | References & lookups | Read | `ff455c68…01fb` | `jajFVxbv…` | Fetch_References_and_Lookups_Data (`action`…`odataFilter`) | ✅ |
-| E02 | Inbound dossiers | Read | `818ec405…8b74` | `MgQUY52I…` | FETCH_DOCS_V2 (`action`…`requestId`,`trackingID`) | ✅ ⚠️ see note |
+| E02 | Inbound dossiers | Read | `7995c1eb…d874` | `G9ti0-fz…` | GET_DOCS_OPS_2 / Live_OPS_Fetch_Docs (`verified_and_revalidated`) | ✅ resolved (matches code) |
 | E04 | Action tasks | Read | `37642ba3…6519` | `hklOSh62…` | Fetch_Tasks (`{status, pagination}`) | ✅ |
 | E09 | Mailbox sync | Read | `3931e2ff…9797` | `SV7I2t9w…` | Fetch_Emails (`folderPath`,`top`,`skip`,`fetchOnlyUnread`) | ✅ |
 | E03 | Update dossier status / flag | Write | `85c556f1…0b91` | `8ikbMhXr…` | **Web - Subsidiary Doc Actions** (`docId`,`status`,`action`) | ✅ revalidated |
@@ -48,11 +48,12 @@ in code.
    updates and acknowledgements (e.g. `response-tracking.js` ack → `{taskId, status,
    acknowledgedBy}`). `6b3bad30` ("Deployed - Create Task") instead requires `NewActivityTask`
    and is the correct target only for **E06** (single/bulk assignment creation).
-2. **E02 docs — three candidate GUIDs:**
-   - `818ec405…` — currently wired (interceptor/FETCH_DOCS_V2; used by all three source SPAs).
-   - `5de1fc93…` — Get Docs "endpoint object" variant from one source file.
-   - `7995c1eb…` (`G9ti0-fz…`) — **"GET_DOCS_OPS_2 / Live_OPS_Fetch_Docs", marked
-     `verified_and_revalidated`.** Recommended: functionally validate, then promote to E02.
+2. **E02 docs — RESOLVED to `7995c1eb…`:** the code (`js/api.js` `FLOW_ENDPOINTS.E02`) and this
+   map now both wire **`7995c1eb…` (`G9ti0-fz…`) — "GET_DOCS_OPS_2 / Live_OPS_Fetch_Docs",
+   `verified_and_revalidated`.** The prior candidates `818ec405…` (FETCH_DOCS_V2) and `5de1fc93…`
+   (endpoint-object variant) are **retired** and intentionally not declared in code. A CI lint
+   (`ENDPOINT_MAP_DRIFT`) now asserts this table's workflow GUIDs match `js/api.js`, so doc/code
+   drift fails the build (GOV-01).
 3. **E07/E08 order** assigned per stakeholder confirmation (E07 = Bulk Assign `c4338863…`;
    E08 = Bulk Ops Assign `1154b50e…`).
 4. **OTP provisioned & gateway enabled (EXC-01)** — E16/E17 wired (Generate `314aaf27…`,
