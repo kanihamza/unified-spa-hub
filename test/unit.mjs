@@ -182,6 +182,23 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
     ls.__setThrow(false);
   }
 
+  // ── REL-02: telemetry sink no-ops until E18 provisioned, then ships ───────────
+  {
+    let posted = null;
+    const { sandbox, ls } = loadPlatform({
+      scripts: ['js/sanitizer.js', 'js/api.js', 'js/telemetry.js'],
+      fetchImpl: async (url, opts) => { posted = { url, opts }; return { ok: true, json: async () => ({}) }; }
+    });
+    const T = sandbox.window.Telemetry;
+    T.log('probe_unprovisioned');
+    await T.flush(true);
+    assert('REL-02 telemetry sink is a no-op until E18 is provisioned', posted === null);
+    ls.setItem('dgo_endpoint_E18', 'https://diag.test/ingest');
+    await T.flush(true);
+    assert('REL-02 telemetry ships to the provisioned E18 sink', !!(posted && posted.url === 'https://diag.test/ingest'));
+    assert('REL-02 telemetry ship is tagged Platform-Telemetry', !!(posted && posted.opts.headers['X-DGO-Trigger'] === 'Platform-Telemetry'));
+  }
+
   console.log(`\n${failures ? 'UNIT FAILED (' + failures + ')' : 'UNIT PASSED'} `);
   process.exit(failures ? 1 : 0);
 })();

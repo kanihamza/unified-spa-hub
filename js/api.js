@@ -41,7 +41,12 @@ const API = (() => {
 
     // Identity / OTP flows
     E16: paUrl('314aaf27593147089b38322e5ca25936', 'OWBIO1ooq0y8Zh9BTPp3sBOQoyVWs_a463FhFUT66fU'), // OTP request ("Web - OTP Generate")
-    E17: paUrl('43879c5165de439680055ab4258b3f27', 'zO21cB8Gn-LDklvld-xWtGUuZDvCleHWR6j5N6s5Dyo')  // OTP verify ("Web - OTP Verify")
+    E17: paUrl('43879c5165de439680055ab4258b3f27', 'zO21cB8Gn-LDklvld-xWtGUuZDvCleHWR6j5N6s5Dyo'), // OTP verify ("Web - OTP Verify")
+
+    // Diagnostics sink (REL-02) — centralized telemetry ingest. Operator-provisioned:
+    // empty until a flow URL is set in Settings (dgo_endpoint_E18). No fabricated URL is
+    // shipped (FR-031–034); telemetry shipping is a no-op until configured.
+    E18: ''
   };
 
   const WRITE_FLOWS = ['E03', 'E05', 'E06', 'E07', 'E08', 'E10', 'E14'];

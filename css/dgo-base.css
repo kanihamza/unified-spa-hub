@@ -128,3 +128,13 @@ code, kbd, samp, pre {
 @media (max-width: 600px) {
   .dgo-container { padding-inline: var(--dgo-s-4); }
 }
+
+/* Connectivity indicator (REL-02) — live flow/connection status dot in the topbar. */
+.dgo-conn-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+  background: var(--dgo-color-border-strong);
+}
+.dgo-conn-dot[data-state="ok"]      { background: var(--dgo-color-action-accent); }
+.dgo-conn-dot[data-state="error"]   { background: var(--dgo-color-action-danger); }
+.dgo-conn-dot[data-state="loading"] { background: var(--dgo-color-warning-fg, #f59e0b); }

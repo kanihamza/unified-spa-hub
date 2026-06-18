@@ -32,6 +32,31 @@ const Chrome = (() => {
     setupMobileMenu();
     injectToastContainer();
     refreshIdentity();
+    setupConnIndicator();
+  }
+
+  // Connectivity indicator (REL-02): reflect live flow/connection state in the topbar so
+  // an outage is visible at a glance (the boot error banner only shows on first-load fail).
+  function updateConnIndicator() {
+    const el = document.getElementById('dgo-conn-indicator');
+    if (!el) return;
+    let state = 'loading', title = 'Connecting…';
+    if (!navigator.onLine) { state = 'error'; title = 'Offline — operations are queued'; }
+    else if (window.API && typeof window.API.getBootState === 'function') {
+      const b = window.API.getBootState();
+      if (b === 'ok') { state = 'ok'; title = 'Live — connected to flows'; }
+      else if (b === 'error') { state = 'error'; title = 'Live data unavailable — check connectivity / flow CORS'; }
+    }
+    el.setAttribute('data-state', state);
+    el.title = title;
+  }
+  let _connWired = false;
+  function setupConnIndicator() {
+    updateConnIndicator();
+    if (_connWired) return; _connWired = true;
+    ['dgo:data-refreshed', 'dgo:storage-error', 'online', 'offline'].forEach((evt) =>
+      window.addEventListener(evt, updateConnIndicator));
+    setInterval(updateConnIndicator, 15000);
   }
 
   // ── Centralized declarative action dispatcher (SEC-03) ──────────────────────
@@ -190,6 +215,8 @@ const Chrome = (() => {
         </div>
 
         <div class="dgo-cluster dgo-cluster--density">
+          <!-- Connectivity indicator (REL-02): live flow/connection status -->
+          <span id="dgo-conn-indicator" class="dgo-conn-dot" data-state="loading" title="Connecting…" aria-label="Connectivity status" role="status"></span>
           <!-- Global data refresh: re-runs the single Fetch-All (superset) for every module -->
           <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" data-act="Chrome.refreshData" id="btn-global-refresh" aria-label="Refresh all data" title="Refresh data (re-runs the Fetch-All)">
             <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>

@@ -45,6 +45,33 @@ const Telemetry = (() => {
     // Broadcast diagnostic event if setting listeners exist
     const evt = new CustomEvent('dgo_telemetry_push', { detail: newLog });
     window.dispatchEvent(evt);
+
+    flush(); // opportunistic, throttled, best-effort ship to the diagnostics sink (REL-02)
+  }
+
+  // Optional centralized diagnostics sink (REL-02): ship the local buffer to the E18
+  // flow when an operator has provisioned it (Settings → dgo_endpoint_E18). No-op (and
+  // never disruptive) until configured; throttled and fully best-effort.
+  let _lastFlush = 0;
+  let _flushing = false;
+  async function flush(force = false) {
+    try {
+      if (_flushing) return;
+      if (!navigator.onLine) return;
+      const url = (window.API && typeof window.API.getEndpoint === 'function') ? window.API.getEndpoint('E18') : '';
+      if (!url) return;
+      const now = Date.now();
+      if (!force && (now - _lastFlush) < 30000) return; // throttle: ≤ 1 ship / 30s
+      const logs = getLogs();
+      if (!logs.length) return;
+      _lastFlush = now; _flushing = true;
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-DGO-Trigger': 'Platform-Telemetry', 'X-Correlation-ID': `DGO-DIAG-${now}` },
+        body: JSON.stringify({ source: 'DGO_Platform', count: logs.length, logs })
+      });
+    } catch { /* diagnostics shipping must never disrupt the app */ }
+    finally { _flushing = false; }
   }
 
   function clearLogs() {
@@ -67,6 +94,7 @@ const Telemetry = (() => {
     getLogs,
     log,
     clearLogs,
+    flush,
     getSummary
   };
 })();
