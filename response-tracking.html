@@ -132,10 +132,6 @@
     <script type="module" src="js/telemetry.js"></script>
     <script type="module" src="js/chrome.js"></script>
     <script type="module" src="js/response-tracking.js"></script>
-    <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.Chrome) window.Chrome.bootstrap('response-track');
-        });
-    </script>
+    <script type="module" src="js/pages/response-tracking.js"></script>
 </body>
 </html>

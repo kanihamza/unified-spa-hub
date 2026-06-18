@@ -110,10 +110,6 @@
     <script type="module" src="js/telemetry.js"></script>
     <script type="module" src="js/chrome.js"></script>
     <script type="module" src="js/exec-hub.js"></script>
-    <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.Chrome) window.Chrome.bootstrap('exec-hub');
-        });
-    </script>
+    <script type="module" src="js/pages/exec-hub.js"></script>
 </body>
 </html>

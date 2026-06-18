@@ -1,0 +1,390 @@
+/* Externalized page logic for emails.html (ARC-02 / SEC-03).
+   Moved verbatim from the page's inline <script type="module"> block(s); no behavior
+   change — handler functions remain window-attached. Page logic now lives in a real
+   module file instead of an inline per-page monolith. */
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        window.Chrome.bootstrap('emails');
+
+        const ccTags = new Set();
+        let emails = [];
+        let selectedMail = null;
+        let officers = [];
+        let categories = [];
+        let depts = [];
+        let closeTrapFn = null;
+        let pendingEnvelope = null;
+
+        // Populate ref data
+        try {
+          const refs = await window.Lookups.loadReferences();
+          officers = refs.officers || [];
+          categories = refs.categories || [];
+          depts = refs.departments || [];
+        } catch {
+          window.Chrome.showToast('Reference lookups sync failed.', 'error');
+        }
+
+        // Fetch emails E09
+        async function fetchAndRender() {
+          try {
+            document.getElementById('emails-tbody').innerHTML = `
+              <tr>
+                <td colspan="2" style="text-align: center; color: var(--dgo-color-fg-subtle);">Fetching mail servers...</td>
+              </tr>
+            `;
+
+            const response = await window.API.callPA('E09');
+            emails = response?.records || [];
+
+            document.getElementById('emails-count-text').textContent = `${emails.length} threads synced`;
+            renderGrid();
+          } catch(err) {
+            window.Chrome.showToast('Failed to exchange mailbox data.', 'error');
+          }
+        }
+
+        function renderGrid() {
+          const tbody = document.getElementById('emails-tbody');
+          if (emails.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--dgo-color-fg-subtle);">No active mail threads in public pool.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = emails.map(e => {
+            const _d = new Date(e.received || e.receivedDateTime || e.dateReceived);
+            const dateStr = isNaN(_d.getTime()) ? '—' : _d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+            return `
+              <tr class="mail-row" data-id="${Sanitizer.escape(e.id)}" style="cursor: pointer;">
+                <td>
+                  <span style="font-size:11px; font-weight:600; color:var(--dgo-color-fg-muted);">${dateStr}</span>
+                </td>
+                <td>
+                  <div class="dgo-stack dgo-stack--0">
+                    <span style="font-weight: 600; font-size:var(--dgo-type-body-sm); color:var(--dgo-color-fg-strong);">${Sanitizer.escape(e.subject)}</span>
+                    <span style="font-size:11px; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(e.sender)}</span>
+                    <div class="dgo-cluster dgo-cluster--density" style="margin-top: 4px;">
+                      <span class="dgo-badge dgo-badge--${e.assignmentStatus === 'ASSIGNED' ? 'replied' : 'draft'}" style="font-size: 9px; height: 16px;">
+                        ${e.assignmentStatus === 'ASSIGNED' ? 'ASSIGNED DIRECTIVE' : 'UNASSIGNED'}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          tbody.querySelectorAll('.mail-row').forEach(row => {
+            row.addEventListener('click', () => {
+              const id = row.getAttribute('data-id');
+              const found = emails.find(e => e.id === id);
+              if (found) selectEmail(found);
+            });
+          });
+        }
+
+        // Render mail details and conversion form
+        function selectEmail(e) {
+          selectedMail = e;
+          ccTags.clear();
+
+          document.querySelectorAll('.mail-row').forEach(row => {
+            if (row.getAttribute('data-id') === e.id) {
+              row.style.background = 'var(--dgo-green-50)';
+            } else {
+              row.style.background = '';
+            }
+          });
+
+          const pane = document.getElementById('email-details-pane');
+          
+          let actionMarkup = '';
+          if (e.assignmentStatus === 'PENDING') {
+            actionMarkup = `
+              <!-- Email-to-task creation form card E10 -->
+              <div class="dgo-card dgo-stack dgo-stack--3 dgo-card--sunken" style="border: 1px solid var(--dgo-color-border-brand); margin-top: var(--dgo-s-4);">
+                <h4 class="text-strong" style="font-family: var(--dgo-family-display); font-size:14px; color: var(--dgo-color-action-primary);">Convert Inquiry into Assignment</h4>
+                <p class="dgo-caption" style="margin-bottom:var(--dgo-s-1);">Map category cascade and principal assignee directory details instantly.</p>
+
+                <form id="email-to-task-form" class="dgo-stack dgo-stack--4" onsubmit="return false">
+                  <!-- Category Cascade -->
+                  <div class="dgo-form-group">
+                    <label for="eml-frm-category" class="dgo-label dgo-label--required">Operations Category</label>
+                    <select id="eml-frm-category" class="dgo-select" required>
+                      <option value="" disabled selected>(Select category cascade)</option>
+                      ${categories.map(c => `<option value="${c.code}">${Sanitizer.escape(c.name)}</option>`).join('')}
+                    </select>
+                  </div>
+
+                  <!-- Autocomplete Assignee -->
+                  <div class="dgo-form-group dgo-autocomplete">
+                    <label for="eml-frm-assignee" class="dgo-label dgo-label--required">Primary Operating Executive</label>
+                    <div style="display:flex; gap: var(--dgo-s-2);">
+                      <input type="text" id="eml-frm-assignee" class="dgo-input" placeholder="Search official directory profiles..." autocomplete="off" required>
+                      <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--outline" id="btn-eml-clear-assign" style="display:none;">Clear</button>
+                    </div>
+                    <div class="dgo-autocomplete__dropdown" id="eml-suggest-assignee"></div>
+                    <input type="hidden" id="eml-frm-assignee-val">
+                  </div>
+
+                  <!-- CC Dropdown and Adder -->
+                  <div class="dgo-form-group">
+                    <label class="dgo-label">Carbon Copy Stakeholders (CC)</label>
+                    <div class="dgo-cluster dgo-cluster--density" id="eml-cc-tags"></div>
+                    <div style="display: flex; gap: var(--dgo-s-2);">
+                      <select id="eml-select-cc-dept" class="dgo-select" style="flex:1;">
+                        <option value="" disabled selected>Add CC Directorates...</option>
+                        ${depts.map(d => `<option value="${d.code}">${Sanitizer.escape(d.name)} (${d.code})</option>`).join('')}
+                      </select>
+                      <button type="button" class="dgo-btn dgo-btn--md dgo-btn--outline" id="btn-eml-add-cc">Add</button>
+                    </div>
+                  </div>
+
+                  <!-- Text area -->
+                  <div class="dgo-form-group">
+                    <label for="eml-frm-directives" class="dgo-label dgo-label--required">Standin Directives</label>
+                    <textarea id="eml-frm-directives" class="dgo-textarea" rows="3" required></textarea>
+                  </div>
+
+                  <button type="button" class="dgo-btn dgo-btn--md dgo-btn--primary" id="btn-verify-conversion" style="width:100%;">
+                    <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
+                    <span>Route Assignment</span>
+                  </button>
+                </form>
+              </div>
+            `;
+          } else {
+            actionMarkup = `
+              <div class="dgo-card dgo-centered dgo-stack dgo-stack--1" style="background:var(--dgo-color-success-subtle-bg); color: var(--dgo-color-success-subtle-fg); border:none; padding:var(--dgo-s-4); margin-top:var(--dgo-s-4);">
+                <svg style="width:22px; height:22px;"><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
+                <p style="font-weight:600; font-size:var(--dgo-type-body-sm);">Inquiry actioned and converted!</p>
+                <p class="dgo-caption" style="color:var(--dgo-color-success-subtle-fg); font-size:11px;">A formal operating task tracking directives is already dispatched and active in standard registry.</p>
+              </div>
+            `;
+          }
+
+          pane.innerHTML = `
+            <div class="dgo-stack dgo-stack--4">
+              <!-- Message Details Header -->
+              <div class="dgo-stack dgo-stack--1" style="border-bottom:1px solid var(--dgo-color-border-default); padding-bottom:var(--dgo-s-4);">
+                <h3 class="dgo-h4">${Sanitizer.escape(e.subject)}</h3>
+                <div class="dgo-cluster dgo-cluster--between">
+                  <span style="font-size: var(--dgo-type-body-sm); font-weight:600; color:var(--dgo-color-fg-muted);">${Sanitizer.escape(e.sender)}</span>
+                  <span style="font-size: 11px; color:var(--dgo-color-fg-subtle);">${(d => isNaN(d.getTime()) ? '—' : d.toLocaleString())(new Date(e.received || e.receivedDateTime || e.dateReceived))}</span>
+                </div>
+              </div>
+
+              <!-- Message Body -->
+              <div style="background:var(--dgo-color-surface-sunken); padding: var(--dgo-s-4); border-radius: var(--dgo-radius-control); border:1px solid var(--dgo-color-border-default);">
+                <p style="white-space: pre-wrap; font-size:var(--dgo-type-body-sm); line-height:1.6; color:var(--dgo-color-fg-default);">${Sanitizer.escape(e.body)}</p>
+              </div>
+
+              <!-- Inline mail stubs -->
+              <div class="dgo-cluster dgo-cluster--density dgo-no-print">
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Reply to thread')">Reply</button>
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Forward thread')">Forward</button>
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Mark Spam')">Flag Spam</button>
+              </div>
+
+              ${actionMarkup}
+            </div>
+          `;
+
+          // Form controller activations
+          if (e.assignmentStatus === 'PENDING') {
+            const prefillDirectives = `Forwarding public inquiry from: ${Sanitizer.escape(e.sender)} concerning: ${Sanitizer.escape(e.subject)}.\n-----------------------------------\nDG MANDATE DIRECTIVE:\n[Confirm guidelines compliance and respond directly to sender.]`;
+            document.getElementById('eml-frm-directives').value = prefillDirectives;
+
+            // Bind selectors cascade
+            document.getElementById('eml-frm-category').addEventListener('change', (evt) => {
+              const cCascade = window.Lookups.resolveCategoryCascade(evt.target.value);
+              if (cCascade) {
+                document.getElementById('eml-frm-assignee').value = cCascade.defaultAssigneeName;
+                document.getElementById('eml-frm-assignee-val').value = cCascade.defaultAssigneeId;
+                document.getElementById('btn-eml-clear-assign').style.display = 'inline-block';
+
+                ccTags.clear();
+                cCascade.defaultCC.forEach(code => ccTags.add(code));
+                renderCCTags();
+                window.Chrome.showToast('Automated category cascade successfully resolved.', 'success');
+              }
+            });
+
+            // Autocomplete binders
+            setupAutocompleteInput('eml-frm-assignee', 'eml-suggest-assignee', 'eml-frm-assignee-val', 'btn-eml-clear-assign');
+
+            // CC Add binders
+            document.getElementById('btn-eml-add-cc').addEventListener('click', () => {
+              const select = document.getElementById('eml-select-cc-dept');
+              const code = select.value;
+              if (code && !ccTags.has(code)) {
+                ccTags.add(code);
+                renderCCTags();
+                select.selectedIndex = 0;
+              }
+            });
+
+            // Verification open preview modal trigger E10
+            document.getElementById('btn-verify-conversion').addEventListener('click', () => {
+              const form = document.getElementById('email-to-task-form');
+              if (!form.reportValidity()) return;
+
+              openPreviewModal();
+            });
+          }
+        }
+
+        // CC dynamic markup renderer
+        function renderCCTags() {
+          const container = document.getElementById('eml-cc-tags');
+          container.innerHTML = Array.from(ccTags).map(code => `
+            <span class="dgo-badge dgo-badge--routed dgo-cluster dgo-cluster--density" style="height:24px; padding-right:4px;">
+              <span>${code}</span>
+              <button type="button" class="btn-cc-remove dgo-centered" data-code="${code}" style="width:14px; height: 14px; border-radius:50%; background:rgba(0,0,0,0.1); color: var(--dgo-color-fg-muted); margin-left:var(--dgo-s-1);">✖</button>
+            </span>
+          `).join('');
+
+          container.querySelectorAll('.btn-cc-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const code = btn.getAttribute('data-code');
+              ccTags.delete(code);
+              renderCCTags();
+            });
+          });
+        }
+
+        function setupAutocompleteInput(inputId, dropdownId, hiddenValId, clearId) {
+          const input = document.getElementById(inputId);
+          const dropdown = document.getElementById(dropdownId);
+          const hidden = document.getElementById(hiddenValId);
+          const clear = document.getElementById(clearId);
+
+          input.addEventListener('input', (event) => {
+            const q = event.target.value.toLowerCase();
+            if (!q) {
+              dropdown.style.display = 'none';
+              return;
+            }
+
+            const matched = officers.filter(o => 
+              o.name.toLowerCase().includes(q) || 
+              o.role.toLowerCase().includes(q) || 
+              o.id.toLowerCase().includes(q)
+            );
+
+            if (matched.length === 0) {
+              dropdown.innerHTML = `<div style="padding: 8px; font-size:12px; color: var(--dgo-color-fg-subtle);">No matching official registry profiles</div>`;
+              dropdown.style.display = 'block';
+              return;
+            }
+
+            dropdown.innerHTML = matched.map(o => `
+              <div class="dgo-autocomplete__item" data-id="${Sanitizer.escape(o.id)}" data-name="${Sanitizer.escape(o.name)}">
+                <p style="font-size: var(--dgo-type-body-sm); font-weight:600;">${Sanitizer.escape(o.name)}</p>
+                <p style="font-size: 10px; color: var(--dgo-color-fg-muted);">${Sanitizer.escape(o.role)}</p>
+              </div>
+            `).join('');
+
+            dropdown.style.display = 'block';
+
+            dropdown.querySelectorAll('.dgo-autocomplete__item').forEach(el => {
+              el.addEventListener('click', () => {
+                const id = el.getAttribute('data-id');
+                const name = el.getAttribute('data-name');
+                input.value = name;
+                hidden.value = id;
+                dropdown.style.display = 'none';
+                if (clear) clear.style.display = 'inline-block';
+              });
+            });
+          });
+
+          if (clear) {
+            clear.addEventListener('click', () => {
+              input.value = '';
+              hidden.value = '';
+              clear.style.display = 'none';
+            });
+          }
+
+          document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+              dropdown.style.display = 'none';
+            }
+          });
+        }
+
+        // Preview actions E10
+        const modal = document.getElementById('modal-email-preview');
+        
+        function openPreviewModal() {
+          const category = document.getElementById('eml-frm-category').value;
+          const assigneeName = document.getElementById('eml-frm-assignee').value;
+          const directives = document.getElementById('eml-frm-directives').value;
+          const priority = window.Lookups.resolveCategoryCascade(category)?.defaultPriority || 'MEDIUM';
+
+          pendingEnvelope = {
+            emailId: selectedMail.id,
+            title: `Inquiry conversion directive: ${Sanitizer.escape(selectedMail.subject)}`,
+            category,
+            assignee: document.getElementById('eml-frm-assignee-val').value || assigneeName,
+            directives,
+            cc: Array.from(ccTags),
+            priority
+          };
+
+          document.getElementById('pre-email-json').textContent = JSON.stringify(pendingEnvelope, null, 2);
+          
+          modal.classList.add('dgo-modal-overlay--active');
+          closeTrapFn = window.A11y.trapFocus(modal.querySelector('.dgo-modal'));
+        }
+
+        window.closePreviewModal = () => {
+          modal.classList.remove('dgo-modal-overlay--active');
+          if (closeTrapFn) {
+            closeTrapFn();
+            closeTrapFn = null;
+          }
+        };
+
+        // Submit E10 trigger
+        document.getElementById('btn-dispatch-email-task').addEventListener('click', async () => {
+          if (!pendingEnvelope) return;
+
+          try {
+            window.Chrome.showToast('Routing conversion directives (E10)...');
+            const response = await window.API.callPA('E10', pendingEnvelope);
+            if (response.success) {
+              window.Chrome.showToast('Email successfully converted and assigned!', 'success');
+              closePreviewModal();
+
+              // Update local caches indices
+              selectedMail.assignmentStatus = 'ASSIGNED';
+              const stored = window.API.getStoredEmails();
+              const idx = stored.findIndex(e => e.id === selectedMail.id);
+              if (idx !== -1) {
+                stored[idx].assignmentStatus = 'ASSIGNED';
+                window.API.saveStoredEmails(stored);
+              }
+
+              // Re-render
+              renderGrid();
+              selectEmail(selectedMail);
+            } else {
+              window.Chrome.showToast('Operational gate rejected email conversion.', 'error');
+            }
+          } catch(err) {
+            window.Chrome.showToast(err.message, 'error');
+          }
+        });
+
+        // Inbox action stubs warning triggers
+        window.showMailboxStubAlert = (actionText) => {
+          window.Chrome.showToast(`Mail Action: '${actionText}' requires standard SMTP SMTP server configuration. Azure Logic Flow triggers are inactive.`, 'warning');
+        };
+
+        document.getElementById('btn-sync-emails').addEventListener('click', fetchAndRender);
+
+        await fetchAndRender();
+        window.addEventListener('dgo:data-refreshed', fetchAndRender); // in-place re-render
+      });
