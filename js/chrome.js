@@ -50,12 +50,32 @@ const Chrome = (() => {
     el.setAttribute('data-state', state);
     el.title = title;
   }
+  // Storage-pressure indicator (DATA-01): topbar dot shown only under pressure (warn+),
+  // plus a one-time toast when crossing into high/critical (the explicit IndexedDB gate).
+  let _lastStorageToast = null;
+  function updateStorageIndicator(stats) {
+    const el = document.getElementById('dgo-storage-indicator');
+    if (!el) return;
+    stats = stats || (window.API && window.API.getStorageStats ? window.API.getStorageStats() : null);
+    if (!stats) return;
+    if (stats.level === 'ok') { el.hidden = true; return; }
+    el.hidden = false;
+    el.setAttribute('data-state', stats.level);
+    el.title = `Local storage ${stats.percent}% used (${stats.level}) — caches/diagnostics approaching the on-device limit`;
+    if ((stats.level === 'high' || stats.level === 'critical') && stats.level !== _lastStorageToast) {
+      showToast(`Local storage ${stats.percent}% full — caches/diagnostics nearing the on-device limit.`, stats.level === 'critical' ? 'error' : 'warning');
+    }
+    _lastStorageToast = stats.level;
+  }
+
   let _connWired = false;
   function setupConnIndicator() {
     updateConnIndicator();
+    updateStorageIndicator();
     if (_connWired) return; _connWired = true;
     ['dgo:data-refreshed', 'dgo:storage-error', 'online', 'offline'].forEach((evt) =>
       window.addEventListener(evt, updateConnIndicator));
+    window.addEventListener('dgo:storage-pressure', (e) => updateStorageIndicator(e.detail));
     setInterval(updateConnIndicator, 15000);
   }
 
@@ -217,6 +237,8 @@ const Chrome = (() => {
         <div class="dgo-cluster dgo-cluster--density">
           <!-- Connectivity indicator (REL-02): live flow/connection status -->
           <span id="dgo-conn-indicator" class="dgo-conn-dot" data-state="loading" title="Connecting…" aria-label="Connectivity status" role="status"></span>
+          <!-- Storage-pressure indicator (DATA-01): shown only under pressure (warn+) -->
+          <span id="dgo-storage-indicator" class="dgo-storage-dot" data-state="ok" title="Storage" aria-label="Local storage usage" role="status" hidden></span>
           <!-- Global data refresh: re-runs the single Fetch-All (superset) for every module -->
           <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" data-act="Chrome.refreshData" id="btn-global-refresh" aria-label="Refresh all data" title="Refresh data (re-runs the Fetch-All)">
             <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>

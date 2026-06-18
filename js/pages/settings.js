@@ -164,6 +164,32 @@
         // Listen for new telemetry logs in real time
         window.addEventListener('dgo_telemetry_push', renderLogsFeed);
 
+        // Local Storage Health (DATA-01) — explicit, continuously-monitored dashboard.
+        function renderStorageHealth(stats) {
+          stats = stats || (window.API && window.API.getStorageStats ? window.API.getStorageStats() : null);
+          if (!stats) return;
+          const bar = document.getElementById('storage-usage-bar');
+          const text = document.getElementById('storage-usage-text');
+          const badge = document.getElementById('storage-level-badge');
+          const bd = document.getElementById('storage-breakdown');
+          const colors = { ok: 'var(--dgo-color-action-accent)', warn: 'var(--dgo-color-warning-fg, #f59e0b)', high: '#ea580c', critical: 'var(--dgo-color-action-danger)' };
+          if (bar) { bar.style.width = `${stats.percent}%`; bar.style.background = colors[stats.level] || colors.ok; }
+          if (text) text.textContent = `${stats.percent}% — ${Math.round(stats.usedBytes / 1024)} KB / ${Math.round(stats.quotaBytes / 1024)} KB`;
+          if (badge) {
+            badge.textContent = stats.level.toUpperCase();
+            badge.className = 'dgo-badge ' + (stats.level === 'ok' ? 'dgo-badge--pending' : stats.level === 'warn' ? 'dgo-badge--routed' : 'dgo-badge--action');
+          }
+          if (bd) {
+            const rows = Object.keys(stats.breakdown || {}).sort((a, b) => stats.breakdown[b] - stats.breakdown[a]);
+            bd.innerHTML = rows.map((k) =>
+              `<div class="dgo-cluster dgo-cluster--between"><span>${Sanitizer.escape(k)}</span><span style="font-family:var(--dgo-family-mono);">${Math.round(stats.breakdown[k] / 1024)} KB</span></div>`
+            ).join('') || '<span>No data stored yet.</span>';
+          }
+        }
+        renderStorageHealth();
+        window.addEventListener('dgo:storage-pressure', (e) => renderStorageHealth(e.detail));
+        window.addEventListener('dgo:storage-error', () => renderStorageHealth());
+
         // Factory reset
         document.getElementById('btn-factory-reset').addEventListener('click', () => {
           if (confirm('Warning! This will clear all locally cached records in your browser storage (dossier flags, progress/comment logs, mailbox cache, identity selection) and restore initial state. Are you sure?')) {

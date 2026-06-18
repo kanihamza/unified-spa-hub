@@ -139,6 +139,12 @@ try {
   check('data-act dispatcher fires (command palette opens)', cmdkOpen === true, `open=${cmdkOpen}`);
   await page.keyboard.press('Escape');
 
+  // DATA-01: the storage-health dashboard is populated by the live monitor (getStorageStats).
+  await page.goto(`${BASE}/settings.html`, { waitUntil: 'networkidle' });
+  await sleep(150);
+  const storageLevel = (await page.textContent('#storage-level-badge') || '').trim();
+  check('storage-health dashboard populated by the monitor', ['OK', 'WARN', 'HIGH', 'CRITICAL'].includes(storageLevel), `level=${storageLevel}`);
+
   // Every page must load in the unified shell with NO console/page errors. This guards
   // the page-logic externalization (ARC-02) + inline-handler removal (SEC-03) across the
   // whole platform, not just the few pages exercised above (INF-02).

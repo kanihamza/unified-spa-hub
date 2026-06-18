@@ -103,14 +103,97 @@ const API = (() => {
     return false;
   }
   function safeSetItem(key, value) {
-    try { localStorage.setItem(key, value); return true; }
+    let ok = false;
+    try { localStorage.setItem(key, value); ok = true; }
     catch (e) {
-      if (evictLargestCache(key)) { try { localStorage.setItem(key, value); return true; } catch {} }
-      try { window.dispatchEvent(new CustomEvent('dgo:storage-error', { detail: { key, error: e && e.message } })); } catch {}
-      if (window.Telemetry) { try { window.Telemetry.log('storage_write_failed', { key, error: e && e.message }); } catch {} }
-      return false;
+      if (evictLargestCache(key)) { try { localStorage.setItem(key, value); ok = true; } catch {} }
+      if (!ok) {
+        try { window.dispatchEvent(new CustomEvent('dgo:storage-error', { detail: { key, error: e && e.message } })); } catch {}
+        if (window.Telemetry) { try { window.Telemetry.log('storage_write_failed', { key, error: e && e.message }); } catch {} }
+      }
+    }
+    // Continuous monitoring (DATA-01): every write re-checks storage pressure so the
+    // localStorage budget is observed at its single mutation chokepoint.
+    try { checkStoragePressure(); } catch {}
+    return ok;
+  }
+
+  // ── Storage-pressure monitor (DATA-01 — explicit, robust, continuous) ───────
+  // localStorage has a small (~5 MB) per-origin quota and is the durable substrate for
+  // caches + the write outbox. We continuously measure usage so the "IndexedDB migration
+  // gate" (and any pre-failure pressure) is an EXPLICIT, monitored signal — surfaced via
+  // a public API, the dgo:storage-pressure event, telemetry (shippable via E18), the
+  // topbar indicator and the Settings dashboard — rather than an implicit assumption.
+  const STORAGE_BUDGET_BYTES = 5 * 1024 * 1024; // conservative localStorage budget (not queryable)
+  const STORAGE_THRESHOLDS = { warn: 70, high: 80, critical: 90 }; // % of budget
+  function storageCategory(k) {
+    if (k === 'dgo_cached_lookups') return 'references';
+    if (k.startsWith('dgo_cache_') || k.startsWith('dgo_cached_')) return 'caches';
+    if (k === 'dgo_sync_outbox' || k === 'dgo_outbox_deadletter') return 'outbox';
+    if (k === 'dgo_telemetry_logs') return 'telemetry';
+    if (k === 'dgo_session_user' || k === 'dgo_auth_token') return 'session';
+    if (k.startsWith('dgo_endpoint_') || k.startsWith('dgo_')) return 'config';
+    return 'other';
+  }
+  function levelFor(rawPct) {
+    if (rawPct >= STORAGE_THRESHOLDS.critical) return 'critical';
+    if (rawPct >= STORAGE_THRESHOLDS.high) return 'high';
+    if (rawPct >= STORAGE_THRESHOLDS.warn) return 'warn';
+    return 'ok';
+  }
+  function measureStorage() {
+    try {
+      let used = 0; const breakdown = {};
+      const n = localStorage.length;
+      for (let i = 0; i < n; i++) {
+        const k = localStorage.key(i);
+        if (k == null) continue;
+        const v = localStorage.getItem(k) || '';
+        const bytes = (k.length + v.length) * 2; // UTF-16 code units
+        used += bytes;
+        const cat = storageCategory(k);
+        breakdown[cat] = (breakdown[cat] || 0) + bytes;
+      }
+      const rawPct = STORAGE_BUDGET_BYTES ? (used / STORAGE_BUDGET_BYTES) * 100 : 0;
+      return {
+        usedBytes: used, quotaBytes: STORAGE_BUDGET_BYTES,
+        percent: Math.min(100, Math.round(rawPct * 10) / 10),
+        rawPercent: Math.round(rawPct * 10) / 10,
+        level: levelFor(rawPct), breakdown, ts: Date.now()
+      };
+    } catch {
+      return { usedBytes: 0, quotaBytes: STORAGE_BUDGET_BYTES, percent: 0, rawPercent: 0, level: 'ok', breakdown: {}, ts: Date.now() };
     }
   }
+  let _lastStorageStats = null;
+  let _lastStorageLevel = null;
+  function checkStoragePressure(force) {
+    const stats = measureStorage();
+    _lastStorageStats = stats;
+    if (force || stats.level !== _lastStorageLevel) {
+      const prev = _lastStorageLevel;
+      _lastStorageLevel = stats.level;
+      try { window.dispatchEvent(new CustomEvent('dgo:storage-pressure', { detail: stats })); } catch {}
+      // Debounced to level changes only (avoid a telemetry-write feedback loop). The
+      // high/critical levels are the EXPLICIT IndexedDB-migration gate signal. The benign
+      // 'ok' baseline is not logged.
+      if (stats.level !== 'ok' && stats.level !== prev && window.Telemetry) {
+        try {
+          window.Telemetry.log('storage_pressure', {
+            level: stats.level, percent: stats.percent, usedKB: Math.round(stats.usedBytes / 1024),
+            gate: (stats.level === 'high' || stats.level === 'critical') ? 'indexeddb_migration_recommended' : undefined
+          });
+        } catch {}
+      }
+    }
+    return stats;
+  }
+  function getStorageStats() { return _lastStorageStats || checkStoragePressure(true); }
+  // Continuous, multi-path monitoring: cross-tab writes + a steady poll (the per-write
+  // hook lives in safeSetItem above). All guarded so monitoring can never disrupt the app.
+  try { window.addEventListener('storage', () => { try { checkStoragePressure(); } catch {} }); } catch {}
+  try { setInterval(() => { try { checkStoragePressure(); } catch {} }, 30000); } catch {}
+  try { checkStoragePressure(); } catch {} // establish a baseline at load
 
   /** Active URL for a flow code: per-flow runtime override (Settings) > per-env central
    *  set (INF-01) > production registry. */
@@ -517,6 +600,7 @@ const API = (() => {
     pendingFetchAll,
     getBootState,
     getEnvironment,
+    getStorageStats,
     invalidate,
     isCached,
     clearCache,

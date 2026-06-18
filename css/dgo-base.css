@@ -138,3 +138,13 @@ code, kbd, samp, pre {
 .dgo-conn-dot[data-state="ok"]      { background: var(--dgo-color-action-accent); }
 .dgo-conn-dot[data-state="error"]   { background: var(--dgo-color-action-danger); }
 .dgo-conn-dot[data-state="loading"] { background: var(--dgo-color-warning-fg, #f59e0b); }
+
+/* Storage-pressure indicator (DATA-01) — escalating dot, shown only under pressure. */
+.dgo-storage-dot {
+  width: 9px; height: 9px; border-radius: 2px;
+  display: inline-block; flex-shrink: 0;
+  background: var(--dgo-color-action-accent);
+}
+.dgo-storage-dot[data-state="warn"]     { background: var(--dgo-color-warning-fg, #f59e0b); }
+.dgo-storage-dot[data-state="high"]     { background: #ea580c; }
+.dgo-storage-dot[data-state="critical"] { background: var(--dgo-color-action-danger); }

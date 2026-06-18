@@ -32,6 +32,7 @@ function makeStore() {
     },
     removeItem: (k) => { delete m[k]; },
     clear: () => { m = {}; },
+    key: (i) => { const ks = Object.keys(m); return i < ks.length ? ks[i] : null; },
     get length() { return Object.keys(m).length; },
     __setThrow: (b) => { throwOnSet = b; },
     __dump: () => ({ ...m })
@@ -200,6 +201,23 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
     await T.flush(true);
     assert('REL-02 telemetry ships to the provisioned E18 sink', !!(posted && posted.url === 'https://diag.test/ingest'));
     assert('REL-02 telemetry ship is tagged Platform-Telemetry', !!(posted && posted.opts.headers['X-DGO-Trigger'] === 'Platform-Telemetry'));
+  }
+
+  // ── DATA-01: explicit, continuous storage-pressure monitor ───────────────────
+  {
+    const { sandbox, ls } = loadPlatform();
+    const API = sandbox.window.API;
+    const base = API.getStorageStats();
+    assert('storage monitor baseline is ok with low usage', base.level === 'ok' && base.percent < 70, `pct=${base.percent}`);
+    // Simulate a large cached dataset (~4.4 MB of the 5 MB budget → >80%). Use the emails
+    // cache (E09), which the E03 write below does NOT invalidate (WRITE_INVALIDATES.E03=['E02']).
+    ls.setItem('dgo_cache_E09', 'x'.repeat(2200000));
+    let evt = null;
+    sandbox.window.addEventListener('dgo:storage-pressure', (e) => { evt = e.detail; });
+    await API.callPA('E03', { a: 1 }); // write → safeSetItem → checkStoragePressure
+    assert('storage-pressure event fires at high/critical on a write', !!(evt && (evt.level === 'high' || evt.level === 'critical')), evt && evt.level);
+    const stats = API.getStorageStats();
+    assert('getStorageStats reports pressure + per-category breakdown', stats.percent >= 80 && stats.breakdown.caches > 0, `pct=${stats.percent}`);
   }
 
   console.log(`\n${failures ? 'UNIT FAILED (' + failures + ')' : 'UNIT PASSED'} `);

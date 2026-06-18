@@ -202,6 +202,20 @@
                   </div>
                 </div>
 
+                <!-- Local Storage Health (DATA-01) — explicit, continuously-monitored pressure -->
+                <div class="dgo-card dgo-stack dgo-stack--3">
+                  <div class="dgo-cluster dgo-cluster--between">
+                    <h3 class="dgo-card__title">Local Storage Health</h3>
+                    <span class="dgo-badge dgo-badge--pending" id="storage-level-badge">—</span>
+                  </div>
+                  <p class="dgo-body-sm text-muted">On-device storage budget (≈5&nbsp;MB). At High/Critical the IndexedDB-migration gate is reached.</p>
+                  <div style="height:10px; background:var(--dgo-color-border-default); border-radius:6px; overflow:hidden;">
+                    <div id="storage-usage-bar" style="width:0%; height:100%; background:var(--dgo-color-action-accent); border-radius:inherit; transition:width .3s, background .3s;"></div>
+                  </div>
+                  <p class="dgo-body-sm" id="storage-usage-text" style="font-family:var(--dgo-family-mono); font-size:11px; color:var(--dgo-color-fg-muted);">0% — 0 KB / 5120 KB</p>
+                  <div id="storage-breakdown" class="dgo-stack dgo-stack--1" style="font-size:10px; color:var(--dgo-color-fg-subtle);"></div>
+                </div>
+
                 <!-- Telemetry Logs pane -->
                 <div class="dgo-card dgo-stack dgo-stack--3 dgo-spacer" style="max-height: 480px; overflow-y: hidden; display:flex; flex-direction:column;">
                   <div class="dgo-cluster dgo-cluster--between">

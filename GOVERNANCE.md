@@ -57,11 +57,19 @@
 >   (script execution) is fully closed (`script-src 'self'`, no inline scripts/handlers); residual
 >   style-injection risk is low and further reduced by `clampPercent`. The attribute→class migration is
 >   the documented next step and must be paired with visual QA.
-> - **DATA-01 IndexedDB:** the durable store risk is addressed in-model via quota-aware `safeSetItem`
->   (evict-and-retry + surfaced `dgo:storage-error`), closing the *silent-failure* substance. A full
->   IndexedDB migration of the large read-caches/outbox would force the currently-synchronous cache/
->   outbox API to become async (rippling through `callPA` and `settings`), so it is deferred as a
->   scale enhancement rather than risk an async rewrite without need.
+> - **DATA-01 IndexedDB — gate now EXPLICITLY & CONTINUOUSLY MONITORED:** the durable-store risk is
+>   addressed in-model via quota-aware `safeSetItem` (evict-and-retry + surfaced `dgo:storage-error`),
+>   closing the *silent-failure* substance. The "when do we need IndexedDB?" gate is no longer implicit:
+>   a storage-pressure monitor (`measureStorage`/`checkStoragePressure` in `js/api.js`) samples usage
+>   **on every write (the `safeSetItem` chokepoint), on a 30s poll, and on cross-tab `storage` events**,
+>   classifies it (ok / warn ≥70% / high ≥80% / critical ≥90% of the ~5 MB budget) and surfaces it via
+>   `API.getStorageStats()`, the `dgo:storage-pressure` event, the topbar indicator, a Settings "Local
+>   Storage Health" dashboard, and a telemetry `storage_pressure` log (shippable via the E18 sink). The
+>   **high/critical levels are the explicit IndexedDB-migration trigger** (logged with
+>   `gate: indexeddb_migration_recommended`). The full async IndexedDB migration of the large
+>   read-caches/outbox (which would force the synchronous cache/outbox API async, rippling through
+>   `callPA`/`settings`) is performed **when monitoring reports sustained high/critical** — not blindly
+>   ahead of need. Unit- and smoke-verified.
 >
 > **Frontend (R) verification this round:** `npm test` = compliance lint (13 rule groups) +
 > 21 headless unit assertions + 38 real-browser smoke checks (all 19 pages load clean; flow calls
