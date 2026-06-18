@@ -128,6 +128,28 @@ try {
   }
 } catch (e) { fail('ENDPOINT_MAP_DRIFT', `parity check failed: ${e.message}`); }
 
+// 11. SEC-03: no inline event handlers anywhere (HTML static or JS-generated markup).
+//     Use data-act + the central dispatcher so script-src can stay 'self'.
+const INLINE_HANDLER = /\son(click|change|submit|input|keyup|keydown|dblclick|mouseover|mouseout|mouseenter|mouseleave|focus|blur)\s*=\s*["']/i;
+for (const f of [...htmlFiles, ...jsFiles]) {
+  const m = read(f).match(INLINE_HANDLER);
+  if (m) fail('INLINE_HANDLER', `${rel(f)} has an inline "${m[0].trim()}" handler (use data-act)`);
+}
+
+// 12. SEC-03: every page must externalize scripts — no inline <script> blocks.
+for (const f of htmlFiles) {
+  if (/<script\b(?![^>]*\bsrc=)[^>]*>/i.test(read(f))) fail('INLINE_SCRIPT', `${rel(f)} has an inline <script> block (externalize to js/pages/*.js)`);
+}
+
+// 13. SEC-03: CSP script-src must NOT allow 'unsafe-inline' (else the CSP is not a real
+//     control). connect-src must not be the 'https:' wildcard.
+for (const f of htmlFiles) {
+  const csp = (read(f).match(/Content-Security-Policy["']\s+content=["']([^"]*)["']/i) || [])[1] || '';
+  const scriptSrc = (csp.match(/script-src([^;]*)/i) || [])[1] || '';
+  if (/unsafe-inline/.test(scriptSrc)) fail('CSP_UNSAFE_INLINE_SCRIPT', `${rel(f)} CSP script-src allows 'unsafe-inline'`);
+  if (/connect-src[^;]*\shttps:(\s|;|$)/i.test(csp)) fail('CSP_CONNECT_WILDCARD', `${rel(f)} CSP connect-src uses the bare 'https:' wildcard`);
+}
+
 if (failures.length) {
   console.error(`\nCompliance lint FAILED (${failures.length}):`);
   for (const x of failures) console.error('  ✗ ' + x);
