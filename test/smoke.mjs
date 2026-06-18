@@ -130,6 +130,25 @@ try {
   const rowsAfterRefresh = await page.$$eval('#home-docs-tbody tr', (els) => els.length);
   check('data still rendered after in-place refresh', rowsAfterRefresh > 0, `rows=${rowsAfterRefresh}`);
 
+  // Every page must load in the unified shell with NO console/page errors. This guards
+  // the page-logic externalization (ARC-02) + inline-handler removal (SEC-03) across the
+  // whole platform, not just the few pages exercised above (INF-02).
+  const ALL_PAGES = [
+    'index.html', 'docs.html', 'assign.html', 'bulk-assign.html', 'tasks.html', 'emails.html',
+    'lookup.html', 'registry-movement.html', 'response-track.html', 'response-tracking.html',
+    'response-matrix.html', 'aid-dashboard.html', 'reports.html', 'dgceo-hub.html',
+    'dgceo-tracker.html', 'exec-hub.html', 'fast-track.html', 'settings.html',
+    'ack.html?taskId=TSK-1'
+  ];
+  for (const pg of ALL_PAGES) {
+    const before = errors.length;
+    await page.goto(`${BASE}/${pg}`, { waitUntil: 'networkidle' });
+    await sleep(150);
+    const hasShell = !!(await page.$('#platform-sidebar'));
+    const newErrs = errors.slice(before);
+    check(`page loads clean in shell: ${pg}`, hasShell && newErrs.length === 0, newErrs.join(' | ') || (hasShell ? '' : 'no #platform-sidebar'));
+  }
+
   check('no console/page errors', errors.length === 0, errors.join(' | '));
   await browser.close();
 } catch (e) {
