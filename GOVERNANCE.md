@@ -26,10 +26,29 @@
 >   `PRIVATE_KEY_IN_HTML` blocks reaching into another module's storage key.
 > - **INT-02/GOV-01:** E02 resolved to `7995c1eb…` in code AND `ENDPOINT_MAP.md`; `FLOW_CONTRACTS.md`
 >   added; CI lint `ENDPOINT_MAP_DRIFT` fails the build on doc/code GUID divergence.
-> - **SEC-03 (CSP) / ARC-02 / ARC-01 (in progress this round):** page logic is being externalized
->   to `js/pages/*.js` and inline handlers removed so `script-src` can drop `'unsafe-inline'`.
->   Tracked per page; the CSP is tightened only once a page is inline-script/handler free and the
->   smoke is green for it.
+> - **ARC-02 (done):** all 15 pages' inline page logic externalized to `js/pages/*.js` (no more
+>   per-page inline monoliths); the compliance lint scans them.
+> - **SEC-03 CSP lockdown (done):** all inline `<script>` blocks and all 96 inline event handlers
+>   removed (central `data-act` dispatcher in `chrome.js`); `script-src` dropped to `'self'` and
+>   `connect-src` narrowed to the Power Platform flow hosts on all 19 pages. CI lint enforces it
+>   (`INLINE_HANDLER`, `INLINE_SCRIPT`, `CSP_UNSAFE_INLINE_SCRIPT`, `CSP_CONNECT_WILDCARD`).
+> - **STR-02 (done):** the `response-*` nav/palette labels disambiguated; `ack.html` documented as an
+>   intentional deep-link page.
+>
+> **Remaining in-repo follow-ups (tracked, not regressions):**
+> - **SEC-03 style-src:** `style-src` still allows `'unsafe-inline'` — inline `style=""` attributes and
+>   one `<style>` block (`registry-movement`) remain. The inline-style→token-class sweep is the next
+>   step to drop it; lower risk than script-src, which is now closed.
+> - **ARC-01 (native ESM):** shared modules still coordinate via `window.*` globals (a valid
+>   dependency-free pattern); converting to native `import`/`export` for fully deterministic init is a
+>   follow-up. Load order is already guarded (DOMContentLoaded) and externalized page modules reduced
+>   the coupling surface.
+> - **REL-02 client sink:** the optional telemetry-to-flow sink (`E18`) and connectivity indicator are
+>   specified (flow-side below) but the client emitter is not yet wired.
+>
+> **Frontend (R) verification this round:** `npm test` = compliance lint (13 rule groups) +
+> 21 headless unit assertions + 38 real-browser smoke checks (all 19 pages load clean; flow calls
+> succeed under the tightened CSP; the data-act dispatcher fires). All green.
 
 > **Audit remediation (2026-06-17) — in-repo phases P0–P4 complete.** Implemented against the
 > Architecture & Structural Audit. Summary:
