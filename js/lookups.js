@@ -48,6 +48,13 @@ const Lookups = (() => {
     if (stored) { try { cachedData = JSON.parse(stored); } catch { cachedData = null; } }
   }
 
+  // Public cache clear (STR-03) — owns the lookups key so other modules/pages do not
+  // reach into 'dgo_cached_lookups' directly.
+  function clearCache() {
+    cachedData = null;
+    try { localStorage.removeItem('dgo_cached_lookups'); } catch {}
+  }
+
   function getCategories() {
     return cachedData?.categories || [];
   }
@@ -109,6 +116,7 @@ const Lookups = (() => {
     isLoaded,
     loadReferences,
     bootstrapCache,
+    clearCache,
     getCategories,
     getDepartments,
     getOfficers,

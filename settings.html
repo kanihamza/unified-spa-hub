@@ -159,8 +159,8 @@
                   </div>
                   <p class="dgo-body-sm text-muted">Operations queued while offline or during PA Flow latency.</p>
                   <div class="dgo-cluster dgo-cluster--density">
-                    <button class="dgo-btn dgo-btn--sm dgo-btn--primary dgo-spacer" onclick="window.API.Outbox.process()">Flush Outbox Now</button>
-                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="localStorage.removeItem('dgo_sync_outbox'); location.reload()">Clear Queue</button>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--primary dgo-spacer" id="btn-flush-outbox">Flush Outbox Now</button>
+                    <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-clear-queue">Clear Queue</button>
                   </div>
                   <div id="deadletter-section" style="display:none; margin-top: var(--dgo-s-3); border-top:1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-3);">
                     <div class="dgo-cluster dgo-cluster--between">
@@ -337,9 +337,9 @@
           updateCacheCounters();
         });
 
-        // Flush cache
+        // Flush cache — via the owning modules' public APIs (STR-03), not raw keys.
         document.getElementById('btn-flush-cache').addEventListener('click', () => {
-          localStorage.removeItem('dgo_cached_lookups');
+          if (window.Lookups && window.Lookups.clearCache) window.Lookups.clearCache();
           if (window.API && window.API.clearCache) window.API.clearCache();
           window.Chrome.showToast('Offline cache flushed! Modules will refetch on next load.', 'warning');
           updateCacheCounters();
@@ -433,6 +433,12 @@
             list.querySelectorAll('[data-discard]').forEach(b => b.addEventListener('click', () => { window.API.Outbox.discardDeadLetter(b.getAttribute('data-discard')); renderOutbox(); }));
           }
         }
+        // Outbox controls via public API (STR-03) + bound listeners (no inline handlers).
+        const flushBtn = document.getElementById('btn-flush-outbox');
+        if (flushBtn) flushBtn.addEventListener('click', () => { window.API.Outbox.process(); });
+        const clearBtn = document.getElementById('btn-clear-queue');
+        if (clearBtn) clearBtn.addEventListener('click', () => { window.API.Outbox.clearQueue(); location.reload(); });
+
         renderOutbox();
         window.addEventListener('dgo:outbox-delivered', renderOutbox);
         window.addEventListener('dgo:outbox-failed', renderOutbox);
