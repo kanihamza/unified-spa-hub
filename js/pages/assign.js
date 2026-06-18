@@ -221,7 +221,7 @@
                 </td>
                 <td><span style="font-size: var(--dgo-type-body-sm);">${getCategoryLabel(d.category)}</span></td>
                 <td style="text-align:right;">
-                  <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--primary" onclick="window.pickDoc('${Sanitizer.escape(d.id)}')">Select</button>
+                  <button type="button" class="dgo-btn dgo-btn--sm dgo-btn--primary" data-act="pickDoc" data-arg="${Sanitizer.escape(d.id)}">Select</button>
                 </td>
               </tr>
             `).join('');

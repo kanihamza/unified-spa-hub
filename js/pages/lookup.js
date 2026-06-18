@@ -95,7 +95,7 @@
             return `
               <div class="dgo-card dgo-card--interactive dgo-stack dgo-stack--1" 
                    style="${style} padding: var(--dgo-s-3); border-radius: var(--dgo-r-lg);"
-                   onclick="selectLookupRecord('${Sanitizer.escape(rec.id)}')">
+                   data-act="selectLookupRecord" data-arg="${Sanitizer.escape(rec.id)}">
                 <div class="dgo-cluster dgo-cluster--between">
                   <code style="font-size:11px; background:var(--dgo-color-surface-sunken); padding:2px 4px; border-radius:3px; font-weight:700;">${Sanitizer.escape(rec.id)}</code>
                   <span class="dgo-badge dgo-badge--outline" style="font-size: 9px; padding-inline:4px;">${activeLookupType}</span>
@@ -157,11 +157,11 @@
 
                 <!-- Primary Document Actions Segment -->
                 <div class="dgo-cluster dgo-cluster--density" style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4); gap: var(--dgo-s-3);">
-                  <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="openFlagModal()">
+                  <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="openFlagModal">
                     <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-settings"></use></svg>
                     <span>Fulfill / Adjust Flag</span>
                   </button>
-                  <button class="dgo-btn dgo-btn--md dgo-btn--primary" onclick="toggleRouteForm()">
+                  <button class="dgo-btn dgo-btn--md dgo-btn--primary" data-act="toggleRouteForm">
                     <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
                     <span>Route Sub-Assignment (E06)</span>
                   </button>
@@ -171,7 +171,7 @@
                 <div id="embed-assign-form-drawer" class="dgo-card dgo-stack dgo-stack--3 dgo-card--sunken" style="display:none; border-left:3px solid var(--dgo-color-action-primary);">
                   <h4 style="font-weight:700; font-size:13px; text-transform:uppercase; color:var(--dgo-color-action-primary); border-bottom:1px solid var(--dgo-color-border-strong); padding-bottom: 4px;">Assign Task Directives</h4>
                   
-                  <form id="frm-embed-assign" class="dgo-stack dgo-stack--3" onsubmit="return false;">
+                  <form id="frm-embed-assign" class="dgo-stack dgo-stack--3" data-nosubmit>
                     <div class="dgo-form-group">
                       <label for="frm-emb-title" class="dgo-label dgo-label--required">Assignment Task Title</label>
                       <input type="text" id="frm-emb-title" class="dgo-input" required>
@@ -249,7 +249,7 @@
                 </div>
 
                 <div style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4);">
-                  <button class="dgo-btn dgo-btn--md dgo-btn--accent" onclick="openProgressModal()">
+                  <button class="dgo-btn dgo-btn--md dgo-btn--accent" data-act="openProgressModal">
                     <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-check-circle"></use></svg>
                     <span>Update Task Comments &amp; Progress (E05)</span>
                   </button>
@@ -289,7 +289,7 @@
                 </div>
 
                 <div style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4);">
-                  <button class="dgo-btn dgo-btn--md dgo-btn--primary" onclick="toggleEmailTaskForm()">
+                  <button class="dgo-btn dgo-btn--md dgo-btn--primary" data-act="toggleEmailTaskForm">
                     <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
                     <span>Extract Assignment Task Directives (E10)</span>
                   </button>
@@ -299,7 +299,7 @@
                 <div id="embed-email-form-drawer" class="dgo-card dgo-stack dgo-stack--3 dgo-card--sunken" style="display:none; border-left:3px solid var(--dgo-color-action-accent);">
                   <h4 style="font-weight:700; font-size:13px; text-transform:uppercase; color:var(--dgo-color-action-accent); border-bottom:1px solid var(--dgo-color-border-strong); padding-bottom: 4px;">Convert Email to Task Directives</h4>
                   
-                  <form id="frm-embed-email" class="dgo-stack dgo-stack--3" onsubmit="return false;">
+                  <form id="frm-embed-email" class="dgo-stack dgo-stack--3" data-nosubmit>
                     <div class="dgo-form-group">
                       <label for="frm-eml-title" class="dgo-label dgo-label--required">Conversion Task Title</label>
                       <input type="text" id="frm-eml-title" class="dgo-input" required>

@@ -25,12 +25,65 @@ const Chrome = (() => {
   ];
 
   function bootstrap(activeCode) {
+    setupActionDispatcher();
     injectSidebar(activeCode);
     injectTopBar(activeCode);
     setupCommandPalette();
     setupMobileMenu();
     injectToastContainer();
     refreshIdentity();
+  }
+
+  // ── Centralized declarative action dispatcher (SEC-03) ──────────────────────
+  // Replaces inline on* handlers (which forced CSP 'unsafe-inline') with a single
+  // delegated listener. Markup uses data-act="fn" (dotted paths like "Chrome.refreshData"
+  // are resolved on window), with args via data-arg (single, coerced) or data-args (JSON
+  // array). Forms opting out of submit use data-nosubmit; <select>/<input> use
+  // data-act-change. Delegation covers dynamically-injected elements too.
+  function resolveFn(path) {
+    if (!path) return null;
+    let ctx = window;
+    for (const part of String(path).split('.')) { if (ctx == null) return null; ctx = ctx[part]; }
+    return typeof ctx === 'function' ? ctx.bind(path.includes('.') ? resolveOwner(path) : window) : null;
+  }
+  function resolveOwner(path) {
+    const parts = String(path).split('.'); let ctx = window;
+    for (let i = 0; i < parts.length - 1; i++) { if (ctx == null) return window; ctx = ctx[parts[i]]; }
+    return ctx || window;
+  }
+  function coerceArg(v) {
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+    if (v !== '' && v != null && !isNaN(v)) return Number(v);
+    return v;
+  }
+  function dispatchAction(el, evt) {
+    const fn = resolveFn(el.dataset.act);
+    if (!fn) return;
+    let args = [];
+    if (el.dataset.args != null) { try { args = JSON.parse(el.dataset.args); } catch { args = [el.dataset.args]; } }
+    else if (el.dataset.arg != null) { args = [coerceArg(el.dataset.arg)]; }
+    fn(...args);
+  }
+  let _dispatcherReady = false;
+  function setupActionDispatcher() {
+    if (_dispatcherReady) return; _dispatcherReady = true;
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest && e.target.closest('[data-act]');
+      if (el) dispatchAction(el, e);
+    });
+    document.addEventListener('submit', (e) => {
+      const f = e.target.closest && e.target.closest('[data-nosubmit],[data-act-submit]');
+      if (!f) return;
+      e.preventDefault();
+      if (f.dataset.actSubmit) { const fn = resolveFn(f.dataset.actSubmit); if (fn) fn(e); }
+    });
+    document.addEventListener('change', (e) => {
+      const el = e.target.closest && e.target.closest('[data-act-change]');
+      if (!el) return;
+      const fn = resolveFn(el.dataset.actChange);
+      if (fn) fn(el.value, el);
+    });
   }
 
   function userLabel(u) { return (u && u.role ? u.role : '') + (u && u.roleCode ? ' (' + u.roleCode + ')' : ''); }
@@ -138,12 +191,12 @@ const Chrome = (() => {
 
         <div class="dgo-cluster dgo-cluster--density">
           <!-- Global data refresh: re-runs the single Fetch-All (superset) for every module -->
-          <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" onclick="Chrome.refreshData()" id="btn-global-refresh" aria-label="Refresh all data" title="Refresh data (re-runs the Fetch-All)">
+          <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" data-act="Chrome.refreshData" id="btn-global-refresh" aria-label="Refresh all data" title="Refresh data (re-runs the Fetch-All)">
             <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
             <span style="font-size: 11px;">Refresh</span>
           </button>
           <!-- Command palette trigger suggestion -->
-          <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" onclick="Chrome.showCommandPalette()" aria-label="Open Command Box">
+          <button class="dgo-btn dgo-btn--sm dgo-btn--outline" style="border-radius: var(--dgo-r-pill);" data-act="Chrome.showCommandPalette" aria-label="Open Command Box">
             <svg style="width:14px; height:14px;"><use href="assets/icons/sprite.svg#i-search"></use></svg>
             <span style="font-size: 11px;">Search <kbd style="font-family: var(--dgo-family-mono); background: var(--dgo-color-surface-sunken); padding-inline: 4px; border-radius: 2px;">Ctrl+K</kbd></span>
           </button>

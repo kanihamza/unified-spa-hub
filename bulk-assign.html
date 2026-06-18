@@ -73,15 +73,15 @@
                 <div class="dgo-card dgo-stack dgo-stack--4">
                   <span class="dgo-overline text-strong" style="margin-bottom: -10px;">Select Pipeline Mode</span>
                   <div class="dgo-tabs">
-                    <span class="dgo-tab dgo-tab--active" id="tab-btn-direct" onclick="switchStrategyTab('direct')">Direct Broadcaster (E07)</span>
-                    <span class="dgo-tab" id="tab-btn-optimized" onclick="switchStrategyTab('optimized')">AI Optimal Allocations (E08)</span>
+                    <span class="dgo-tab dgo-tab--active" id="tab-btn-direct" data-act="switchStrategyTab" data-arg="direct">Direct Broadcaster (E07)</span>
+                    <span class="dgo-tab" id="tab-btn-optimized" data-act="switchStrategyTab" data-arg="optimized">AI Optimal Allocations (E08)</span>
                   </div>
 
                   <!-- Tab Option 1: Direct Broadcaster config -->
                   <div id="strategy-direct" class="dgo-stack dgo-stack--4">
                     <p class="dgo-body-sm text-muted">Broadcasting maps **identical** assignees, CC watchgroups, priorities, and SLA deadlines across the entire batch in a single dispatch click.</p>
                     
-                    <form id="direct-broadcast-form" class="dgo-stack dgo-stack--3" onsubmit="return false">
+                    <form id="direct-broadcast-form" class="dgo-stack dgo-stack--3" data-nosubmit>
                       <div class="dgo-form-group">
                         <label for="dir-frm-category" class="dgo-label dgo-label--required">Uniform Category</label>
                         <select id="dir-frm-category" class="dgo-select" required>

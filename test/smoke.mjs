@@ -130,6 +130,15 @@ try {
   const rowsAfterRefresh = await page.$$eval('#home-docs-tbody tr', (els) => els.length);
   check('data still rendered after in-place refresh', rowsAfterRefresh > 0, `rows=${rowsAfterRefresh}`);
 
+  // SEC-03: the declarative action dispatcher (replacing inline on* handlers) actually
+  // fires. Click the topbar command-palette button (data-act="Chrome.showCommandPalette",
+  // a dotted-path action) and assert the overlay opens.
+  await page.click('[data-act="Chrome.showCommandPalette"]');
+  await sleep(150);
+  const cmdkOpen = await page.$eval('#dgo-cmdk-overlay', (el) => el.classList.contains('dgo-modal-overlay--active'));
+  check('data-act dispatcher fires (command palette opens)', cmdkOpen === true, `open=${cmdkOpen}`);
+  await page.keyboard.press('Escape');
+
   // Every page must load in the unified shell with NO console/page errors. This guards
   // the page-logic externalization (ARC-02) + inline-handler removal (SEC-03) across the
   // whole platform, not just the few pages exercised above (INF-02).

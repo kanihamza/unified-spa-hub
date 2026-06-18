@@ -40,7 +40,7 @@
                   <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" id="btn-reset-form" style="height:28px; font-size:11px;">Clear Fields</button>
                 </div>
 
-                <form id="assignment-form" class="dgo-stack dgo-stack--4" onsubmit="return false;">
+                <form id="assignment-form" class="dgo-stack dgo-stack--4" data-nosubmit>
                   <!-- Reference ID field -->
                   <div class="dgo-form-group">
                     <label for="frm-document-id" class="dgo-label dgo-label--required">Reference Dossier ID</label>
@@ -203,7 +203,7 @@
       <div class="dgo-modal dgo-modal--lg">
         <div class="dgo-modal__header">
           <h3 class="dgo-modal__title">Collect Pending Registrations</h3>
-          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" onclick="closeDocBrowser()">
+          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" data-act="closeDocBrowser">
             <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-close"></use></svg>
           </button>
         </div>
@@ -233,7 +233,7 @@
       <div class="dgo-modal dgo-modal--lg">
         <div class="dgo-modal__header">
           <h3 class="dgo-modal__title">Assignment Dispatch Review</h3>
-          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" onclick="closePreviewModal()">
+          <button class="dgo-btn dgo-btn--sm dgo-btn--icon-only dgo-btn--ghost" data-act="closePreviewModal">
             <svg style="width:20px; height:20px;"><use href="assets/icons/sprite.svg#i-close"></use></svg>
           </button>
         </div>
@@ -242,8 +242,8 @@
           <p class="dgo-body-sm">Verify the final notification layout which will be sent to the executive email and flagged onto the SharePoint tracking console.</p>
           
           <div class="dgo-tabs">
-            <span class="dgo-tab dgo-tab--active" id="tab-btn-email" onclick="switchPreviewTab('email')">Formal Email Notification Card</span>
-            <span class="dgo-tab" id="tab-btn-json" onclick="switchPreviewTab('json')">Structured API Envelope</span>
+            <span class="dgo-tab dgo-tab--active" id="tab-btn-email" data-act="switchPreviewTab" data-arg="email">Formal Email Notification Card</span>
+            <span class="dgo-tab" id="tab-btn-json" data-act="switchPreviewTab" data-arg="json">Structured API Envelope</span>
           </div>
 
           <!-- Tab Content 1: Email visual card -->
@@ -291,7 +291,7 @@
         </div>
 
         <div class="dgo-modal__footer">
-          <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="closePreviewModal()">Back to Edit</button>
+          <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="closePreviewModal">Back to Edit</button>
           <button class="dgo-btn dgo-btn--md dgo-btn--accent" id="btn-modal-dispatch">
             <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-check"></use></svg>
             <span>Confirm and Dispatch Directive</span>

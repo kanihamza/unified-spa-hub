@@ -69,7 +69,7 @@
             return `
               <div class="dgo-card dgo-card--interactive dgo-stack dgo-stack--1" 
                    style="${style} padding: var(--dgo-s-3); border-radius: var(--dgo-radius-control);"
-                   onclick="selectFile('${Sanitizer.escape(doc.id)}')">
+                   data-act="selectFile" data-arg="${Sanitizer.escape(doc.id)}">
                 <div class="dgo-cluster dgo-cluster--between">
                   <code style="font-size:11px; font-weight:700; background: var(--dgo-color-surface-sunken); padding: 1px 4px; border-radius:3px;">${Sanitizer.escape(doc.id)}</code>
                   <span class="dgo-badge dgo-badge--${doc.status === 'ROUTED' ? 'routed' : 'pending'}" style="font-size: 9px; padding-inline: 4px;">${Sanitizer.escape(doc.status)}</span>

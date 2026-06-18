@@ -30,7 +30,7 @@
                             <p class="dgo-body text-muted">Office of the Director General</p>
                         </div>
                         <div class="dgo-cluster">
-                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="syncData()">
+                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="syncData">
                                 <svg style="width: 16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
                                 <span>Sync Feed</span>
                             </button>
@@ -42,7 +42,7 @@
                             <div class="feed-header">
                                 <h2>Pending Files</h2>
                                 <div class="feed-controls">
-                                    <select id="filterStatus" onchange="filterFeed()">
+                                    <select id="filterStatus" data-act-change="filterFeed">
                                         <option value="Pending">Needs Action</option>
                                         <option value="All">All Files</option>
                                         <option value="Completed">Treated</option>
@@ -70,8 +70,8 @@
                                         <option value="">Loading routing table...</option>
                                     </select>
                                     <div style="display: flex; gap: 10px;">
-                                        <button class="btn-primary" onclick="submitDecision('Approve')">Approve / Treat</button>
-                                        <button class="btn-secondary" onclick="submitDecision('Delegate')">Min/Delegate</button>
+                                        <button class="btn-primary" data-act="submitDecision" data-arg="Approve">Approve / Treat</button>
+                                        <button class="btn-secondary" data-act="submitDecision" data-arg="Delegate">Min/Delegate</button>
                                     </div>
                                 </div>
                             </div>

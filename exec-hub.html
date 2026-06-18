@@ -31,7 +31,7 @@
                         </div>
                         <div class="dgo-cluster">
                             <span style="font-size: 0.75rem; font-family: monospace; color: var(--dgo-color-fg-muted); margin-right: 1rem;" id="userCtx">SYS.ADMIN | exec@nitda.gov.ng</span>
-                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="sync()">
+                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="sync">
                                 <svg style="width: 16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
                                 <span>Sync State</span>
                             </button>
@@ -85,8 +85,8 @@
                                                 <option value="">-- Target Node --</option>
                                             </select>
                                             <div style="display:flex; gap:0.5rem; margin-top: auto;">
-                                                <button class="btn btn-primary" style="flex:1;" onclick="submitAction('Approve')">APPROVE</button>
-                                                <button class="btn" style="flex:1;" onclick="submitAction('Delegate')">ROUTE</button>
+                                                <button class="btn btn-primary" style="flex:1;" data-act="submitAction" data-arg="Approve">APPROVE</button>
+                                                <button class="btn" style="flex:1;" data-act="submitAction" data-arg="Delegate">ROUTE</button>
                                             </div>
                                         </div>
                                     </div>

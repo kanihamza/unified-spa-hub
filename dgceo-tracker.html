@@ -33,11 +33,11 @@
               </div>
               <div class="dgo-cluster dgo-cluster--density">
                 <input type="text" id="global-search" class="dgo-input" style="width: 260px;" placeholder="Search references, subjects…" autocomplete="off">
-                <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="exportToCSV()">
+                <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="exportToCSV">
                   <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-download"></use></svg>
                   <span>Export</span>
                 </button>
-                <button class="dgo-btn dgo-btn--md dgo-btn--ghost" onclick="triggerManualSync()">
+                <button class="dgo-btn dgo-btn--md dgo-btn--ghost" data-act="triggerManualSync">
                   <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
                   <span>Force Sync</span>
                 </button>
@@ -46,15 +46,15 @@
 
             <!-- Tab navigation -->
             <div class="dgceo-tabs" role="tablist" aria-label="Tracker views">
-              <button id="nav-dashboard" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--primary" role="tab" aria-selected="true" onclick="switchTab('dashboard')">
+              <button id="nav-dashboard" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--primary" role="tab" aria-selected="true" data-act="switchTab" data-arg="dashboard">
                 <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-chart"></use></svg>
                 <span>Dashboard</span>
               </button>
-              <button id="nav-new-entry" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" onclick="switchTab('new-entry')">
+              <button id="nav-new-entry" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" data-act="switchTab" data-arg="new-entry">
                 <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-plus"></use></svg>
                 <span>Log Correspondence</span>
               </button>
-              <button id="nav-records" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" onclick="switchTab('records')">
+              <button id="nav-records" class="nav-btn dgo-btn dgo-btn--sm dgo-btn--outline" role="tab" aria-selected="false" data-act="switchTab" data-arg="records">
                 <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-folder"></use></svg>
                 <span>Official Records</span>
                 <span class="dgo-badge dgo-badge--action" id="badge-pending" style="font-size:10px;">0</span>
@@ -105,7 +105,7 @@
               <div class="dgo-card dgo-stack dgo-stack--4">
                 <div class="dgo-card__header" style="margin-bottom: 0;">
                   <h3 class="dgo-card__title">Recent Registrations</h3>
-                  <button class="dgo-link dgo-body-sm" onclick="switchTab('records')" style="background:none;border:none;cursor:pointer;">View All →</button>
+                  <button class="dgo-link dgo-body-sm" data-act="switchTab" data-arg="records" style="background:none;border:none;cursor:pointer;">View All →</button>
                 </div>
                 <div class="dgo-table-container">
                   <table class="dgo-table">
@@ -191,7 +191,7 @@
                 </div>
 
                 <div class="dgo-cluster dgo-cluster--between" style="border-top: 1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4);">
-                  <button type="button" class="dgo-btn dgo-btn--md dgo-btn--ghost" onclick="resetForm()">Clear Form</button>
+                  <button type="button" class="dgo-btn dgo-btn--md dgo-btn--ghost" data-act="resetForm">Clear Form</button>
                   <button type="submit" class="dgo-btn dgo-btn--md dgo-btn--primary">
                     <svg style="width:16px;height:16px;"><use href="assets/icons/sprite.svg#i-download"></use></svg>
                     <span>Save &amp; Sync Record</span>
@@ -206,7 +206,7 @@
                 <div class="dgo-cluster dgo-cluster--density">
                   <div class="dgo-cluster dgo-cluster--density">
                     <svg style="width:16px;height:16px; color: var(--dgo-color-fg-muted);"><use href="assets/icons/sprite.svg#i-filter"></use></svg>
-                    <select id="filter-status" class="dgo-select" style="height:32px;" onchange="applyFilters()">
+                    <select id="filter-status" class="dgo-select" style="height:32px;" data-act-change="applyFilters">
                       <option value="All">All Statuses</option>
                       <option value="Pending">Pending Action</option>
                       <option value="Accepted">Accepted / Treated</option>
@@ -214,7 +214,7 @@
                       <option value="Declined">Declined</option>
                     </select>
                   </div>
-                  <select id="filter-category" class="dgo-select" style="height:32px;" onchange="applyFilters()">
+                  <select id="filter-category" class="dgo-select" style="height:32px;" data-act-change="applyFilters">
                     <option value="All">All Categories</option>
                     <option value="Ministerial Directive">Ministerial Directive</option>
                     <option value="Event Invitation">Event Invitation</option>
@@ -223,7 +223,7 @@
                     <option value="Internal Memo">Internal Memo</option>
                     <option value="Other">Other</option>
                   </select>
-                  <button class="dgo-btn dgo-btn--sm dgo-btn--soft" onclick="filterRecords('category', 'Event Invitation')">
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--soft" data-act="filterRecords" data-args='[&quot;category&quot;,&quot;Event Invitation&quot;]'>
                     <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-calendar"></use></svg>
                     <span>Events</span>
                     <span class="dgo-badge dgo-badge--draft" id="badge-events" style="font-size:10px;">0</span>
@@ -244,7 +244,7 @@
                 <div id="records-empty-state" class="hidden">
                   <svg style="width:36px;height:36px; color: var(--dgo-color-fg-subtle);"><use href="assets/icons/sprite.svg#i-folder"></use></svg>
                   <p class="dgo-body-sm" style="font-weight:600;">No records match the current filters.</p>
-                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="filterRecords('status','All'); filterRecords('category','All'); document.getElementById('global-search').value=''; applyFilters();">Clear All Filters</button>
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-act="clearAllFilters">Clear All Filters</button>
                 </div>
               </div>
             </div>

@@ -30,7 +30,7 @@
                             <p class="dgo-body text-muted">Tracking details ledger</p>
                         </div>
                         <div class="dgo-cluster">
-                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" onclick="syncData()">
+                            <button class="dgo-btn dgo-btn--md dgo-btn--outline" data-act="syncData">
                                 <svg style="width: 16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
                                 <span>Sync Live Data</span>
                             </button>
@@ -58,7 +58,7 @@
                                 <label for="filterSearch">Global Search</label>
                                 <input type="text" id="filterSearch" placeholder="Search by title, ID, or assignee...">
                             </div>
-                            <button class="btn-search" onclick="applyFilters()">Filter Data</button>
+                            <button class="btn-search" data-act="applyFilters">Filter Data</button>
                         </div>
 
                         <div class="response-table">
@@ -93,9 +93,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">Acknowledge Task Receipt</h2>
-                <button class="modal-close" onclick="closeAckModal()">&times;</button>
+                <button class="modal-close" data-act="closeAckModal">&times;</button>
             </div>
-            <form id="ackForm" onsubmit="handleAckSubmit(event)">
+            <form id="ackForm" data-act-submit="handleAckSubmit">
                 <div class="form-group">
                     <label for="ackEmail">Your Email</label>
                     <input type="email" id="ackEmail" required>
@@ -106,7 +106,7 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn-search" style="flex: 1;">Acknowledge</button>
-                    <button type="button" class="back-btn" style="flex: 1;" onclick="closeAckModal()">Cancel</button>
+                    <button type="button" class="back-btn" style="flex: 1;" data-act="closeAckModal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -116,7 +116,7 @@
         <div class="modal-content large">
             <div class="modal-header">
                 <h2 class="modal-title">Matrix View: Task Lineage</h2>
-                <button class="modal-close" onclick="closeDetailsModal()">&times;</button>
+                <button class="modal-close" data-act="closeDetailsModal">&times;</button>
             </div>
             <div id="detailsContent"></div>
         </div>

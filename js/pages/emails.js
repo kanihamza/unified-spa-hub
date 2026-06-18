@@ -106,7 +106,7 @@
                 <h4 class="text-strong" style="font-family: var(--dgo-family-display); font-size:14px; color: var(--dgo-color-action-primary);">Convert Inquiry into Assignment</h4>
                 <p class="dgo-caption" style="margin-bottom:var(--dgo-s-1);">Map category cascade and principal assignee directory details instantly.</p>
 
-                <form id="email-to-task-form" class="dgo-stack dgo-stack--4" onsubmit="return false">
+                <form id="email-to-task-form" class="dgo-stack dgo-stack--4" data-nosubmit>
                   <!-- Category Cascade -->
                   <div class="dgo-form-group">
                     <label for="eml-frm-category" class="dgo-label dgo-label--required">Operations Category</label>
@@ -181,9 +181,9 @@
 
               <!-- Inline mail stubs -->
               <div class="dgo-cluster dgo-cluster--density dgo-no-print">
-                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Reply to thread')">Reply</button>
-                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Forward thread')">Forward</button>
-                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" onclick="showMailboxStubAlert('Mark Spam')">Flag Spam</button>
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" data-act="showMailboxStubAlert" data-arg="Reply to thread">Reply</button>
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" data-act="showMailboxStubAlert" data-arg="Forward thread">Forward</button>
+                <button class="dgo-btn dgo-btn--sm dgo-btn--outline" data-act="showMailboxStubAlert" data-arg="Mark Spam">Flag Spam</button>
               </div>
 
               ${actionMarkup}

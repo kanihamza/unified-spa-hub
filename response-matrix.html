@@ -43,7 +43,7 @@
                                 <h1 class="dgo-h2">Response Matrix</h1>
                                 <p class="dgo-body text-muted uppercase tracking-widest text-[10px] font-bold">Enterprise Registry & Decision Hub</p>
                             </div>
-                            <button onclick="syncData()" class="dgo-btn dgo-btn--md dgo-btn--outline">
+                            <button data-act="syncData" class="dgo-btn dgo-btn--md dgo-btn--outline">
                                 <svg style="width: 16px; height: 16px;"><use href="assets/icons/sprite.svg#i-refresh"></use></svg>
                                 <span>Full Matrix Sync</span>
                             </button>
@@ -84,18 +84,18 @@
                             <div class="flex-1 min-w-[300px]">
                                 <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Global Matrix Search</label>
                                 <div class="relative">
-                                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search Ref ID, Task Title, Assigned Officer..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition font-medium">
+                                    <input type="text" id="searchInput" data-act-change="applyFilters" placeholder="Search Ref ID, Task Title, Assigned Officer..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition font-medium">
                                 </div>
                             </div>
                             <div class="w-64">
                                 <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Classification</label>
-                                <select id="categoryFilter" onchange="applyFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
+                                <select id="categoryFilter" data-act-change="applyFilters" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
                                     <option value="">All Categories</option>
                                 </select>
                             </div>
                             <div class="w-64">
                                 <label class="block text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Status</label>
-                                <select id="statusFilter" onchange="applyFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
+                                <select id="statusFilter" data-act-change="applyFilters" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-teal-500 font-bold text-gray-700">
                                     <option value="">All Statuses</option>
                                     <option value="pending">Pending/Active</option>
                                     <option value="completed">Completed</option>
@@ -135,8 +135,8 @@
             <label class="block text-xs font-bold text-gray-500 mb-1">Execution Notes</label>
             <textarea id="ackNotes" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none mb-4" rows="3" placeholder="Enter acknowledgment notes..."></textarea>
             <div class="flex justify-end gap-3">
-                <button onclick="closeAckModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-xs uppercase">Cancel</button>
-                <button onclick="submitAck()" class="px-4 py-2 bg-teal-600 text-white rounded-lg font-bold text-xs uppercase shadow-lg">Confirm Receipt</button>
+                <button data-act="closeAckModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-xs uppercase">Cancel</button>
+                <button data-act="submitAck" class="px-4 py-2 bg-teal-600 text-white rounded-lg font-bold text-xs uppercase shadow-lg">Confirm Receipt</button>
             </div>
         </div>
     </div>
@@ -151,7 +151,7 @@
                         <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest" id="modalRef">REF: ---</p>
                     </div>
                 </div>
-                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/20 text-2xl transition">&times;</button>
+                <button data-act="closeModal" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/20 text-2xl transition">&times;</button>
             </div>
             
             <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
@@ -184,7 +184,7 @@
                             <option value="">Select Target DSU...</option>
                         </select>
                         <textarea id="internalNote" class="w-full bg-white border border-gray-200 rounded-xl p-4 text-xs font-medium h-24 mb-4 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Enter routing instruction for the minute sheet..."></textarea>
-                        <button onclick="submitMinute()" class="w-full nitda-gradient text-white font-black py-4 rounded-xl shadow-lg hover:shadow-teal-500/20 transition active:scale-95">
+                        <button data-act="submitMinute" class="w-full nitda-gradient text-white font-black py-4 rounded-xl shadow-lg hover:shadow-teal-500/20 transition active:scale-95">
                             FORWARD FILE
                         </button>
                     </div>

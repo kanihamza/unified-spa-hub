@@ -24,7 +24,7 @@
         { content: item.Assignee || item.assignee || 'Unassigned', className: 'p-5 text-xs text-gray-700 font-bold' },
         { content: `${item.slaPercent || 0}%`, className: 'p-5' },
         { content: `<span class="status-badge">${item.derivedStatus || 'Pending'}</span>`, isHTML: true, className: 'p-5 text-center' },
-        { content: `<button class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold" onclick="openMatrixModal('${item.id}')">Trace</button>`, isHTML: true, className: 'p-5 text-right' }
+        { content: `<button class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold" data-act="openMatrixModal" data-arg="${window.Sanitizer.escape(item.id)}">Trace</button>`, isHTML: true, className: 'p-5 text-right' }
       ]);
 
       tbody.appendChild(tr);

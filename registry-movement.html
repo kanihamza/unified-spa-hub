@@ -153,9 +153,9 @@
                 
                 <!-- Category Tabs inside Sidebar Filter -->
                 <div class="dgo-tabs" style="margin-bottom: var(--dgo-s-2);">
-                  <span class="dgo-tab dgo-tab--active" id="tab-all" onclick="setFilter('ALL')">All Files</span>
-                  <span class="dgo-tab" id="tab-pending" onclick="setFilter('PENDING')">Registry</span>
-                  <span class="dgo-tab" id="tab-routed" onclick="setFilter('ROUTED') text-strong">Routed</span>
+                  <span class="dgo-tab dgo-tab--active" id="tab-all" data-act="setFilter" data-arg="ALL">All Files</span>
+                  <span class="dgo-tab" id="tab-pending" data-act="setFilter" data-arg="PENDING">Registry</span>
+                  <span class="dgo-tab" id="tab-routed" data-act="setFilter" data-arg="ROUTED">Routed</span>
                 </div>
 
                 <div class="dgo-stack dgo-stack--2" id="file-registry-list" style="max-height: 520px; overflow-y: auto;">
@@ -179,7 +179,7 @@
                 <div class="dgo-card dgo-stack dgo-stack--4" id="minute-editor-card" style="display: none;">
                   <h4 class="dgo-h4" style="border-bottom: 1px solid var(--dgo-color-border-default); padding-bottom: 8px;">Constitute New Minute Entry</h4>
                   
-                  <form id="new-minute-form" class="dgo-stack dgo-stack--3" onsubmit="return false;">
+                  <form id="new-minute-form" class="dgo-stack dgo-stack--3" data-nosubmit>
                     <div class="dgo-form-group">
                       <label for="frm-minute-content" class="dgo-label dgo-label--required">Annotate Minute Text</label>
                       <textarea id="frm-minute-content" class="dgo-textarea" rows="4" placeholder="Detail executive annotations, operational directives, or minutes for the file..." required></textarea>

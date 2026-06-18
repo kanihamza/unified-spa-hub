@@ -494,7 +494,7 @@
     };
 
     const html = state.colActions.map(item => `
-      <button class="ribbon-btn" title="${item.Tooltip}" onclick="executeAction('${item.ActionKey}', '${item.Label}')">
+      <button class="ribbon-btn" title="${item.Tooltip}" data-act="executeAction" data-args='["${item.ActionKey}","${item.Label}"]'>
         <div style="font-size:16px;margin-bottom:4px;">${item.Icon}</div>
         <div style="display:flex;justify-content:space-between;width:100%;align-items:flex-end;">
           <span class="btn-label">${item.Label}</span>
@@ -529,7 +529,7 @@
         html = `<div class="empty-state"><h4>No matched documents</h4><p>Click 'Dashboard' in the ribbon to build matches.</p></div>`;
       } else {
         html = data.map(doc => `
-          <div class="gallery-item ${state.locSelectedDoc?.ID === doc.ID ? 'selected' : ''}" onclick="selectDoc(${doc.ID}, 'matched')">
+          <div class="gallery-item ${state.locSelectedDoc?.ID === doc.ID ? 'selected' : ''}" data-act="selectDoc" data-args='[${doc.ID},"matched"]'>
             <div class="item-title">${escapeHtml(doc.Title)}</div>
             <div class="item-meta-line">
               <span class="item-meta">Category: ${escapeHtml(doc.Category || '—')}</span>
@@ -559,7 +559,7 @@
         html = `<div class="empty-state"><h4>No Response Matrix Data</h4><p>Reload all data to generate matrix.</p></div>`;
       } else {
         html = data.map(item => `
-          <div class="gallery-item matrix-item ${state.varSelectedItem?.ID === item.ID ? 'selected' : ''}" onclick="selectDoc(${item.ID}, 'matrix')">
+          <div class="gallery-item matrix-item ${state.varSelectedItem?.ID === item.ID ? 'selected' : ''}" data-act="selectDoc" data-args='[${item.ID},"matrix"]'>
             <div class="matrix-title">${escapeHtml(item.Title)}</div>
             <div class="matrix-meta">Assigned To: ${escapeHtml(item.AssignedTo || 'Unassigned')}</div>
             <div class="matrix-meta">Category: ${escapeHtml(item.Category || '—')}</div>
@@ -653,7 +653,7 @@
   function renderEmailCards(emails) {
     if (emails.length === 0) return `<div class="empty-state"><h4>No Emails</h4><p>No matching emails found.</p></div>`;
     return emails.map(e => `
-      <div class="email-card" onclick="openEmailDetail('${e.id}')">
+      <div class="email-card" data-act="openEmailDetail" data-arg="${escapeHtml(e.id)}">
         <h3>${emailHighIndicator(e.Importance)}${e.HasAttachments?'📎 ':''}${escapeHtml(e.Subject || 'No Subject')}</h3>
         <p><strong>From:</strong> ${escapeHtml(e.From || e.FromName)} &nbsp;|&nbsp; <strong>Date:</strong> ${formatDateTime(e.DateTimeReceived)}</p>
         <div class="email-body-preview">${escapeHtml((e.BodyPreview || '').slice(0,100))}...</div>
@@ -728,7 +728,7 @@
     const cont = document.getElementById('nav-items-container');
     if(!cont) return;
     const html = items.map(i => `
-      <button class="nav-btn" onclick="toggleMenu(false)">
+      <button class="nav-btn" data-act="toggleMenu" data-arg="false">
         <span style="font-size:16px;">${i.icon}</span> ${i.name}
       </button>
     `).join('');

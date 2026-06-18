@@ -165,7 +165,7 @@
 
               <!-- Action button -->
               <div style="border-top:1px solid var(--dgo-color-border-default); padding-top: var(--dgo-s-4); margin-top:var(--dgo-s-2);">
-                <button class="dgo-btn dgo-btn--md dgo-btn--primary" style="width:100%;" onclick="window.openProgressModal()">
+                <button class="dgo-btn dgo-btn--md dgo-btn--primary" style="width:100%;" data-act="openProgressModal">
                   <svg style="width:16px; height:16px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg>
                   <span>Update Progress / Comments</span>
                 </button>

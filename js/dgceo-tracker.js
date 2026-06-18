@@ -75,7 +75,7 @@
               <td style="color: var(--dgo-color-fg-muted);">${formatDate(record.receivedDate)}</td>
               <td>${getStatusBadge(record.status)}</td>
               <td style="text-align:right;">
-                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="editRecord('${escapeHtml(record.id)}')" aria-label="Edit record">
+                  <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-act="editRecord" data-arg="${escapeHtml(record.id)}" aria-label="Edit record">
                       <svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg>
                   </button>
               </td>
@@ -130,9 +130,9 @@
                   <td>${getPriorityBadge(record.priority)}</td>
                   <td>${getStatusBadge(record.status)}</td>
                   <td style="text-align:right; white-space:nowrap;">
-                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="editRecord('${escapeHtml(record.id)}')" aria-label="Edit"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg></button>
-                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="quickAction('${escapeHtml(record.id)}','Accepted')" aria-label="Mark accepted"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-check"></use></svg></button>
-                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" onclick="deleteRecord('${escapeHtml(record.id)}')" aria-label="Delete"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-trash"></use></svg></button>
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-act="editRecord" data-arg="${escapeHtml(record.id)}" aria-label="Edit"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-edit"></use></svg></button>
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-act="quickAction" data-args='["${escapeHtml(record.id)}","Accepted"]' aria-label="Mark accepted"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-check"></use></svg></button>
+                      <button class="dgo-btn dgo-btn--sm dgo-btn--ghost" data-act="deleteRecord" data-arg="${escapeHtml(record.id)}" aria-label="Delete"><svg style="width:14px;height:14px;"><use href="assets/icons/sprite.svg#i-trash"></use></svg></button>
                   </td>
               `;
               tbody.appendChild(tr);
@@ -152,6 +152,15 @@
 
   window.filterRecords = function(type, value) {
       document.getElementById(`filter-${type}`).value = value;
+      applyFilters();
+  }
+
+  // Single action for the "Clear All Filters" control (replaces a compound inline
+  // handler; SEC-03 — no inline JS).
+  window.clearAllFilters = function() {
+      const s = document.getElementById('filter-status'); if (s) s.value = 'All';
+      const c = document.getElementById('filter-category'); if (c) c.value = 'All';
+      const g = document.getElementById('global-search'); if (g) g.value = '';
       applyFilters();
   }
 

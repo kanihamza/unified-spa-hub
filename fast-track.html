@@ -29,7 +29,7 @@
               <h3 style="color:var(--brand-primary);margin-bottom:8px;font-size:16px;">Welcome to DGO Digital Ops</h3>
               <p style="font-size:12px;color:var(--neutral-secondary);margin-bottom:16px;">Please enter your NITDA email address to personalize your experience and set your role.</p>
               <input id="init-email-input" placeholder="e.g. user@nitda.gov.ng" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;margin-bottom:16px;font-size:14px;" type="email"/>
-              <button onclick="saveUserEmail()" style="width:100%;padding:10px;background:var(--brand-primary);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Continue</button>
+              <button data-act="saveUserEmail" style="width:100%;padding:10px;background:var(--brand-primary);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Continue</button>
             </div>
           </div>
           
@@ -43,7 +43,7 @@
           <div id="error-banner">
             <span style="font-size:16px;">⚠️</span>
             <span id="error-message">Failed to load data. Please refresh or contact support.</span>
-            <button onclick="clearError()" style="margin-left:auto;background:none;border:none;color:white;cursor:pointer;font-size:16px;">✕</button>
+            <button data-act="clearError" style="margin-left:auto;background:none;border:none;color:white;cursor:pointer;font-size:16px;">✕</button>
           </div>
           
           <!-- SUCCESS TOAST -->
@@ -56,12 +56,12 @@
           <div id="side-nav">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:12px;">
               <span style="color:white;font-weight:600;font-size:14px;">Navigation</span>
-              <button id="close-nav-btn" onclick="toggleMenu(false)" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
+              <button id="close-nav-btn" data-act="toggleMenu" data-arg="false" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
             </div>
             <div style="color:rgba(255,255,255,0.7);font-size:10px;margin-bottom:8px;">Logged in as: <br/><span id="nav-user-email" style="color:white;font-weight:bold;"></span></div>
             <div id="nav-items-container" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;"></div>
           </div>
-          <div id="side-nav-overlay" onclick="toggleMenu(false)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:8999;"></div>
+          <div id="side-nav-overlay" data-act="toggleMenu" data-arg="false" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:8999;"></div>
           
           <!-- APP HEADER -->
           <div id="app-header">
@@ -97,9 +97,9 @@
             <!-- LEFT COLUMN -->
             <div id="col-a">
               <div class="tab-bar">
-                <button class="tab-btn active" data-tab="matched" onclick="switchTab('matched')">📎 Matched Docs (<span id="count-matched">0</span>)</button>
-                <button class="tab-btn" data-tab="pairs" onclick="switchTab('pairs')">🔗 Doc-Email Pairs (<span id="count-pairs">0</span>)</button>
-                <button class="tab-btn" data-tab="matrix" onclick="switchTab('matrix')">📊 Response Matrix</button>
+                <button class="tab-btn active" data-tab="matched" data-act="switchTab" data-arg="matched">📎 Matched Docs (<span id="count-matched">0</span>)</button>
+                <button class="tab-btn" data-tab="pairs" data-act="switchTab" data-arg="pairs">🔗 Doc-Email Pairs (<span id="count-pairs">0</span>)</button>
+                <button class="tab-btn" data-tab="matrix" data-act="switchTab" data-arg="matrix">📊 Response Matrix</button>
               </div>
               <div class="gallery-container" id="col-a-content"></div>
             </div>
@@ -108,7 +108,7 @@
             <div id="col-b">
               <!-- Standard Detail Header -->
               <div id="doc-header" style="background:rgba(5,88,59,0.08);padding:10px 12px;display:none;align-items:center;gap:10px;border-bottom:1px solid var(--neutral-light);min-height:52px;">
-                <button id="back-to-list-btn" onclick="clearSelection()" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
+                <button id="back-to-list-btn" data-act="clearSelection" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
                 <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
                   <span id="doc-title" style="font-weight:600;font-size:12px;color:var(--neutral-primary);"></span>
                   <div id="doc-meta" style="font-size:9px;color:var(--neutral-secondary);"></div>
@@ -123,8 +123,8 @@
               
               <!-- Sub-Tabs for Matrix mode -->
               <div class="tab-bar" id="matrix-sub-tabs" style="display:none;background:#FAFAFA;">
-                <button class="tab-btn active" id="tab-matrix-emails" onclick="switchMatrixTab('emails')">📧 Matching Emails</button>
-                <button class="tab-btn" id="tab-matrix-tasks" onclick="switchMatrixTab('tasks')">✅ Related Tasks</button>
+                <button class="tab-btn active" id="tab-matrix-emails" data-act="switchMatrixTab" data-arg="emails">📧 Matching Emails</button>
+                <button class="tab-btn" id="tab-matrix-tasks" data-act="switchMatrixTab" data-arg="tasks">✅ Related Tasks</button>
               </div>
               
               <!-- Scrollable content area for details -->
@@ -141,7 +141,7 @@
               <!-- Email detail pane (Mobile or overlay mode) -->
               <div id="email-detail-panel" style="display:none;position:absolute;inset:0;background:white;z-index:50;flex-direction:column;">
                 <div style="background:rgba(5,88,59,0.08);padding:10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--neutral-light);">
-                  <button id="close-email-btn" onclick="closeEmailDetail()" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
+                  <button id="close-email-btn" data-act="closeEmailDetail" style="background:none;border:none;color:var(--brand-primary);font-size:24px;cursor:pointer;line-height:1;padding:0 8px;">‹</button>
                   <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
                     <span id="email-detail-subject" style="font-weight:600;font-size:12px;color:var(--brand-primary);"></span>
                     <span id="email-detail-meta" style="font-size:10px;color:var(--neutral-secondary);"></span>
@@ -156,7 +156,7 @@
           <div id="telemetry-panel" style="display:none;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <div style="font-weight:600;font-size:12px;color:var(--brand-primary);">Action Telemetry &amp; Performance</div>
-              <button onclick="toggleTelemetry()" style="background:none;border:none;color:var(--neutral-secondary);cursor:pointer;font-size:16px;">✕</button>
+              <button data-act="toggleTelemetry" style="background:none;border:none;color:var(--neutral-secondary);cursor:pointer;font-size:16px;">✕</button>
             </div>
             <div id="telemetry-no-data" style="font-size:10px;color:var(--neutral-secondary);">No telemetry yet. Run an action to populate metrics.</div>
             <div id="telemetry-content" style="display:none;">

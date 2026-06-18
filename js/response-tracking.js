@@ -198,10 +198,10 @@
               <td>
                   <div class="action-buttons">
                       ${(r.displayStatus === 'Pending' || r.displayStatus === 'Overdue' || r.displayStatus === 'Not started') ? 
-                          `<button class="action-btn action-btn-primary" onclick="openAckModal(${r.id})">Acknowledge</button>` : 
+                          `<button class="action-btn action-btn-primary" data-act="openAckModal" data-arg="${r.id}">Acknowledge</button>` : 
                           `<button class="action-btn action-btn-secondary" disabled>Treated</button>`
                       }
-                      <button class="action-btn action-btn-secondary" onclick="viewDetails(${r.id})">Matrix View</button>
+                      <button class="action-btn action-btn-secondary" data-act="viewDetails" data-arg="${r.id}">Matrix View</button>
                   </div>
               </td>
           </tr>
