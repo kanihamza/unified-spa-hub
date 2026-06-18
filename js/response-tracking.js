@@ -15,11 +15,8 @@
 
   function safeText(str) { return str == null ? '' : String(str); }
   function safeDate(str) { const d = new Date(str); return isNaN(d) ? null : d; }
-  function escapeHtml(str) {
-      return safeText(str).replace(/[&<>'"]/g, 
-          tag => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[tag])
-      );
-  }
+  // Output-encoding is centralized in Sanitizer (STR-01) — never re-implemented here.
+  const escapeHtml = (str) => window.Sanitizer.escapeHtml(str);
   function formatDate(dateObj) {
       if (!dateObj) return 'N/A';
       return new Date(dateObj).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });

@@ -101,9 +101,8 @@
   function formatNow() { return formatDateTime(new Date()); }
   function msDiff(start) { return new Date() - start; }
   
-  function escapeHtml(unsafe) {
-    return String(unsafe||'').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
+  // Output-encoding is centralized in Sanitizer (STR-01) — never re-implemented here.
+  const escapeHtml = (unsafe) => window.Sanitizer.escapeHtml(unsafe);
 
   function parseDocs(rawDocs) {
     return (rawDocs || []).map(item => ({

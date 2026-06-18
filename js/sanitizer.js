@@ -116,13 +116,22 @@ const Sanitizer = (() => {
       .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  /**
+   * Canonical, DOM-free HTML-text escaper (STR-01 / SEC-03). This is the single
+   * source of truth for output-encoding across every module — no page or module
+   * may re-implement it. Handles non-string input safely and is usable outside a
+   * DOM context (unlike the prior `escape` that relied on document.createElement).
+   */
+  const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, (ch) => ESC_MAP[ch]);
+  }
+
   return {
-    escape: (str) => {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    },
+    // `escape` is retained as the established API name and now delegates to the
+    // single canonical implementation.
+    escape: escapeHtml,
+    escapeHtml,
     cleanHTML,
     safeUrl,
     createRow: createSafeRow

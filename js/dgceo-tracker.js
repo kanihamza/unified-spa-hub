@@ -274,9 +274,8 @@
       }
   }
 
-  function escapeHtml(str) {
-      return safeText(str).replace(/[&<>'"]/g, tag => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[tag]));
-  }
+  // Output-encoding is centralized in Sanitizer (STR-01) — never re-implemented here.
+  const escapeHtml = (str) => window.Sanitizer.escapeHtml(str);
 
   window.switchTab = function(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
