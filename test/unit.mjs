@@ -39,7 +39,7 @@ function makeStore() {
 }
 
 // Build a fresh headless platform context and run sanitizer.js + api.js inside it.
-function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profile = null } = {}) {
+function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profile = null, scripts = ['js/sanitizer.js', 'js/api.js'] } = {}) {
   const listeners = {};
   const ls = makeStore();
   if (profile) ls.setItem('dgo_env_profile', profile);
@@ -66,7 +66,7 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
   sandbox.__fetch = fetchImpl || (async () => ({ ok: true, json: async () => ({ success: true }) }));
   sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.self = sandbox;
   vm.createContext(sandbox);
-  for (const f of ['js/sanitizer.js', 'js/api.js']) {
+  for (const f of scripts) {
     vm.runInContext(readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
   }
   return { sandbox, ls, ss, listeners };
@@ -153,6 +153,22 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
     assert('SEC-03 safeUrl neutralizes javascript: scheme', S.safeUrl('javascript:alert(1)') === '#');
     assert('SEC-03 safeUrl attribute-encodes ampersands', S.safeUrl('https://x.test/a?b=1&c=2').includes('&amp;'));
     assert('SEC-03 safeUrl preserves http/https', S.safeUrl('https://x.test/a').startsWith('https://'));
+  }
+
+  // ── DATA-02: single canonical session shape + shared expiry rule ──────────────
+  {
+    const { sandbox } = loadPlatform({ scripts: ['js/sanitizer.js', 'js/api.js', 'js/state.js'] });
+    const State = sandbox.window.State;
+    // Officer-switcher selection → canonical shape, not authenticated.
+    const sel = State.setActiveUser({ id: 'sirajo@x', name: 'Dr Sirajo', role: 'Director (EGI)', dsu: 'EGI', email: 'sirajo@x' });
+    assert('DATA-02 switcher selection normalized to canonical shape', sel && sel.id === 'sirajo@x' && sel.authenticated === false && sel.roleCode === 'DIR');
+    assert('DATA-02 active user persisted + re-read identically', State.getActiveUser().name === 'Dr Sirajo');
+    // OTP-style authenticated session shares the SAME shape, with expiry honored.
+    State.setActiveUser({ id: 'dg@x', name: 'DG', role: 'Director General', email: 'dg@x', authenticated: true, expiresAt: new Date(Date.now() + 60000).toISOString() });
+    assert('DATA-02 authenticated session carries authenticated=true + roleCode DG', State.getActiveUser().authenticated === true && State.getActiveUser().roleCode === 'DG');
+    // Expired authenticated session is dropped by the shared rule.
+    State.setActiveUser({ id: 'old@x', name: 'Old', role: 'Director', email: 'old@x', authenticated: true, expiresAt: new Date(Date.now() - 1000).toISOString() });
+    assert('DATA-02 expired session dropped on read', State.getActiveUser() === null);
   }
 
   console.log(`\n${failures ? 'UNIT FAILED (' + failures + ')' : 'UNIT PASSED'} `);

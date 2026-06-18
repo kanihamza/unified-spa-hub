@@ -73,11 +73,19 @@ const Identity = (() => {
           roleCode: response.user.roleCode,
           dsu: response.user.dsu,
           email: email,
+          authenticated: true,
           expiresAt: response.expiresAt || new Date(Date.now() + 28800000).toISOString()
         };
 
+        // Token is the only identity datum Identity owns directly; the user record is
+        // written through the single canonical writer (State) so both the switcher and
+        // OTP produce one shape (DATA-02 / EXC-01 closure).
         localStorage.setItem(TOKEN_KEY, response.token);
-        localStorage.setItem(USER_KEY, JSON.stringify(userPayload));
+        if (window.State && typeof window.State.setActiveUser === 'function') {
+          window.State.setActiveUser(userPayload);
+        } else {
+          localStorage.setItem(USER_KEY, JSON.stringify(userPayload));
+        }
 
         if (window.Telemetry) window.Telemetry.log("otp_verify_success", { email, role: userPayload.roleCode });
         return userPayload;

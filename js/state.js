@@ -9,11 +9,34 @@
 const State = (() => {
   const USER_KEY = 'dgo_session_user';
 
-  // The active user, or null if none has been selected/authenticated yet.
+  // Canonical session/identity shape (DATA-02 / EXC-01 closure: "unify the session
+  // model so state.js and identity.js write a single session shape"). BOTH the officer
+  // switcher and OTP verification produce THIS shape, written only through setActiveUser.
+  // The bearer token itself is NOT stored here — Identity owns it in dgo_auth_token.
+  function normalizeSession(u) {
+    if (!u || typeof u !== 'object') return null;
+    return {
+      id: (u.id != null && u.id !== '') ? u.id : (u.email || ''),
+      name: u.name || '',
+      role: u.role || '',
+      roleCode: u.roleCode || deriveRoleCode(u.role),
+      dsu: u.dsu || '',
+      email: u.email || '',
+      authenticated: !!(u.authenticated || u.token),
+      expiresAt: u.expiresAt || undefined
+    };
+  }
+
+  // The active user, or null if none has been selected/authenticated yet. An expired
+  // authenticated session is dropped here too (single expiry rule shared with Identity).
   function getActiveUser() {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    try {
+      const u = JSON.parse(raw);
+      if (u && u.expiresAt && new Date(u.expiresAt) < new Date()) { clearActiveUser(); return null; }
+      return u;
+    } catch { return null; }
   }
 
   // Live directory of selectable identities, sourced from the references flow (E01).
@@ -50,6 +73,7 @@ const State = (() => {
     } else if (idOrUser) {
       user = getAllUsers().find(u => String(u.id) === String(idOrUser)) || null;
     }
+    user = normalizeSession(user);
     if (user) {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
       if (window.Telemetry) window.Telemetry.log('session_switch', { userId: user.id, userName: user.name });
