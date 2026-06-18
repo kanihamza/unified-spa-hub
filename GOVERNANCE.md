@@ -35,16 +35,33 @@
 > - **STR-02 (done):** the `response-*` nav/palette labels disambiguated; `ack.html` documented as an
 >   intentional deep-link page.
 >
-> **Remaining in-repo follow-ups (tracked, not regressions):**
-> - **SEC-03 style-src:** `style-src` still allows `'unsafe-inline'` — inline `style=""` attributes and
->   one `<style>` block (`registry-movement`) remain. The inline-style→token-class sweep is the next
->   step to drop it; lower risk than script-src, which is now closed.
-> - **ARC-01 (native ESM):** shared modules still coordinate via `window.*` globals (a valid
->   dependency-free pattern); converting to native `import`/`export` for fully deterministic init is a
->   follow-up. Load order is already guarded (DOMContentLoaded) and externalized page modules reduced
->   the coupling surface.
-> - **REL-02 client sink:** the optional telemetry-to-flow sink (`E18`) and connectivity indicator are
->   specified (flow-side below) but the client emitter is not yet wired.
+> **Follow-up round (2026-06-18) — done:**
+> - **REL-02 (done):** client telemetry sink wired — `Telemetry.flush()` ships the buffer to the
+>   operator-provisioned `E18` diagnostics flow (no-op until configured; throttled, best-effort). Topbar
+>   connectivity indicator reflects live/offline/error state. Unit-proven.
+> - **ARC-01 (done, bounded):** single ES-module boot entry `js/app.js` imports the core services in
+>   canonical order — init order is enforced by the module graph, not per-page script-tag order (and
+>   `a11y.js` is now loaded everywhere). The `window.*` surface is retained as the **intentional,
+>   documented** platform contract (action-dispatcher registry + page handlers); a per-module
+>   import-graph rewrite that also removes `window.*` would conflict with the data-act dispatcher and is
+>   not required by the BRD (no bundler/build).
+> - **SEC-03 CSS-injection hardening (done):** backend-supplied values interpolated into `style`
+>   (`width:${progress}%`) now pass `Sanitizer.clampPercent()` (clamped 0–100; non-numeric → 0). The
+>   other dynamic styles use developer-controlled palettes/`var(--…)`.
+>
+> **Deliberately NOT brute-forced here (documented decisions, with rationale):**
+> - **SEC-03 `style-src 'unsafe-inline'` retained:** dropping it requires migrating ~644 inline
+>   `style=""` attributes to classes. Inline styles outrank classes in **specificity**, so a blind sweep
+>   risks cascade/visual regressions that the automated suite (lint/unit/headless smoke) **cannot
+>   detect** — there is no visual-regression tooling in this environment. The high-value half of SEC-03
+>   (script execution) is fully closed (`script-src 'self'`, no inline scripts/handlers); residual
+>   style-injection risk is low and further reduced by `clampPercent`. The attribute→class migration is
+>   the documented next step and must be paired with visual QA.
+> - **DATA-01 IndexedDB:** the durable store risk is addressed in-model via quota-aware `safeSetItem`
+>   (evict-and-retry + surfaced `dgo:storage-error`), closing the *silent-failure* substance. A full
+>   IndexedDB migration of the large read-caches/outbox would force the currently-synchronous cache/
+>   outbox API to become async (rippling through `callPA` and `settings`), so it is deferred as a
+>   scale enhancement rather than risk an async rewrite without need.
 >
 > **Frontend (R) verification this round:** `npm test` = compliance lint (13 rule groups) +
 > 21 headless unit assertions + 38 real-browser smoke checks (all 19 pages load clean; flow calls

@@ -93,7 +93,7 @@
                 <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap; width:100px;">
                   <span style="font-family: var(--dgo-family-mono); font-size:11px;">${linkedTask.progress}%</span>
                   <div style="flex:1; height:4px; background:var(--dgo-color-border-default); border-radius:6px; overflow:hidden;">
-                    <div style="width: ${linkedTask.progress}%; height:100%; background:var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                    <div style="width: ${Sanitizer.clampPercent(linkedTask.progress)}%; height:100%; background:var(--dgo-color-action-accent); border-radius:inherit;"></div>
                   </div>
                 </div>
               `;

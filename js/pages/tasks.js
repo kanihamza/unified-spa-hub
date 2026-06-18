@@ -53,7 +53,7 @@
                   <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap;">
                     <span style="font-family: var(--dgo-family-mono); font-size: 11px; width: 36px; text-align:right;">${t.progress}%</span>
                     <div style="flex:1; height: 6px; background: var(--dgo-color-border-default); border-radius: 9px; overflow:hidden; min-width: 60px;">
-                      <div style="width: ${t.progress}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                      <div style="width: ${Sanitizer.clampPercent(t.progress)}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
                     </div>
                   </div>
                 </td>
@@ -150,7 +150,7 @@
                 <div class="dgo-cluster dgo-cluster--density" style="flex-wrap:nowrap;">
                   <span style="font-family:var(--dgo-family-mono); font-weight:700; font-size:15px; width:40px;">${t.progress}%</span>
                   <div style="flex:1; height: 8px; background: var(--dgo-color-border-default); border-radius: 9px; overflow:hidden;">
-                    <div style="width: ${t.progress}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
+                    <div style="width: ${Sanitizer.clampPercent(t.progress)}%; height: 100%; background: var(--dgo-color-action-accent); border-radius:inherit;"></div>
                   </div>
                 </div>
               </div>

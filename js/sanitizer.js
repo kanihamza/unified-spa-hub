@@ -127,6 +127,15 @@ const Sanitizer = (() => {
     return String(str == null ? '' : str).replace(/[&<>"']/g, (ch) => ESC_MAP[ch]);
   }
 
+  // Clamp a value destined for a CSS length/percentage interpolation to a safe number
+  // in [0,100] (SEC-03 defense-in-depth): backend-supplied values (e.g. task progress)
+  // must never be interpolated raw into a style context, which would be CSS injection.
+  function clampPercent(v) {
+    const n = Number(v);
+    if (!isFinite(n)) return 0;
+    return Math.max(0, Math.min(100, n));
+  }
+
   return {
     // `escape` is retained as the established API name and now delegates to the
     // single canonical implementation.
@@ -134,6 +143,7 @@ const Sanitizer = (() => {
     escapeHtml,
     cleanHTML,
     safeUrl,
+    clampPercent,
     createRow: createSafeRow
   };
 })();

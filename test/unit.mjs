@@ -153,6 +153,9 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
     assert('SEC-03 safeUrl neutralizes javascript: scheme', S.safeUrl('javascript:alert(1)') === '#');
     assert('SEC-03 safeUrl attribute-encodes ampersands', S.safeUrl('https://x.test/a?b=1&c=2').includes('&amp;'));
     assert('SEC-03 safeUrl preserves http/https', S.safeUrl('https://x.test/a').startsWith('https://'));
+    assert('SEC-03 clampPercent passes valid numbers', S.clampPercent(50) === 50 && S.clampPercent('80') === 80);
+    assert('SEC-03 clampPercent clamps out-of-range', S.clampPercent(150) === 100 && S.clampPercent(-10) === 0);
+    assert('SEC-03 clampPercent neutralizes CSS injection in width%', S.clampPercent('50%; background:url(evil)') === 0);
   }
 
   // ── DATA-02: single canonical session shape + shared expiry rule ──────────────
