@@ -171,6 +171,17 @@ function loadPlatform({ hostname = 'localhost', online = true, fetchImpl, profil
     assert('DATA-02 expired session dropped on read', State.getActiveUser() === null);
   }
 
+  // ── DATA-03: telemetry log() must never throw on storage quota/disabled ───────
+  {
+    const { sandbox, ls } = loadPlatform({ scripts: ['js/sanitizer.js', 'js/api.js', 'js/telemetry.js'] });
+    const T = sandbox.window.Telemetry;
+    ls.__setThrow(true);
+    let threw = false;
+    try { T.log('unit_probe', { x: 1 }); } catch { threw = true; }
+    assert('DATA-03 telemetry.log() does not throw on storage failure', !threw);
+    ls.__setThrow(false);
+  }
+
   console.log(`\n${failures ? 'UNIT FAILED (' + failures + ')' : 'UNIT PASSED'} `);
   process.exit(failures ? 1 : 0);
 })();
